@@ -18,8 +18,8 @@ Ablation grid (per dataset):
   gnn_type : gcn | gat | gatv2 | gin
   n_layers : 2, 3, 4
   d_model  : 128, 256, 512, 1024
-  top_k    : 0, 3, 5    (sparsity_top_k for DynamicAdjacency; 0 = dense)
-  n_heads  : 2, 4, 8    (GCN/GIN ignore this; only one value run for those)
+  top_k    : 0, 3  (sparsity_top_k for DynamicAdjacency; 0 = dense)
+  n_heads  :  4, 8    (GCN/GIN ignore this; only one value run for those)
 
 Training: 20 000 steps, no intermediate checkpoints.
 """
@@ -483,6 +483,54 @@ def _run_one(
 # Main entry-point called by each dataset script
 # ---------------------------------------------------------------------------
 
+def aggregate_summary(
+    dataset_name: str,
+    args: argparse.Namespace,
+) -> list:
+    """Build ablation_summary.json from per-combo results_full_averaged.json files.
+
+    Safe to call after all SLURM array tasks finish — reads only per-combo
+    files that are never shared between tasks, so there is no race condition.
+    """
+    exp_root     = os.path.abspath(args.exp_root if args.exp_root else args.repo_root)
+    ablation_dir = os.path.join(exp_root, "exp", dataset_name, "ablation")
+    summary_path = os.path.join(ablation_dir, "ablation_summary.json")
+    os.makedirs(ablation_dir, exist_ok=True)
+
+    summary: list = []
+    for gnn_type, n_layers, d_model, top_k, n_heads in iter_ablation_grid():
+        name         = exp_dir_name(gnn_type, n_layers, d_model, top_k, n_heads)
+        results_file = os.path.join(ablation_dir, name, "results_full_averaged.json")
+        entry: dict = {
+            "dataset":     dataset_name,
+            "exp_name":    name,
+            "gnn_type":    gnn_type,
+            "n_layers":    n_layers,
+            "d_model":     d_model,
+            "top_k":       top_k,
+            "n_heads":     n_heads,
+            "steps":       ABLATION_STEPS,
+            "n_gen_seeds": N_GEN_SEEDS,
+            "n_clf_seeds": N_CLF_SEEDS,
+        }
+        if os.path.exists(results_file):
+            with open(results_file) as fh:
+                entry["status"]  = "done"
+                entry["metrics"] = json.load(fh)
+        else:
+            entry["status"] = "missing"
+        summary.append(entry)
+
+    with open(summary_path, "w") as fh:
+        json.dump(summary, fh, indent=2)
+
+    n_done    = sum(1 for e in summary if e["status"] == "done")
+    n_missing = sum(1 for e in summary if e["status"] == "missing")
+    print(f"  [{dataset_name}] Aggregated: done={n_done}  missing={n_missing}"
+          f"  -> {summary_path}")
+    return summary
+
+
 def run_ablation(
     dataset_name: str,
     dataset_cfg: dict,
@@ -503,6 +551,9 @@ def run_ablation(
     single_combo  : optional (gnn_type, n_layers, d_model, top_k, n_heads)
                     tuple for cluster single-job mode; if None, run all.
     """
+    if getattr(args, "aggregate", False):
+        return aggregate_summary(dataset_name, args)
+
     repo_root = os.path.abspath(args.repo_root)
     data_root = os.path.abspath(args.data_root if args.data_root else repo_root)
     exp_root  = os.path.abspath(args.exp_root  if args.exp_root  else repo_root)
@@ -512,16 +563,46 @@ def run_ablation(
     _setup_repo_path(repo_root)
 
     ablation_dir = os.path.join(exp_root, "exp", dataset_name, "ablation")
-    summary_path = os.path.join(ablation_dir, "ablation_summary.json")
     os.makedirs(ablation_dir, exist_ok=True)
 
+    # SLURM single-combo path: never touch the shared summary file.
+    # Each combo writes only to its own results_full_averaged.json, so
+    # parallel array tasks cannot race. Run aggregate_summary() afterwards.
+    if single_combo is not None:
+        gnn_type, n_layers, d_model, top_k, n_heads = single_combo
+        name = exp_dir_name(gnn_type, n_layers, d_model, top_k, n_heads)
+        print(f"\n[1/1] {name}")
+        try:
+            result = _run_one(
+                gnn_type=gnn_type,
+                n_layers=n_layers,
+                d_model=d_model,
+                top_k=top_k,
+                n_heads=n_heads,
+                dataset_name=dataset_name,
+                dataset_cfg=dataset_cfg,
+                repo_root=repo_root,
+                data_root=data_root,
+                exp_root=exp_root,
+                device=args.device,
+                seed=args.seed,
+                skip_if_done=skip_flag,
+            )
+        except Exception:
+            traceback.print_exc()
+            raise
+        return [result]
+
+    # Sequential (local / single-node) mode: no concurrency, safe to
+    # read-modify-write the shared summary after each combo completes.
+    summary_path = os.path.join(ablation_dir, "ablation_summary.json")
     summary: list = []
     if os.path.exists(summary_path):
         with open(summary_path) as fh:
             summary = json.load(fh)
     done_names = {e["exp_name"] for e in summary if e.get("status") == "done"}
 
-    combos = [single_combo] if single_combo is not None else list(iter_ablation_grid())
+    combos = list(iter_ablation_grid())
     total  = len(combos)
 
     for idx, (gnn_type, n_layers, d_model, top_k, n_heads) in enumerate(combos, 1):
@@ -610,6 +691,10 @@ def make_parser(dataset_name: str = "") -> argparse.ArgumentParser:
     env.add_argument("--seed",      type=int, default=0)
     env.add_argument("--no_skip",   action="store_true", default=False,
                      help="Re-run even if results already exist")
+
+    p.add_argument("--aggregate", action="store_true", default=False,
+                   help="Build ablation_summary.json from finished per-combo results "
+                        "(run this after all SLURM array tasks complete)")
 
     p.set_defaults(skip_if_done=True)
     return p

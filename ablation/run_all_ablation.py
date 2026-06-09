@@ -29,7 +29,7 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
-from ablation_runner import make_parser, run_ablation, iter_ablation_grid
+from ablation_runner import make_parser, run_ablation, iter_ablation_grid, aggregate_summary
 
 # ---------------------------------------------------------------------------
 # All 16 dataset configurations
@@ -387,6 +387,12 @@ def main() -> None:
     p.add_argument("--no_skip",   action="store_true", default=False,
                    help="Re-run even if results already exist")
 
+    # Aggregation mode (run after SLURM array jobs finish)
+    p.add_argument("--aggregate", action="store_true", default=False,
+                   help="Build ablation_summary.json for each dataset from finished "
+                        "per-combo results_full_averaged.json files. Run this after "
+                        "all SLURM array tasks complete.")
+
     # SLURM mode
     p.add_argument("--submit_slurm", action="store_true", default=False,
                    help="Submit one SLURM array job per dataset instead of running sequentially")
@@ -416,6 +422,13 @@ def main() -> None:
     print(f"Total runs    : {n * combos_per_ds}")
     print(f"Mode          : {'SLURM array jobs' if args.submit_slurm else 'sequential'}")
     print()
+
+    if args.aggregate:
+        agg_args = argparse.Namespace(repo_root=args.repo_root, exp_root=args.exp_root)
+        for ds in datasets_to_run:
+            aggregate_summary(ds, agg_args)
+        print("\nAggregation complete.")
+        return
 
     if args.submit_slurm:
         for ds in datasets_to_run:
