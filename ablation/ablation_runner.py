@@ -377,7 +377,7 @@ def _run_one(
         tabddpm_sample(
             parent_dir=gen_dir,
             real_data_path=real_data_path,
-            model_path=os.path.join(parent_dir, "model.pt"),
+            model_path=os.path.join(parent_dir, "model_ema.pt"),
             model_type="mlp",
             model_params=deepcopy(model_params),
             T_dict=T_dict_train,
