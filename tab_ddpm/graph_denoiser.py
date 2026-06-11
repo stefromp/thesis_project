@@ -120,9 +120,17 @@ class AttnGNNBlock(nn.Module):
         n_nodes: int,
         top_k: int = 0,
         n_gnn_layers: int = GNN_LAYERS_PER_BLOCK,
+        use_attention: bool = True,
     ) -> None:
         super().__init__()
-        self.attn = SelfAttentionLayer(d_model, n_heads, dropout=dropout)
+        # Dense self-attention sublayer (global, adjacency-free mixing). When
+        # use_attention is False the block is GNN-only: the dynamic adjacency is
+        # then computed from the block's *input* embeddings instead of the
+        # post-attention ones, and ~1/3 of the block's parameters are dropped.
+        self.attn: Optional[nn.Module] = (
+            SelfAttentionLayer(d_model, n_heads, dropout=dropout)
+            if use_attention else None
+        )
         # Per-block dynamic adjacency: independent q/k projections per block,
         # so the learned graph differs across depth (None in static mode).
         self.dynamic_adj: Optional[nn.Module] = (
@@ -138,9 +146,10 @@ class AttnGNNBlock(nn.Module):
         )
 
     def forward(self, x: Tensor, adj: Optional[Tensor] = None) -> Tensor:
-        x = self.attn(x)
-        # Recompute the soft adjacency once per block, from the post-attention
-        # embeddings, then reuse it for both GNN layers.
+        if self.attn is not None:
+            x = self.attn(x)
+        # Recompute the soft adjacency once per block, from the (post-attention,
+        # if enabled) embeddings, then reuse it for both GNN layers.
         a = self.dynamic_adj(x) if self.dynamic_adj is not None else adj
         for gnn in self.gnns:
             x = gnn(x, a)
@@ -185,6 +194,12 @@ class GraphAwareDenoiser(nn.Module):
                     (graph-masked multi-head attention + FFN).
         dropout:    dropout rate inside each GNN layer (attention / FFN).
         dim_t:      sinusoidal timestep embedding dimension.
+        use_attention: if True (default) each block begins with a dense
+                    self-attention sublayer (global, adjacency-free mixing);
+                    if False the blocks are GNN-only (graph message passing
+                    on the dynamic/static adjacency), dropping ~1/3 of the
+                    backbone parameters and removing the structure-free
+                    global channel.
     """
 
     def __init__(
@@ -203,9 +218,11 @@ class GraphAwareDenoiser(nn.Module):
         gnn_type: str = "graphmha",
         dropout: float = 0.0,
         dim_t: int = 128,
+        use_attention: bool = True,
     ) -> None:
         super().__init__()
 
+        self.use_attention = use_attention
         self.d_num = d_num
         self.cat_sizes = list(cat_sizes)
         self.n_cat = len(cat_sizes)
@@ -296,6 +313,7 @@ class GraphAwareDenoiser(nn.Module):
                     graph_mode=graph_mode,
                     n_nodes=self.N,
                     top_k=top_k,
+                    use_attention=use_attention,
                 )
                 for _ in range(n_layers)
             ]

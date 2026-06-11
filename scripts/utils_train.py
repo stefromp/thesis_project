@@ -32,6 +32,7 @@ def get_model(
             top_k=graph_params.get('sparsity_top_k', 0),
             gnn_type=graph_params.get('gnn_type', 'graphmha'),
             dropout=graph_params.get('dropout', 0.0),
+            use_attention=graph_params.get('use_attention', True),
         )
     elif model_name == 'mlp':
         model = MLPDiffusion(**model_params)

@@ -54,6 +54,9 @@ N_LAYERS  = [ 3,4]                   #number of blocks
 D_MODELS  = [256, 512, 1024]
 TOP_KS    = [5]
 N_HEADS   = [4]
+# Dense self-attention sublayer on/off. True = each block starts with global
+# adjacency-free self-attention (original behaviour); False = GNN-only blocks.
+ATTENTIONS = [True, False]
 
 _HEADLESS_GNNS = {"gcn", "gin"}
 
@@ -63,19 +66,24 @@ _HEADLESS_GNNS = {"gcn", "gin"}
 # ---------------------------------------------------------------------------
 
 def exp_dir_name(gnn_type: str, n_layers: int, d_model: int,
-                 top_k: int, n_heads: int) -> str:
+                 top_k: int, n_heads: int, use_attention: bool = True) -> str:
+    # The "_noattn" suffix is appended only when self-attention is disabled, so
+    # existing (attention-on) result directories keep their original names.
+    suffix = "" if use_attention else "_noattn"
     return (f"gnn_{gnn_type}_layers{n_layers}_dim{d_model}"
-            f"_topk{top_k}_heads{n_heads}")
+            f"_topk{top_k}_heads{n_heads}{suffix}")
 
 
 def iter_ablation_grid():
-    """Yield all (gnn_type, n_layers, d_model, top_k, n_heads) combinations.
+    """Yield all (gnn_type, n_layers, d_model, top_k, n_heads, use_attention)
+    combinations.
 
-    GCN and GIN have no attention heads; only the first n_heads value (= 2)
-    is run for them to avoid producing identical redundant jobs.
+    GCN and GIN have no attention heads; only the first n_heads value is run
+    for them to avoid producing identical redundant jobs.
     """
-    for combo in itertools.product(GNN_TYPES, N_LAYERS, D_MODELS, TOP_KS, N_HEADS):
-        gnn_type, _, _, _, n_heads = combo
+    for combo in itertools.product(GNN_TYPES, N_LAYERS, D_MODELS, TOP_KS,
+                                   N_HEADS, ATTENTIONS):
+        gnn_type, _, _, _, n_heads, _ = combo
         if gnn_type in _HEADLESS_GNNS and n_heads != N_HEADS[0]:
             continue
         yield combo
@@ -266,6 +274,7 @@ def _run_one(
     d_model: int,
     top_k: int,
     n_heads: int,
+    use_attention: bool,
     dataset_name: str,
     dataset_cfg: dict,
     repo_root: str,
@@ -287,7 +296,8 @@ def _run_one(
     from eval_catboost import train_catboost
     from eval_fidelity import compute_fidelity_metrics
 
-    dir_name       = exp_dir_name(gnn_type, n_layers, d_model, top_k, n_heads)
+    dir_name       = exp_dir_name(gnn_type, n_layers, d_model, top_k, n_heads,
+                                  use_attention)
     parent_dir     = os.path.join(exp_root, "exp", dataset_name, "ablation", dir_name)
     real_data_path = os.path.join(data_root, dataset_cfg["real_data_path"])
     results_file   = os.path.join(parent_dir, "results_full_averaged.json")
@@ -343,6 +353,7 @@ def _run_one(
         n_heads=n_heads,
         sparsity_top_k=top_k,
         dropout=0.0,
+        use_attention=use_attention,
     )
 
     # ---- 1. Train (single run) ---------------------------------------------
@@ -503,18 +514,20 @@ def aggregate_summary(
     os.makedirs(ablation_dir, exist_ok=True)
 
     summary: list = []
-    for gnn_type, n_layers, d_model, top_k, n_heads in iter_ablation_grid():
-        name         = exp_dir_name(gnn_type, n_layers, d_model, top_k, n_heads)
+    for gnn_type, n_layers, d_model, top_k, n_heads, use_attention in iter_ablation_grid():
+        name         = exp_dir_name(gnn_type, n_layers, d_model, top_k, n_heads,
+                                    use_attention)
         results_file = os.path.join(ablation_dir, name, "results_full_averaged.json")
         entry: dict = {
-            "dataset":     dataset_name,
-            "exp_name":    name,
-            "gnn_type":    gnn_type,
-            "n_layers":    n_layers,
-            "d_model":     d_model,
-            "top_k":       top_k,
-            "n_heads":     n_heads,
-            "steps":       ABLATION_STEPS,
+            "dataset":       dataset_name,
+            "exp_name":      name,
+            "gnn_type":      gnn_type,
+            "n_layers":      n_layers,
+            "d_model":       d_model,
+            "top_k":         top_k,
+            "n_heads":       n_heads,
+            "use_attention": use_attention,
+            "steps":         ABLATION_STEPS,
             "n_gen_seeds": N_GEN_SEEDS,
             "n_clf_seeds": N_CLF_SEEDS,
         }
@@ -574,8 +587,15 @@ def run_ablation(
     # Each combo writes only to its own results_full_averaged.json, so
     # parallel array tasks cannot race. Run aggregate_summary() afterwards.
     if single_combo is not None:
-        gnn_type, n_layers, d_model, top_k, n_heads = single_combo
-        name = exp_dir_name(gnn_type, n_layers, d_model, top_k, n_heads)
+        # Accept legacy 5-tuples (no attention axis): default to attention on,
+        # unless --use_attention was passed on the CLI.
+        if len(single_combo) == 5:
+            cli_attn = getattr(args, "use_attention", None)
+            single_combo = (*single_combo,
+                            True if cli_attn is None else bool(cli_attn))
+        gnn_type, n_layers, d_model, top_k, n_heads, use_attention = single_combo
+        name = exp_dir_name(gnn_type, n_layers, d_model, top_k, n_heads,
+                            use_attention)
         print(f"\n[1/1] {name}")
         try:
             result = _run_one(
@@ -584,6 +604,7 @@ def run_ablation(
                 d_model=d_model,
                 top_k=top_k,
                 n_heads=n_heads,
+                use_attention=use_attention,
                 dataset_name=dataset_name,
                 dataset_cfg=dataset_cfg,
                 repo_root=repo_root,
@@ -610,8 +631,9 @@ def run_ablation(
     combos = list(iter_ablation_grid())
     total  = len(combos)
 
-    for idx, (gnn_type, n_layers, d_model, top_k, n_heads) in enumerate(combos, 1):
-        name = exp_dir_name(gnn_type, n_layers, d_model, top_k, n_heads)
+    for idx, (gnn_type, n_layers, d_model, top_k, n_heads, use_attention) in enumerate(combos, 1):
+        name = exp_dir_name(gnn_type, n_layers, d_model, top_k, n_heads,
+                            use_attention)
         print(f"\n[{idx}/{total}] {name}")
 
         if skip_flag and name in done_names:
@@ -619,17 +641,18 @@ def run_ablation(
             continue
 
         entry: dict = {
-            "dataset":     dataset_name,
-            "exp_name":    name,
-            "gnn_type":    gnn_type,
-            "n_layers":    n_layers,
-            "d_model":     d_model,
-            "top_k":       top_k,
-            "n_heads":     n_heads,
-            "steps":       ABLATION_STEPS,
-            "n_gen_seeds": N_GEN_SEEDS,
-            "n_clf_seeds": N_CLF_SEEDS,
-            "status":      "pending",
+            "dataset":       dataset_name,
+            "exp_name":      name,
+            "gnn_type":      gnn_type,
+            "n_layers":      n_layers,
+            "d_model":       d_model,
+            "top_k":         top_k,
+            "n_heads":       n_heads,
+            "use_attention": use_attention,
+            "steps":         ABLATION_STEPS,
+            "n_gen_seeds":   N_GEN_SEEDS,
+            "n_clf_seeds":   N_CLF_SEEDS,
+            "status":        "pending",
         }
 
         try:
@@ -639,6 +662,7 @@ def run_ablation(
                 d_model=d_model,
                 top_k=top_k,
                 n_heads=n_heads,
+                use_attention=use_attention,
                 dataset_name=dataset_name,
                 dataset_cfg=dataset_cfg,
                 repo_root=repo_root,
@@ -684,6 +708,9 @@ def make_parser(dataset_name: str = "") -> argparse.ArgumentParser:
                      help="sparsity_top_k (0 = dense)")
     grp.add_argument("--n_heads",  type=int, choices=N_HEADS,   default=None, metavar="H",
                      help="Attention heads (ignored by gcn/gin)")
+    grp.add_argument("--use_attention", type=int, choices=[0, 1], default=None, metavar="A",
+                     help="Dense self-attention sublayer per block: 1=on (default), "
+                          "0=GNN-only. Applies to single-combo mode.")
 
     env = p.add_argument_group("Environment")
     env.add_argument("--repo_root", type=str, default=".",
