@@ -29,10 +29,14 @@ from .gnn_layers import (
     GATLayer,
     GATv2Layer,
     GINLayer,
+    SelfAttentionLayer,
     TransformerGraphLayer,
     GraphAttentionLayer,   # alias of TransformerGraphLayer — kept for users
                            # who import it from graph_denoiser.
 )
+
+# Each block stacks this many GNN layers after its attention sublayer.
+GNN_LAYERS_PER_BLOCK = 2
 
 
 # ---------------------------------------------------------------------------
@@ -86,6 +90,64 @@ def _build_gnn_layer(
 
 
 # ---------------------------------------------------------------------------
+# Attention -> GNN block
+# ---------------------------------------------------------------------------
+
+class AttnGNNBlock(nn.Module):
+    """One ablation 'layer': a dense self-attention sublayer followed by
+    GNN_LAYERS_PER_BLOCK (=2) graph layers of the chosen backbone.
+
+    The attention provides global, adjacency-free mixing; the GNN layers
+    provide adjacency-constrained local message passing.  Each block owns
+    its own attention, GNN, and (in dynamic mode) DynamicAdjacency
+    parameters, so when blocks are stacked every learned component differs
+    across depth.
+
+    In dynamic mode the block holds its own `DynamicAdjacency` and recomputes
+    the soft adjacency once per block -- from the post-attention embeddings --
+    then reuses it for both GNN layers, so the block's two GNN layers refine
+    on a single stable soft graph.  In static mode the frozen adjacency tensor
+    is passed in via `adj` and `self.dynamic_adj` is None.
+    """
+
+    def __init__(
+        self,
+        gnn_type: str,
+        d_model: int,
+        n_heads: int,
+        dropout: float,
+        graph_mode: str,
+        n_nodes: int,
+        top_k: int = 0,
+        n_gnn_layers: int = GNN_LAYERS_PER_BLOCK,
+    ) -> None:
+        super().__init__()
+        self.attn = SelfAttentionLayer(d_model, n_heads, dropout=dropout)
+        # Per-block dynamic adjacency: independent q/k projections per block,
+        # so the learned graph differs across depth (None in static mode).
+        self.dynamic_adj: Optional[nn.Module] = (
+            DynamicAdjacency(n_nodes, d_model, top_k)
+            if graph_mode == "dynamic" else None
+        )
+        self.gnns = nn.ModuleList(
+            [
+                _build_gnn_layer(gnn_type, d_model=d_model,
+                                 n_heads=n_heads, dropout=dropout)
+                for _ in range(n_gnn_layers)
+            ]
+        )
+
+    def forward(self, x: Tensor, adj: Optional[Tensor] = None) -> Tensor:
+        x = self.attn(x)
+        # Recompute the soft adjacency once per block, from the post-attention
+        # embeddings, then reuse it for both GNN layers.
+        a = self.dynamic_adj(x) if self.dynamic_adj is not None else adj
+        for gnn in self.gnns:
+            x = gnn(x, a)
+        return x
+
+
+# ---------------------------------------------------------------------------
 # Graph-aware denoiser
 # ---------------------------------------------------------------------------
 
@@ -95,9 +157,10 @@ class GraphAwareDenoiser(nn.Module):
     Each feature is mapped to a graph node.  N = d_num + len(cat_sizes) nodes
     in total.  Numerical features produce scalar-input nodes; each categorical
     feature produces one node whose initial embedding comes from its one-hot
-    slice.  After L graph attention layers, every node is projected back to its
-    original feature space and the outputs are concatenated to reconstruct the
-    full input vector.
+    slice.  After n_layers attention->GNN blocks (each = dense self-attention
+    followed by GNN_LAYERS_PER_BLOCK graph layers), every node is projected
+    back to its original feature space and the outputs are concatenated to
+    reconstruct the full input vector.
 
     Accepts the same forward signature as MLPDiffusion:
         forward(x, timesteps, y=None) → Tensor of shape (B, d_in)
@@ -109,7 +172,9 @@ class GraphAwareDenoiser(nn.Module):
         d_num:      number of numerical features.
         cat_sizes:  cardinalities of categorical features (empty list = none).
         d_model:    hidden dimension per node.
-        n_layers:   number of graph attention layers.
+        n_layers:   number of attention->GNN blocks.  Each block is a dense
+                    self-attention sublayer followed by GNN_LAYERS_PER_BLOCK
+                    (=2) graph layers of `gnn_type`.
         n_heads:    number of attention heads (must divide d_model).
         graph_mode: 'static' or 'dynamic'.
         adjacency:  (N, N) binary tensor for static mode; None for dynamic.
@@ -206,26 +271,31 @@ class GraphAwareDenoiser(nn.Module):
                 # Placeholder replaced by load_state_dict when loading a
                 # trained checkpoint (identity = self-loops only).
                 self.register_buffer("static_adj", torch.eye(self.N))
-        else:
-            self.dynamic_adj = DynamicAdjacency(self.N, d_model, top_k)
+        # dynamic mode: each AttnGNNBlock owns its own DynamicAdjacency
+        # (instantiated below), so the learned graph differs across depth.
 
         # ------------------------------------------------------------------
-        # GNN backbone layers — chosen via gnn_type:
+        # Backbone — n_layers attention->GNN blocks.  Each block is a dense
+        # self-attention sublayer (global mixing) followed by
+        # GNN_LAYERS_PER_BLOCK (=2) graph layers of the chosen backbone
+        # (local, adjacency-constrained message passing).  gnn_type selects
+        # only the GNN sublayer type:
         #   graphmha : graph-masked multi-head attention (the original block).
         #   gcn      : Kipf & Welling (2017), symmetric-normalised aggregation.
         #   gat      : Velickovic et al. (2018), static masked attention.
         #   gatv2    : Brody, Alon & Yahav (2022), dynamic masked attention.
         #   gin      : Xu et al. (2019), injective sum + MLP (WL-expressive).
-        # Every layer shares the (x, adj) -> x interface defined in
-        # gnn_layers.py, so the forward pass below is identical for all.
         # ------------------------------------------------------------------
-        self.layers = nn.ModuleList(
+        self.blocks = nn.ModuleList(
             [
-                _build_gnn_layer(
+                AttnGNNBlock(
                     self.gnn_type,
                     d_model=d_model,
                     n_heads=n_heads,
                     dropout=dropout,
+                    graph_mode=graph_mode,
+                    n_nodes=self.N,
+                    top_k=top_k,
                 )
                 for _ in range(n_layers)
             ]
@@ -300,16 +370,17 @@ class GraphAwareDenoiser(nn.Module):
             node_emb = node_emb + y_emb.unsqueeze(1)
 
         # ------------------------------------------------------------------
-        # 3 & 4. Adjacency + Graph attention layers
+        # 3 & 4. Attention -> GNN blocks
         # ------------------------------------------------------------------
+        # static  : the frozen adjacency is reused by every GNN sublayer.
+        # dynamic : each block recomputes the soft adjacency once, from its
+        #           post-attention embeddings, and reuses it for both GNN layers.
         if self.graph_mode == "static":
-            adj = self.static_adj  # (N, N) — frozen, computed once
-            for layer in self.layers:
-                node_emb = layer(node_emb, adj)
+            for block in self.blocks:
+                node_emb = block(node_emb, adj=self.static_adj)
         else:
-            for layer in self.layers:
-                adj = self.dynamic_adj(node_emb)  # (B, N, N) — recomputed from current embeddings
-                node_emb = layer(node_emb, adj)
+            for block in self.blocks:
+                node_emb = block(node_emb)  # each block uses its own dynamic_adj
 
         # ------------------------------------------------------------------
         # 5. Readout — project each node back to its original feature space

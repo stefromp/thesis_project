@@ -450,6 +450,69 @@ GraphAttentionLayer = TransformerGraphLayer
 
 
 # ---------------------------------------------------------------------------
+# Dense self-attention (global channel, adjacency-free)
+# ---------------------------------------------------------------------------
+
+class SelfAttentionLayer(nn.Module):
+    """Dense multi-head self-attention over feature-nodes, pre-norm + FFN.
+
+    Unlike the graph layers above, this sublayer does **not** use the
+    adjacency: every node attends to every other node.  It provides the
+    "global" mixing channel in an attention->GNN block, while the GNN
+    sublayers that follow provide the adjacency-constrained "local" channel.
+
+    Each instance owns its own Q/K/V/out projections, so when several blocks
+    are stacked the attention parameters differ per block and the attention
+    pattern is recomputed from each block's (already updated) embeddings --
+    attention adapts with depth rather than being shared across layers.
+
+    Signature mirrors the graph layers, `forward(x, adj=None)`, with `adj`
+    accepted and ignored so blocks can call every sublayer uniformly.
+    """
+
+    def __init__(self, d_model: int, n_heads: int = 4, dropout: float = 0.0) -> None:
+        super().__init__()
+        if d_model % n_heads != 0:
+            raise ValueError(
+                f"d_model ({d_model}) must be divisible by n_heads ({n_heads})"
+            )
+        self.n_heads = n_heads
+        self.d_head = d_model // n_heads
+        self.scale = math.sqrt(self.d_head)
+
+        self.q_proj = nn.Linear(d_model, d_model)
+        self.k_proj = nn.Linear(d_model, d_model)
+        self.v_proj = nn.Linear(d_model, d_model)
+        self.out_proj = nn.Linear(d_model, d_model)
+
+        self.norm1 = nn.LayerNorm(d_model)
+        self.attn_drop = nn.Dropout(dropout)
+        self.ffn = _FFN(d_model, dropout)
+
+    def forward(self, x: Tensor, adj: Optional[Tensor] = None) -> Tensor:
+        B, N, D = x.shape
+        h, dh = self.n_heads, self.d_head
+
+        residual = x
+        x_ln = self.norm1(x)
+        Q = self.q_proj(x_ln).view(B, N, h, dh).transpose(1, 2)
+        K = self.k_proj(x_ln).view(B, N, h, dh).transpose(1, 2)
+        V = self.v_proj(x_ln).view(B, N, h, dh).transpose(1, 2)
+
+        scores = torch.matmul(Q, K.transpose(-2, -1)) / self.scale
+        attn = F.softmax(scores, dim=-1)
+        attn = self.attn_drop(attn)
+
+        out = torch.matmul(attn, V)
+        out = out.transpose(1, 2).contiguous().view(B, N, D)
+        out = self.out_proj(out)
+
+        x = residual + out
+        x = self.ffn(x)
+        return x
+
+
+# ---------------------------------------------------------------------------
 # Factory
 # ---------------------------------------------------------------------------
 

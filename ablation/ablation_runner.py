@@ -44,11 +44,16 @@ ABLATION_STEPS = 20_000
 N_GEN_SEEDS    = 5
 N_CLF_SEEDS    = 10
 
-GNN_TYPES = ["gcn", "gat", "gatv2", "gin"]
-N_LAYERS  = [2, 3, 4]
-D_MODELS  = [128, 256, 512, 1024]
-TOP_KS    = [0, 3]
-N_HEADS   = [4, 8]
+# Hardcoded across all datasets, overriding any per-dataset CB-best values.
+ABLATION_NUM_TIMESTEPS = 1000
+ABLATION_BATCH_SIZE    = 4096
+ABLATION_LR            = 1e-4
+
+GNN_TYPES = ["gcn", "gatv2", "gin"]
+N_LAYERS  = [ 3,4]                   #number of blocks
+D_MODELS  = [256, 512, 1024]
+TOP_KS    = [5]
+N_HEADS   = [4]
 
 _HEADLESS_GNNS = {"gcn", "gin"}
 
@@ -352,12 +357,12 @@ def _run_one(
         seed=seed,
         change_val=False,
         graph_params=graph_params,
-        num_timesteps=dataset_cfg["num_timesteps"],
+        num_timesteps=ABLATION_NUM_TIMESTEPS,
         gaussian_loss_type="mse",
         scheduler=dataset_cfg["scheduler"],
-        lr=dataset_cfg["lr"],
+        lr=ABLATION_LR,
         weight_decay=dataset_cfg["weight_decay"],
-        batch_size=dataset_cfg["batch_size"],
+        batch_size=ABLATION_BATCH_SIZE,
         steps=ABLATION_STEPS,
         checkpoint_every=0,
     )
@@ -386,7 +391,7 @@ def _run_one(
             seed=gen_seed,
             change_val=False,
             graph_params=graph_params,
-            num_timesteps=dataset_cfg["num_timesteps"],
+            num_timesteps=ABLATION_NUM_TIMESTEPS,
             gaussian_loss_type="mse",
             scheduler=dataset_cfg["scheduler"],
             num_samples=dataset_cfg["num_samples"],
