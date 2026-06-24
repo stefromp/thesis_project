@@ -159,14 +159,18 @@ class DynamicAdjacency(nn.Module):
         Q = self.q_proj(node_emb)                              # (B, N, D)
         K = self.k_proj(node_emb)                              # (B, N, D)
         scores = torch.bmm(Q, K.transpose(1, 2)) / self.scale  # (B, N, N)
-        adj = torch.sigmoid(scores)
 
         if self.top_k > 0 and self.top_k < N - 1:
-            eye = torch.eye(N, device=adj.device, dtype=adj.dtype).unsqueeze(0)
-            adj_no_self = adj * (1.0 - eye)
-            _, topk_idx = torch.topk(adj_no_self, k=self.top_k, dim=-1)
-            mask = torch.zeros_like(adj_no_self).scatter_(-1, topk_idx, 1.0)
-            adj = adj * mask
+            # Select top-k off-diagonal neighbours on the raw scores and push
+            # the rest to -1e9 *before* sigmoid, so gradients flow through the
+            # softmax-like nonlinearity for the surviving entries.
+            eye = torch.eye(N, device=scores.device, dtype=torch.bool).unsqueeze(0)
+            scores_no_self = scores.masked_fill(eye, float("-inf"))
+            _, topk_idx = torch.topk(scores_no_self, k=self.top_k, dim=-1)
+            keep = torch.zeros_like(scores, dtype=torch.bool).scatter_(-1, topk_idx, True)
+            scores = scores.masked_fill(~keep, -1e9)
+
+        adj = torch.sigmoid(scores)
 
         # Enforce self-loops
         eye = torch.eye(N, device=adj.device, dtype=adj.dtype).unsqueeze(0)
