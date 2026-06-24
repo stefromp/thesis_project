@@ -56,7 +56,7 @@ TOP_KS    = [5]
 N_HEADS   = [4]
 # Dense self-attention sublayer on/off. True = each block starts with global
 # adjacency-free self-attention (original behaviour); False = GNN-only blocks.
-ATTENTIONS = [True, False]
+ATTENTIONS = [True]
 
 _HEADLESS_GNNS = {"gcn", "gin"}
 
