@@ -328,7 +328,10 @@ def compute_fidelity_metrics(
     X_r_sub = _subsample(X_r_enc, MAX_SAMPLES, rng)
     X_s_sub = _subsample(X_s_enc, MAX_SAMPLES, rng)
 
-    out["Coverage"]    = compute_coverage(X_r_sub, X_s_sub, k=k)
-    out["beta_Recall"] = compute_beta_recall(X_r_sub, X_s_sub, k=k)
+    out["Coverage"] = compute_coverage(X_r_sub, X_s_sub, k=k)
+    # Named "knn_manifold_recall": this is a Kynkaanniemi-2019 k-NN manifold
+    # recall, NOT the Alaa-2022 beta-Recall (the name is kept explicit to avoid
+    # confusing the two).
+    out["knn_manifold_recall"] = compute_beta_recall(X_r_sub, X_s_sub, k=k)
 
     return out

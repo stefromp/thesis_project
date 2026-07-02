@@ -1,18 +1,19 @@
 """
 Shared runner for GNN ablation studies across all 16 datasets.
 
-Evaluation protocol — matches the default notebook exactly:
+Evaluation protocol — the original TabDDPM (Kotelnikov et al., 2023) metrics only:
   N_GEN_SEEDS = 5  : sample the trained model 5 times (different gen seeds)
   N_CLF_SEEDS = 10 : run CatBoost 10 times per generated dataset
 
-  Per gen_seed:
+  Per gen_seed (eval_tabddpm_protocol):
     1. Sample synthetic data
-    2. Fidelity metrics  (eval_fidelity.compute_fidelity_metrics)
-    3. DCR privacy metric (pairwise distance to closest real record)
-    4. CatBoost x N_CLF_SEEDS -> collect test-split metrics
+    2. DCR (mean nearest-neighbour L2, synthetic -> real train)
+    3. Wasserstein (mean over numerical columns)
+    4. Membership-inference AUC (proximity attack, train vs test)
+    5. CatBoost x N_CLF_SEEDS -> ML efficiency (F1 / R2) on the real test split
 
-  Aggregation: mean +/- std over all 50 CatBoost runs (utility) and 5 gen runs
-  (fidelity / privacy). Saved to results_full_averaged.json.
+  Aggregation: mean +/- std over all 50 CatBoost runs (ML efficiency) and 5 gen
+  runs (DCR / Wasserstein / MIA). Saved to results_full_averaged.json.
 
 Ablation grid (per dataset):
   gnn_type : gcn | gat | gatv2 | gin
@@ -294,7 +295,14 @@ def _run_one(
     from train import train as tabddpm_train
     from sample import sample as tabddpm_sample
     from eval_catboost import train_catboost
-    from eval_fidelity import compute_fidelity_metrics
+    # TabDDPM (Kotelnikov et al., 2023) protocol metrics. Pure sklearn/scipy — no
+    # synthcity — so they are safe to run inside the training environment. ML
+    # efficiency (F1/R2) is produced by the CatBoost loop below.
+    from eval_tabddpm_protocol import (
+        compute_dcr_tabddpm_mean,
+        compute_wasserstein_mean,
+        compute_membership_inference_auc,
+    )
 
     dir_name       = exp_dir_name(gnn_type, n_layers, d_model, top_k, n_heads,
                                   use_attention)
@@ -409,37 +417,39 @@ def _run_one(
             batch_size=dataset_cfg["sample_batch_size"],
         )
 
-        # 2b. Fidelity metrics
-        X_num_syn, X_cat_syn = _load_raw_syn(gen_dir, cat_enc)
-        fidelity = compute_fidelity_metrics(
-            X_real_num=X_num_real,
-            X_syn_num=X_num_syn,
-            X_real_cat=X_cat_real,
-            X_syn_cat=X_cat_syn,
-            cat_sizes=cat_sizes,
-            seed=gen_seed,
-        )
-        for name, val in fidelity.items():
-            if val is not None:
-                all_gen_metrics[name].append(val)
-
-        # 2c. DCR privacy metric
+        # 2b. TabDDPM-protocol metrics (per gen_seed): mean-L2 DCR, mean numerical
+        #     Wasserstein, and membership-inference AUC. (ML efficiency / F1 is
+        #     produced by the CatBoost loop in 2c.)
+        _load_raw_syn(gen_dir, cat_enc)  # ensure synthetic arrays are present
         try:
-            dcr = _compute_dcr(real_data_path, gen_dir)
-            all_gen_metrics["DCR"].append(dcr)
+            all_gen_metrics["dcr_tabddpm_mean"].append(
+                compute_dcr_tabddpm_mean(dataset_name, real_data_path, gen_dir))
         except Exception as exc:
-            print(f"    [WARN] DCR failed for gen_seed={gen_seed}: {exc}")
+            print(f"    [WARN] DCR (TabDDPM mean) failed for gen_seed={gen_seed}: {exc}")
+        try:
+            w = compute_wasserstein_mean(dataset_name, real_data_path, gen_dir)
+            if w is not None:
+                all_gen_metrics["wasserstein_mean"].append(w)
+        except Exception as exc:
+            print(f"    [WARN] Wasserstein failed for gen_seed={gen_seed}: {exc}")
+        try:
+            all_gen_metrics["mia_auc"].append(
+                compute_membership_inference_auc(dataset_name, real_data_path,
+                                                 gen_dir))
+        except Exception as exc:
+            print(f"    [WARN] MIA-AUC failed for gen_seed={gen_seed}: {exc}")
 
         print(
             f"  [gen_seed={gen_seed}]"
-            f"  ColumnWise={fidelity['ColumnWise_score']:.2f}"
-            f"  PairWise={fidelity['PairWise_score']:.2f}"
-            f"  Coverage={fidelity.get('Coverage', float('nan')):.4f}"
-            + (f"  DCR={all_gen_metrics['DCR'][-1]:.4f}"
-               if all_gen_metrics["DCR"] else "")
+            + (f"  DCR_mean={all_gen_metrics['dcr_tabddpm_mean'][-1]:.4f}"
+               if all_gen_metrics["dcr_tabddpm_mean"] else "")
+            + (f"  Wasserstein={all_gen_metrics['wasserstein_mean'][-1]:.4f}"
+               if all_gen_metrics["wasserstein_mean"] else "")
+            + (f"  MIA_AUC={all_gen_metrics['mia_auc'][-1]:.4f}"
+               if all_gen_metrics["mia_auc"] else "")
         )
 
-        # 2d. CatBoost utility: 10 classifier seeds
+        # 2c. CatBoost utility: 10 classifier seeds
         for clf_seed in range(N_CLF_SEEDS):
             clf_eval_T = {**T_dict_eval, "seed": clf_seed}
             train_catboost(
@@ -476,28 +486,18 @@ def _run_one(
         averaged[metric] = {"mean": float(arr.mean()), "std": float(arr.std())}
         print(f"    {metric:20s}: {arr.mean():.4f} +/- {arr.std():.4f}")
 
-    fidelity_order = [
-        ("ColumnWise_score", "Column-wise  [up]"),
-        ("KST",              "KST          [down]"),
-        ("TVD",              "TVD          [down]"),
-        ("PairWise_score",   "Pair-wise    [up]"),
-        ("DPCM",             "DPCM         [down]"),
-        ("DCSM",             "DCSM         [down]"),
-        ("mixed",            "Mixed        [down]"),
-        ("Coverage",         "Coverage     [up]"),
-        ("beta_Recall",      "beta-Recall  [up]"),
+    # TabDDPM-protocol metrics (averaged over generation seeds).
+    tabddpm_order = [
+        ("dcr_tabddpm_mean", "DCR (mean L2, higher=private) [down~0]"),
+        ("wasserstein_mean", "Wasserstein (num mean)        [down]"),
+        ("mia_auc",          "Membership-inf AUC (~0.5 good)      "),
     ]
-    print(f"\n  Fidelity  (averaged over {N_GEN_SEEDS} generation seeds)")
-    for key, label in fidelity_order:
+    print(f"\n  TabDDPM protocol  (averaged over {N_GEN_SEEDS} generation seeds)")
+    for key, label in tabddpm_order:
         if key in all_gen_metrics:
             arr = np.array(all_gen_metrics[key])
             averaged[key] = {"mean": float(arr.mean()), "std": float(arr.std())}
             print(f"    {label}: {arr.mean():.4f} +/- {arr.std():.4f}")
-
-    if "DCR" in all_gen_metrics:
-        arr = np.array(all_gen_metrics["DCR"])
-        averaged["DCR"] = {"mean": float(arr.mean()), "std": float(arr.std())}
-        print(f"\n  Privacy  DCR: {arr.mean():.4f} +/- {arr.std():.4f}")
 
     lib.dump_json(averaged, results_file)
     print(f"\n  [DONE] {dir_name}  ->  {results_file}")
