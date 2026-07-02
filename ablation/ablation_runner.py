@@ -451,8 +451,17 @@ def _run_one(
                 change_val=False,
             )
             run_report = lib.load_json(os.path.join(gen_dir, "results_catboost.json"))
+            # For classification, metrics["test"] is sklearn's classification_report
+            # (output_dict=True): scalar entries (accuracy, roc_auc, score) sit
+            # alongside nested per-class / averaged dicts. Keep the scalars and
+            # flatten the averaged blocks so aggregation never sees a dict.
             for metric, value in run_report["metrics"]["test"].items():
-                all_test_metrics[metric].append(value)
+                if isinstance(value, (int, float)):
+                    all_test_metrics[metric].append(value)
+                elif isinstance(value, dict) and metric in ("macro avg", "weighted avg"):
+                    for sub, subval in value.items():
+                        if isinstance(subval, (int, float)):
+                            all_test_metrics[f"{metric}/{sub}"].append(subval)
 
     # ---- 3. Aggregate with mean +/- std ------------------------------------
     averaged: dict = {}
