@@ -61,15 +61,20 @@ def _expand_adj(adj: Tensor, B: int) -> Tensor:
 def _sym_normalize(adj: Tensor, eps: float = 1e-8) -> Tensor:
     """Symmetric normalisation D^{-1/2} (A + I) D^{-1/2}.
 
-    Works for either binary or soft adjacency.  Self-loops are added before
-    normalisation.  Operates on the last two dims of any (..., N, N) tensor.
+    Works for either binary or soft adjacency.  Self-loops are (re)added with
+    weight exactly 1 before normalisation: the incoming adjacency already has
+    a diagonal set to 1 (static builder / DynamicAdjacency), so we first zero
+    the diagonal and then add I.  This gives self-weight 1 (matching textbook
+    GCN / PyG GCNConv) rather than 2 from double-counting.  Operates on the
+    last two dims of any (..., N, N) tensor.
     """
     N = adj.size(-1)
     eye = torch.eye(N, device=adj.device, dtype=adj.dtype)
     if adj.dim() == 2:
-        a = adj + eye
+        a = adj * (1.0 - eye) + eye
     else:
-        a = adj + eye.unsqueeze(0)
+        eye_b = eye.unsqueeze(0)
+        a = adj * (1.0 - eye_b) + eye_b
     deg = a.sum(dim=-1).clamp(min=eps)        # (..., N)
     d_inv_sqrt = deg.pow(-0.5)                # (..., N)
     if adj.dim() == 2:

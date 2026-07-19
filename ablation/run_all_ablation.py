@@ -32,7 +32,7 @@ if _HERE not in sys.path:
 from ablation_runner import make_parser, run_ablation, iter_ablation_grid, aggregate_summary
 
 # ---------------------------------------------------------------------------
-# All 16 dataset configurations
+# All dataset configurations (16 TabDDPM-tuned + 4 TabDiff-paper additions)
 # ---------------------------------------------------------------------------
 
 ALL_DATASETS: dict = {
@@ -65,6 +65,27 @@ ALL_DATASETS: dict = {
         "batch_size":              4096,
         "num_samples":             216000,
         "sample_batch_size":       10000,
+        "train_normalization":     "quantile",
+        "eval_normalization":      None,
+    },
+    # NOTE: beijing / magic / news / shoppers (the TabDiff-paper datasets added
+    # via scripts/process_new_datasets.py) have no TabDDPM-tuned config.
+    # rtdl_d_layers/lr are sensible defaults borrowed from similarly sized
+    # datasets; the ablation overrides lr/batch_size/num_timesteps anyway.
+    # num_samples follows the repo convention of ~8x the train split size.
+    "beijing": {
+        "real_data_path":          "data/beijing/",
+        "num_numerical_features":  10,
+        "num_classes":             0,
+        "is_y_cond":               False,
+        "rtdl_d_layers":           [128, 512, 512, 512, 512, 256],
+        "num_timesteps":           1000,
+        "scheduler":               "cosine",
+        "lr":                      0.001,
+        "weight_decay":            0.0,
+        "batch_size":              4096,
+        "num_samples":             213800,
+        "sample_batch_size":       20000,
         "train_normalization":     "quantile",
         "eval_normalization":      None,
     },
@@ -134,7 +155,9 @@ ALL_DATASETS: dict = {
     },
     "default": {
         "real_data_path":          "data/default/",
-        "num_numerical_features":  20,
+        # data/default has 14 numerical + 9 categorical columns (see info.json);
+        # the previous value of 20 did not match the committed arrays.
+        "num_numerical_features":  14,
         "num_classes":             2,
         "is_y_cond":               True,
         "rtdl_d_layers":           [256, 1024, 1024, 1024, 1024, 512],
@@ -260,6 +283,22 @@ ALL_DATASETS: dict = {
         "train_normalization":     "quantile",
         "eval_normalization":      None,
     },
+    "magic": {
+        "real_data_path":          "data/magic/",
+        "num_numerical_features":  10,
+        "num_classes":             2,
+        "is_y_cond":               True,
+        "rtdl_d_layers":           [512, 1024, 1024, 1024, 1024, 512],
+        "num_timesteps":           1000,
+        "scheduler":               "cosine",
+        "lr":                      0.001,
+        "weight_decay":            0.0,
+        "batch_size":              4096,
+        "num_samples":             97400,
+        "sample_batch_size":       10000,
+        "train_normalization":     "quantile",
+        "eval_normalization":      None,
+    },
     "miniboone": {
         "real_data_path":          "data/miniboone/",
         "num_numerical_features":  50,
@@ -273,6 +312,38 @@ ALL_DATASETS: dict = {
         "batch_size":              4096,
         "num_samples":             664000,
         "sample_batch_size":       20000,
+        "train_normalization":     "quantile",
+        "eval_normalization":      None,
+    },
+    "news": {
+        "real_data_path":          "data/news/",
+        "num_numerical_features":  44,
+        "num_classes":             0,
+        "is_y_cond":               False,
+        "rtdl_d_layers":           [512, 1024],
+        "num_timesteps":           1000,
+        "scheduler":               "cosine",
+        "lr":                      0.001,
+        "weight_decay":            0.0,
+        "batch_size":              4096,
+        "num_samples":             203000,
+        "sample_batch_size":       20000,
+        "train_normalization":     "quantile",
+        "eval_normalization":      None,
+    },
+    "shoppers": {
+        "real_data_path":          "data/shoppers/",
+        "num_numerical_features":  10,
+        "num_classes":             2,
+        "is_y_cond":               True,
+        "rtdl_d_layers":           [512, 1024, 1024, 1024, 1024, 512],
+        "num_timesteps":           1000,
+        "scheduler":               "cosine",
+        "lr":                      0.001,
+        "weight_decay":            0.0,
+        "batch_size":              4096,
+        "num_samples":             63200,
+        "sample_batch_size":       10000,
         "train_normalization":     "quantile",
         "eval_normalization":      None,
     },

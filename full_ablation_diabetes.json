@@ -1,0 +1,1730 @@
+[
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gcn_layers2_dim32_topk3_heads4_noattn",
+    "gnn_type": "gcn",
+    "n_layers": 2,
+    "d_model": 32,
+    "top_k": 3,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.771948051948052,
+        "std": 0.0188486260327551
+      },
+      "macro avg/precision": {
+        "mean": 0.759893362162086,
+        "std": 0.0226074301894295
+      },
+      "macro avg/recall": {
+        "mean": 0.723114814814815,
+        "std": 0.0226284684796361
+      },
+      "macro avg/f1-score": {
+        "mean": 0.732997190716597,
+        "std": 0.0225258852186984
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.76864100795359,
+        "std": 0.0190650403523451
+      },
+      "weighted avg/recall": {
+        "mean": 0.771948051948052,
+        "std": 0.0188486260327551
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.763320538131243,
+        "std": 0.0196103587486558
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.843209259259259,
+        "std": 0.0234536478483346
+      },
+      "score": {
+        "mean": 0.771948051948052,
+        "std": 0.0188486260327551
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.199472735207977,
+        "std": 0.00274472794443854
+      },
+      "wasserstein_mean": {
+        "mean": 0.0773081175416509,
+        "std": 0.00210904285680281
+      },
+      "mia_auc": {
+        "mean": 0.519809411367853,
+        "std": 0.021207413889806
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gcn_layers2_dim32_topk5_heads4_noattn",
+    "gnn_type": "gcn",
+    "n_layers": 2,
+    "d_model": 32,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.765454545454546,
+        "std": 0.0207646052495305
+      },
+      "macro avg/precision": {
+        "mean": 0.751187179756092,
+        "std": 0.0241846526800627
+      },
+      "macro avg/recall": {
+        "mean": 0.715474074074074,
+        "std": 0.0294527628594478
+      },
+      "macro avg/f1-score": {
+        "mean": 0.724600887816748,
+        "std": 0.0293179241066951
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.761109173990115,
+        "std": 0.0221976662900651
+      },
+      "weighted avg/recall": {
+        "mean": 0.765454545454546,
+        "std": 0.0207646052495305
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.756144267098103,
+        "std": 0.0241356599092697
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.842468518518519,
+        "std": 0.019594908233248
+      },
+      "score": {
+        "mean": 0.765454545454546,
+        "std": 0.0207646052495305
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.203590860839806,
+        "std": 0.00303793116586399
+      },
+      "wasserstein_mean": {
+        "mean": 0.0852893286507715,
+        "std": 0.0057354691111616
+      },
+      "mia_auc": {
+        "mean": 0.520880418283016,
+        "std": 0.0138564846052792
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gcn_layers2_dim64_topk3_heads4_noattn",
+    "gnn_type": "gcn",
+    "n_layers": 2,
+    "d_model": 64,
+    "top_k": 3,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.774285714285714,
+        "std": 0.0192435807189522
+      },
+      "macro avg/precision": {
+        "mean": 0.758262050972508,
+        "std": 0.0217045362471901
+      },
+      "macro avg/recall": {
+        "mean": 0.733092592592593,
+        "std": 0.0255604732251811
+      },
+      "macro avg/f1-score": {
+        "mean": 0.740555591675915,
+        "std": 0.0249354008847977
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.770821678386783,
+        "std": 0.019493704036528
+      },
+      "weighted avg/recall": {
+        "mean": 0.774285714285714,
+        "std": 0.0192435807189522
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.768332436151175,
+        "std": 0.0210853690088576
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.845861111111111,
+        "std": 0.0236885892929194
+      },
+      "score": {
+        "mean": 0.774285714285714,
+        "std": 0.0192435807189522
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.183540821260463,
+        "std": 0.00332782725049358
+      },
+      "wasserstein_mean": {
+        "mean": 0.0626205875523832,
+        "std": 0.002118306380648
+      },
+      "mia_auc": {
+        "mean": 0.534027660651037,
+        "std": 0.00913101487149618
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gcn_layers2_dim64_topk5_heads4_noattn",
+    "gnn_type": "gcn",
+    "n_layers": 2,
+    "d_model": 64,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.769350649350649,
+        "std": 0.0220488731737187
+      },
+      "macro avg/precision": {
+        "mean": 0.749376977033902,
+        "std": 0.0253409681914745
+      },
+      "macro avg/recall": {
+        "mean": 0.731251851851852,
+        "std": 0.0300221125638812
+      },
+      "macro avg/f1-score": {
+        "mean": 0.737358852511966,
+        "std": 0.0288933694400593
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.764887973808818,
+        "std": 0.0242523516807496
+      },
+      "weighted avg/recall": {
+        "mean": 0.769350649350649,
+        "std": 0.0220488731737187
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.764658038675399,
+        "std": 0.0244014601516874
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.846009259259259,
+        "std": 0.0243028181880062
+      },
+      "score": {
+        "mean": 0.769350649350649,
+        "std": 0.0220488731737187
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.178837482153206,
+        "std": 0.00176335238004665
+      },
+      "wasserstein_mean": {
+        "mean": 0.0613237127867626,
+        "std": 0.00223650154853508
+      },
+      "mia_auc": {
+        "mean": 0.530258053634677,
+        "std": 0.0178718917486726
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gcn_layers3_dim32_topk3_heads4_noattn",
+    "gnn_type": "gcn",
+    "n_layers": 3,
+    "d_model": 32,
+    "top_k": 3,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.780909090909091,
+        "std": 0.023115788679769
+      },
+      "macro avg/precision": {
+        "mean": 0.769131202622006,
+        "std": 0.0320036426717425
+      },
+      "macro avg/recall": {
+        "mean": 0.735381481481482,
+        "std": 0.0230996056950058
+      },
+      "macro avg/f1-score": {
+        "mean": 0.745680978208266,
+        "std": 0.0250193175133423
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.77768348902789,
+        "std": 0.0257497186580893
+      },
+      "weighted avg/recall": {
+        "mean": 0.780909090909091,
+        "std": 0.023115788679769
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.77389886697213,
+        "std": 0.0227710989981743
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.848024074074074,
+        "std": 0.0261816135785165
+      },
+      "score": {
+        "mean": 0.780909090909091,
+        "std": 0.023115788679769
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.208563065590041,
+        "std": 0.00760174777618407
+      },
+      "wasserstein_mean": {
+        "mean": 0.123472751036773,
+        "std": 0.0184680161677345
+      },
+      "mia_auc": {
+        "mean": 0.532669927475122,
+        "std": 0.0189775564014519
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gcn_layers3_dim32_topk5_heads4_noattn",
+    "gnn_type": "gcn",
+    "n_layers": 3,
+    "d_model": 32,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.774675324675325,
+        "std": 0.017960151540181
+      },
+      "macro avg/precision": {
+        "mean": 0.756354887732543,
+        "std": 0.0210903287752295
+      },
+      "macro avg/recall": {
+        "mean": 0.735607407407407,
+        "std": 0.0212455123963195
+      },
+      "macro avg/f1-score": {
+        "mean": 0.742941267393493,
+        "std": 0.0212178037039887
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.770166652168532,
+        "std": 0.0188825643460913
+      },
+      "weighted avg/recall": {
+        "mean": 0.774675324675325,
+        "std": 0.017960151540181
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.769888011274117,
+        "std": 0.0186614262882234
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.846014814814815,
+        "std": 0.0183474502326932
+      },
+      "score": {
+        "mean": 0.774675324675325,
+        "std": 0.017960151540181
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.192490706025474,
+        "std": 0.00552785313506413
+      },
+      "wasserstein_mean": {
+        "mean": 0.0805442692366647,
+        "std": 0.00917697763582122
+      },
+      "mia_auc": {
+        "mean": 0.523857311519649,
+        "std": 0.0264001732379462
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gcn_layers3_dim64_topk3_heads4_noattn",
+    "gnn_type": "gcn",
+    "n_layers": 3,
+    "d_model": 64,
+    "top_k": 3,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.775064935064935,
+        "std": 0.0217609019288639
+      },
+      "macro avg/precision": {
+        "mean": 0.760517898984272,
+        "std": 0.0279334423349264
+      },
+      "macro avg/recall": {
+        "mean": 0.730455555555556,
+        "std": 0.0254681600083565
+      },
+      "macro avg/f1-score": {
+        "mean": 0.739590236057737,
+        "std": 0.0258081575878881
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.771085835028293,
+        "std": 0.0237550661000333
+      },
+      "weighted avg/recall": {
+        "mean": 0.775064935064935,
+        "std": 0.0217609019288639
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.768225328965662,
+        "std": 0.0225998749942537
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.842125925925926,
+        "std": 0.0221168486259071
+      },
+      "score": {
+        "mean": 0.775064935064935,
+        "std": 0.0217609019288639
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.178160134721566,
+        "std": 0.00422426146436271
+      },
+      "wasserstein_mean": {
+        "mean": 0.0645874316051417,
+        "std": 0.00317584972652784
+      },
+      "mia_auc": {
+        "mean": 0.534483049418114,
+        "std": 0.0175626875672431
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gcn_layers3_dim64_topk5_heads4_noattn",
+    "gnn_type": "gcn",
+    "n_layers": 3,
+    "d_model": 64,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.780649350649351,
+        "std": 0.0124763226588285
+      },
+      "macro avg/precision": {
+        "mean": 0.765730081096901,
+        "std": 0.0157888355479314
+      },
+      "macro avg/recall": {
+        "mean": 0.738588888888889,
+        "std": 0.015149048691877
+      },
+      "macro avg/f1-score": {
+        "mean": 0.747491853359011,
+        "std": 0.0148503705287352
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.776622761035938,
+        "std": 0.0133131033337059
+      },
+      "weighted avg/recall": {
+        "mean": 0.780649350649351,
+        "std": 0.0124763226588285
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.774776882110863,
+        "std": 0.0129324754165074
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.848083333333333,
+        "std": 0.014641969127994
+      },
+      "score": {
+        "mean": 0.780649350649351,
+        "std": 0.0124763226588285
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.17306857011625,
+        "std": 0.00371646243955868
+      },
+      "wasserstein_mean": {
+        "mean": 0.0608940717079324,
+        "std": 0.0057591547410513
+      },
+      "mia_auc": {
+        "mean": 0.537771968291449,
+        "std": 0.0207281760069466
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gatv2_layers2_dim32_topk3_heads4_noattn",
+    "gnn_type": "gatv2",
+    "n_layers": 2,
+    "d_model": 32,
+    "top_k": 3,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.777922077922078,
+        "std": 0.0192190241388945
+      },
+      "macro avg/precision": {
+        "mean": 0.763685738421913,
+        "std": 0.0253211736936083
+      },
+      "macro avg/recall": {
+        "mean": 0.734614814814815,
+        "std": 0.0205294742779484
+      },
+      "macro avg/f1-score": {
+        "mean": 0.743726647940293,
+        "std": 0.021209419807131
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.774245022850815,
+        "std": 0.0206364888669227
+      },
+      "weighted avg/recall": {
+        "mean": 0.777922077922078,
+        "std": 0.0192190241388945
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.771618735850958,
+        "std": 0.0190896780734914
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.853205555555555,
+        "std": 0.0162156769520223
+      },
+      "score": {
+        "mean": 0.777922077922078,
+        "std": 0.0192190241388945
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.18888352487587,
+        "std": 0.00425292816065306
+      },
+      "wasserstein_mean": {
+        "mean": 0.073792438281846,
+        "std": 0.0035255280582384
+      },
+      "mia_auc": {
+        "mean": 0.523106763366504,
+        "std": 0.0118624430687535
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gatv2_layers2_dim32_topk5_heads4_noattn",
+    "gnn_type": "gatv2",
+    "n_layers": 2,
+    "d_model": 32,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.775324675324675,
+        "std": 0.0213398399027987
+      },
+      "macro avg/precision": {
+        "mean": 0.762109986943244,
+        "std": 0.0277326292937073
+      },
+      "macro avg/recall": {
+        "mean": 0.729633333333333,
+        "std": 0.0230674293387082
+      },
+      "macro avg/f1-score": {
+        "mean": 0.739189966948527,
+        "std": 0.0241100364497349
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.771822181336277,
+        "std": 0.0226184016043361
+      },
+      "weighted avg/recall": {
+        "mean": 0.775324675324675,
+        "std": 0.0213398399027987
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.768091916258952,
+        "std": 0.0215031959135193
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.842831481481482,
+        "std": 0.0231355676184109
+      },
+      "score": {
+        "mean": 0.775324675324675,
+        "std": 0.0213398399027987
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.192061088934529,
+        "std": 0.00496120278824437
+      },
+      "wasserstein_mean": {
+        "mean": 0.0764315566169489,
+        "std": 0.0106971048658059
+      },
+      "mia_auc": {
+        "mean": 0.51503626243886,
+        "std": 0.00840112836929403
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gatv2_layers2_dim64_topk3_heads4_noattn",
+    "gnn_type": "gatv2",
+    "n_layers": 2,
+    "d_model": 64,
+    "top_k": 3,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.778831168831169,
+        "std": 0.0151681417740513
+      },
+      "macro avg/precision": {
+        "mean": 0.762799209662926,
+        "std": 0.0205170512889304
+      },
+      "macro avg/recall": {
+        "mean": 0.738722222222222,
+        "std": 0.0140759379857375
+      },
+      "macro avg/f1-score": {
+        "mean": 0.746911685468983,
+        "std": 0.015412908391606
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.774963932654155,
+        "std": 0.0159661140624601
+      },
+      "weighted avg/recall": {
+        "mean": 0.778831168831169,
+        "std": 0.0151681417740513
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.773710730368802,
+        "std": 0.0143950272496757
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.854464814814815,
+        "std": 0.0161312484836296
+      },
+      "score": {
+        "mean": 0.778831168831169,
+        "std": 0.0151681417740513
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.177878590551657,
+        "std": 0.00311197772621683
+      },
+      "wasserstein_mean": {
+        "mean": 0.0689392270396715,
+        "std": 0.00791071832499594
+      },
+      "mia_auc": {
+        "mean": 0.529836397368865,
+        "std": 0.0183811685016789
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gatv2_layers2_dim64_topk5_heads4_noattn",
+    "gnn_type": "gatv2",
+    "n_layers": 2,
+    "d_model": 64,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.781038961038961,
+        "std": 0.011546031569295
+      },
+      "macro avg/precision": {
+        "mean": 0.767327465668293,
+        "std": 0.0153510425232634
+      },
+      "macro avg/recall": {
+        "mean": 0.737440740740741,
+        "std": 0.0137153949127675
+      },
+      "macro avg/f1-score": {
+        "mean": 0.746920103481032,
+        "std": 0.0135432911935676
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.777216709924543,
+        "std": 0.0123262889434303
+      },
+      "weighted avg/recall": {
+        "mean": 0.781038961038961,
+        "std": 0.011546031569295
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.774625145849924,
+        "std": 0.011814544588587
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.856551851851852,
+        "std": 0.0198648344088375
+      },
+      "score": {
+        "mean": 0.781038961038961,
+        "std": 0.011546031569295
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.171895658741636,
+        "std": 0.00209657401746055
+      },
+      "wasserstein_mean": {
+        "mean": 0.0654544823859045,
+        "std": 0.00792916828901162
+      },
+      "mia_auc": {
+        "mean": 0.54093439028504,
+        "std": 0.0287682742847186
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gatv2_layers3_dim32_topk3_heads4_noattn",
+    "gnn_type": "gatv2",
+    "n_layers": 3,
+    "d_model": 32,
+    "top_k": 3,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.774415584415584,
+        "std": 0.0209332763246124
+      },
+      "macro avg/precision": {
+        "mean": 0.760943187583528,
+        "std": 0.0251407796186532
+      },
+      "macro avg/recall": {
+        "mean": 0.727485185185185,
+        "std": 0.0274955312493345
+      },
+      "macro avg/f1-score": {
+        "mean": 0.736962717793569,
+        "std": 0.0274007303017786
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.770511152289238,
+        "std": 0.0225608031951082
+      },
+      "weighted avg/recall": {
+        "mean": 0.774415584415584,
+        "std": 0.0209332763246124
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.766503878629619,
+        "std": 0.0231611918138702
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.845664814814815,
+        "std": 0.0216634351024707
+      },
+      "score": {
+        "mean": 0.774415584415584,
+        "std": 0.0209332763246124
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.187743981908773,
+        "std": 0.00393922956179448
+      },
+      "wasserstein_mean": {
+        "mean": 0.0730696406624909,
+        "std": 0.00678208748162536
+      },
+      "mia_auc": {
+        "mean": 0.528622027323326,
+        "std": 0.0155527363495856
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gatv2_layers3_dim32_topk5_heads4_noattn",
+    "gnn_type": "gatv2",
+    "n_layers": 3,
+    "d_model": 32,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.776493506493507,
+        "std": 0.0184163903620831
+      },
+      "macro avg/precision": {
+        "mean": 0.764002583557391,
+        "std": 0.023293803246625
+      },
+      "macro avg/recall": {
+        "mean": 0.729255555555555,
+        "std": 0.0216949637945455
+      },
+      "macro avg/f1-score": {
+        "mean": 0.7393752246726,
+        "std": 0.021912402966724
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.772781520665649,
+        "std": 0.0196831557917231
+      },
+      "weighted avg/recall": {
+        "mean": 0.776493506493507,
+        "std": 0.0184163903620831
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.768684720011358,
+        "std": 0.0191470034170906
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.845925925925926,
+        "std": 0.0254303831975604
+      },
+      "score": {
+        "mean": 0.776493506493507,
+        "std": 0.0184163903620831
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.191785952274113,
+        "std": 0.00543566943986598
+      },
+      "wasserstein_mean": {
+        "mean": 0.0869243592041962,
+        "std": 0.0125410904907238
+      },
+      "mia_auc": {
+        "mean": 0.525037949063923,
+        "std": 0.0164162086185786
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gatv2_layers3_dim64_topk3_heads4_noattn",
+    "gnn_type": "gatv2",
+    "n_layers": 3,
+    "d_model": 64,
+    "top_k": 3,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.784025974025974,
+        "std": 0.0160540703846406
+      },
+      "macro avg/precision": {
+        "mean": 0.771508875273006,
+        "std": 0.0180817791221423
+      },
+      "macro avg/recall": {
+        "mean": 0.738803703703704,
+        "std": 0.0218166448958824
+      },
+      "macro avg/f1-score": {
+        "mean": 0.748979303243204,
+        "std": 0.0212800810893601
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.780075959822254,
+        "std": 0.0171139604938814
+      },
+      "weighted avg/recall": {
+        "mean": 0.784025974025974,
+        "std": 0.0160540703846406
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.776961775600486,
+        "std": 0.0179506087502727
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.855977777777778,
+        "std": 0.0118863525620386
+      },
+      "score": {
+        "mean": 0.784025974025974,
+        "std": 0.0160540703846406
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.167316721554787,
+        "std": 0.00197055291969364
+      },
+      "wasserstein_mean": {
+        "mean": 0.0605825462165448,
+        "std": 0.00640212551102178
+      },
+      "mia_auc": {
+        "mean": 0.549536178107607,
+        "std": 0.0174608954285364
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gatv2_layers3_dim64_topk5_heads4_noattn",
+    "gnn_type": "gatv2",
+    "n_layers": 3,
+    "d_model": 64,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.788441558441559,
+        "std": 0.0134395192631015
+      },
+      "macro avg/precision": {
+        "mean": 0.775868704291592,
+        "std": 0.0161846562570715
+      },
+      "macro avg/recall": {
+        "mean": 0.746974074074074,
+        "std": 0.0162205144543334
+      },
+      "macro avg/f1-score": {
+        "mean": 0.756244215839289,
+        "std": 0.0158840255050151
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.785349707441197,
+        "std": 0.0133330229053744
+      },
+      "weighted avg/recall": {
+        "mean": 0.788441558441559,
+        "std": 0.0134395192631015
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.782625608099451,
+        "std": 0.0138919421027768
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.849251851851852,
+        "std": 0.0260887929310284
+      },
+      "score": {
+        "mean": 0.788441558441559,
+        "std": 0.0134395192631015
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.153829955416982,
+        "std": 0.00175905153522747
+      },
+      "wasserstein_mean": {
+        "mean": 0.0624280199840294,
+        "std": 0.00538366157664379
+      },
+      "mia_auc": {
+        "mean": 0.580123123629617,
+        "std": 0.0106697999763621
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gin_layers2_dim32_topk3_heads4_noattn",
+    "gnn_type": "gin",
+    "n_layers": 2,
+    "d_model": 32,
+    "top_k": 3,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.776493506493506,
+        "std": 0.0137496837541639
+      },
+      "macro avg/precision": {
+        "mean": 0.763450989276148,
+        "std": 0.0157776452434362
+      },
+      "macro avg/recall": {
+        "mean": 0.731725925925926,
+        "std": 0.0201662990137558
+      },
+      "macro avg/f1-score": {
+        "mean": 0.740623123775573,
+        "std": 0.0186776872515712
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.773473047553639,
+        "std": 0.0133969869162341
+      },
+      "weighted avg/recall": {
+        "mean": 0.776493506493506,
+        "std": 0.0137496837541639
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.769274596043992,
+        "std": 0.0153603657665821
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.840688888888889,
+        "std": 0.0338803579628777
+      },
+      "score": {
+        "mean": 0.776493506493506,
+        "std": 0.0137496837541639
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.198081167434138,
+        "std": 0.00538838762469219
+      },
+      "wasserstein_mean": {
+        "mean": 0.0930973534818431,
+        "std": 0.0132688808657604
+      },
+      "mia_auc": {
+        "mean": 0.528731657952437,
+        "std": 0.020003874538394
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gin_layers2_dim32_topk5_heads4_noattn",
+    "gnn_type": "gin",
+    "n_layers": 2,
+    "d_model": 32,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.792077922077922,
+        "std": 0.0195449152102315
+      },
+      "macro avg/precision": {
+        "mean": 0.777838703055289,
+        "std": 0.0225541649446603
+      },
+      "macro avg/recall": {
+        "mean": 0.75462962962963,
+        "std": 0.0237839498162407
+      },
+      "macro avg/f1-score": {
+        "mean": 0.76254278326753,
+        "std": 0.0235156255364964
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.788992540948889,
+        "std": 0.0200192556628048
+      },
+      "weighted avg/recall": {
+        "mean": 0.792077922077922,
+        "std": 0.0195449152102315
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.787478002979721,
+        "std": 0.0205316514620705
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.847394444444445,
+        "std": 0.0275959108742974
+      },
+      "score": {
+        "mean": 0.792077922077922,
+        "std": 0.0195449152102315
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.184395307719021,
+        "std": 0.001620832449413
+      },
+      "wasserstein_mean": {
+        "mean": 0.0728991844627696,
+        "std": 0.00283331413124407
+      },
+      "mia_auc": {
+        "mean": 0.540268173385057,
+        "std": 0.014011809648156
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gin_layers2_dim64_topk3_heads4_noattn",
+    "gnn_type": "gin",
+    "n_layers": 2,
+    "d_model": 64,
+    "top_k": 3,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.784675324675325,
+        "std": 0.0237829052306693
+      },
+      "macro avg/precision": {
+        "mean": 0.771220553647044,
+        "std": 0.0285050039829688
+      },
+      "macro avg/recall": {
+        "mean": 0.741348148148148,
+        "std": 0.0280052180127141
+      },
+      "macro avg/f1-score": {
+        "mean": 0.750996092209257,
+        "std": 0.0287957119748074
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.780689604878983,
+        "std": 0.0252892597778106
+      },
+      "weighted avg/recall": {
+        "mean": 0.784675324675325,
+        "std": 0.0237829052306693
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.778308470029334,
+        "std": 0.0251547084308103
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.848407407407407,
+        "std": 0.0224653673410163
+      },
+      "score": {
+        "mean": 0.784675324675325,
+        "std": 0.0237829052306693
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.166494960795063,
+        "std": 0.00133097162064702
+      },
+      "wasserstein_mean": {
+        "mean": 0.062439997335037,
+        "std": 0.00490549761903216
+      },
+      "mia_auc": {
+        "mean": 0.550514420644291,
+        "std": 0.0148321389953378
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gin_layers2_dim64_topk5_heads4_noattn",
+    "gnn_type": "gin",
+    "n_layers": 2,
+    "d_model": 64,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.775974025974026,
+        "std": 0.0184237155313131
+      },
+      "macro avg/precision": {
+        "mean": 0.761846418038132,
+        "std": 0.0218359835040538
+      },
+      "macro avg/recall": {
+        "mean": 0.730218518518519,
+        "std": 0.0243836418327137
+      },
+      "macro avg/f1-score": {
+        "mean": 0.739680624333158,
+        "std": 0.023716890764137
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.771777827316516,
+        "std": 0.0198556591823137
+      },
+      "weighted avg/recall": {
+        "mean": 0.775974025974026,
+        "std": 0.0184237155313131
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.768649489956244,
+        "std": 0.0201436743697849
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.847168518518518,
+        "std": 0.0254258253754317
+      },
+      "score": {
+        "mean": 0.775974025974026,
+        "std": 0.0184237155313131
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.165516810060526,
+        "std": 0.00381015700655255
+      },
+      "wasserstein_mean": {
+        "mean": 0.0613101717709345,
+        "std": 0.00594839509187326
+      },
+      "mia_auc": {
+        "mean": 0.543017372238152,
+        "std": 0.0111712780608092
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gin_layers3_dim32_topk3_heads4_noattn",
+    "gnn_type": "gin",
+    "n_layers": 3,
+    "d_model": 32,
+    "top_k": 3,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.776493506493507,
+        "std": 0.0193105135932113
+      },
+      "macro avg/precision": {
+        "mean": 0.759072646424691,
+        "std": 0.0223585566788169
+      },
+      "macro avg/recall": {
+        "mean": 0.740840740740741,
+        "std": 0.0184811923825084
+      },
+      "macro avg/f1-score": {
+        "mean": 0.746878420082377,
+        "std": 0.0196097360679844
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.773851406893348,
+        "std": 0.0179284667030892
+      },
+      "weighted avg/recall": {
+        "mean": 0.776493506493507,
+        "std": 0.0193105135932113
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.772587434555823,
+        "std": 0.0184744182574171
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.845042592592593,
+        "std": 0.0191190786040193
+      },
+      "score": {
+        "mean": 0.776493506493507,
+        "std": 0.0193105135932113
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.185857904036231,
+        "std": 0.00244251544779892
+      },
+      "wasserstein_mean": {
+        "mean": 0.0797915165744388,
+        "std": 0.00310044044941072
+      },
+      "mia_auc": {
+        "mean": 0.53384213189408,
+        "std": 0.0194246859222254
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gin_layers3_dim32_topk5_heads4_noattn",
+    "gnn_type": "gin",
+    "n_layers": 3,
+    "d_model": 32,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.784805194805195,
+        "std": 0.0120443605762198
+      },
+      "macro avg/precision": {
+        "mean": 0.768355598926924,
+        "std": 0.0151803194110004
+      },
+      "macro avg/recall": {
+        "mean": 0.749285185185185,
+        "std": 0.0132037431821133
+      },
+      "macro avg/f1-score": {
+        "mean": 0.755927890773266,
+        "std": 0.0128793003231827
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.781835644793095,
+        "std": 0.0118045453431362
+      },
+      "weighted avg/recall": {
+        "mean": 0.784805194805195,
+        "std": 0.0120443605762198
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.780917903131009,
+        "std": 0.0116756287544587
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.850496296296296,
+        "std": 0.0136120906676998
+      },
+      "score": {
+        "mean": 0.784805194805195,
+        "std": 0.0120443605762198
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.186020323733714,
+        "std": 0.00204963422571612
+      },
+      "wasserstein_mean": {
+        "mean": 0.0767583942156451,
+        "std": 0.0061557042427291
+      },
+      "mia_auc": {
+        "mean": 0.528200371057514,
+        "std": 0.00961322282942921
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gin_layers3_dim64_topk3_heads4_noattn",
+    "gnn_type": "gin",
+    "n_layers": 3,
+    "d_model": 64,
+    "top_k": 3,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.785064935064935,
+        "std": 0.01996159240122
+      },
+      "macro avg/precision": {
+        "mean": 0.77242641654431,
+        "std": 0.0225914874040898
+      },
+      "macro avg/recall": {
+        "mean": 0.741392592592593,
+        "std": 0.0258460207792893
+      },
+      "macro avg/f1-score": {
+        "mean": 0.750957983358457,
+        "std": 0.0255440206527761
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.781552944638307,
+        "std": 0.0206649916101351
+      },
+      "weighted avg/recall": {
+        "mean": 0.785064935064935,
+        "std": 0.01996159240122
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.7784071970689,
+        "std": 0.0218080961238814
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.851724074074074,
+        "std": 0.0217020594908733
+      },
+      "score": {
+        "mean": 0.785064935064935,
+        "std": 0.01996159240122
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.152939975963363,
+        "std": 0.00341153659927029
+      },
+      "wasserstein_mean": {
+        "mean": 0.066358043608579,
+        "std": 0.00562813234264362
+      },
+      "mia_auc": {
+        "mean": 0.583858998144713,
+        "std": 0.0260370938009923
+      }
+    }
+  },
+  {
+    "dataset": "diabetes",
+    "exp_name": "gnn_gin_layers3_dim64_topk5_heads4_noattn",
+    "gnn_type": "gin",
+    "n_layers": 3,
+    "d_model": 64,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.780779220779221,
+        "std": 0.018845046386719
+      },
+      "macro avg/precision": {
+        "mean": 0.764504261781181,
+        "std": 0.0225253956155015
+      },
+      "macro avg/recall": {
+        "mean": 0.742096296296296,
+        "std": 0.0207357613070311
+      },
+      "macro avg/f1-score": {
+        "mean": 0.749740550841935,
+        "std": 0.0210746099532517
+      },
+      "macro avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "weighted avg/precision": {
+        "mean": 0.777115537465478,
+        "std": 0.0190674331531553
+      },
+      "weighted avg/recall": {
+        "mean": 0.780779220779221,
+        "std": 0.018845046386719
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.775998937053475,
+        "std": 0.0189257307858595
+      },
+      "weighted avg/support": {
+        "mean": 154,
+        "std": 0
+      },
+      "roc_auc": {
+        "mean": 0.853212962962963,
+        "std": 0.0176872332535253
+      },
+      "score": {
+        "mean": 0.780779220779221,
+        "std": 0.018845046386719
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.154838007778915,
+        "std": 0.0039153518921193
+      },
+      "wasserstein_mean": {
+        "mean": 0.0622427048388758,
+        "std": 0.00405236693908589
+      },
+      "mia_auc": {
+        "mean": 0.598035081801316,
+        "std": 0.0296941587137422
+      }
+    }
+  }
+]

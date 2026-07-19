@@ -59,6 +59,11 @@ N_HEADS   = [4]
 # adjacency-free self-attention (original behaviour); False = GNN-only blocks.
 ATTENTIONS = [True]
 
+# ML-efficiency evaluator: "catboost" (original TabDDPM protocol, default) or
+# "xgboost" (TabDiff's eval/mle protocol via ablation/eval_xgboost.py).
+# Overridable in-memory by the notebooks, like the grid constants above.
+EVALUATOR = "catboost"
+
 _HEADLESS_GNNS = {"gcn", "gin"}
 
 
@@ -149,7 +154,8 @@ def _setup_zero_rtdl_stubs() -> None:
 
 
 def _setup_repo_path(repo_root: str) -> None:
-    for p in [repo_root, os.path.join(repo_root, "scripts")]:
+    for p in [repo_root, os.path.join(repo_root, "scripts"),
+              os.path.join(repo_root, "ablation")]:
         if p not in sys.path:
             sys.path.insert(0, p)
 
@@ -294,7 +300,12 @@ def _run_one(
     import lib
     from train import train as tabddpm_train
     from sample import sample as tabddpm_sample
-    from eval_catboost import train_catboost
+    if EVALUATOR == "xgboost":
+        from eval_xgboost import train_xgboost as train_eval_model
+        eval_results_json = "results_xgboost.json"
+    else:
+        from eval_catboost import train_catboost as train_eval_model
+        eval_results_json = "results_catboost.json"
     # TabDDPM (Kotelnikov et al., 2023) protocol metrics. Pure sklearn/scipy — no
     # synthcity — so they are safe to run inside the training environment. ML
     # efficiency (F1/R2) is produced by the CatBoost loop below.
@@ -449,10 +460,10 @@ def _run_one(
                if all_gen_metrics["mia_auc"] else "")
         )
 
-        # 2c. CatBoost utility: 10 classifier seeds
+        # 2c. ML-efficiency utility (CatBoost or XGBoost): N_CLF_SEEDS runs
         for clf_seed in range(N_CLF_SEEDS):
             clf_eval_T = {**T_dict_eval, "seed": clf_seed}
-            train_catboost(
+            train_eval_model(
                 parent_dir=gen_dir,
                 real_data_path=real_data_path,
                 eval_type="synthetic",
@@ -460,7 +471,7 @@ def _run_one(
                 seed=clf_seed,
                 change_val=False,
             )
-            run_report = lib.load_json(os.path.join(gen_dir, "results_catboost.json"))
+            run_report = lib.load_json(os.path.join(gen_dir, eval_results_json))
             # For classification, metrics["test"] is sklearn's classification_report
             # (output_dict=True): scalar entries (accuracy, roc_auc, score) sit
             # alongside nested per-class / averaged dicts. Keep the scalars and
@@ -477,7 +488,7 @@ def _run_one(
     averaged: dict = {}
 
     print(
-        f"\n  CatBoost utility  "
+        f"\n  {EVALUATOR} utility  "
         f"({N_GEN_SEEDS} gen x {N_CLF_SEEDS} clf seeds = "
         f"{N_GEN_SEEDS * N_CLF_SEEDS} runs)"
     )
