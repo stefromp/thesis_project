@@ -64,6 +64,12 @@ ATTENTIONS = [True]
 # Overridable in-memory by the notebooks, like the grid constants above.
 EVALUATOR = "catboost"
 
+# TabDiff-paper fidelity/privacy suite (density Shape/Trend, C2ST detection,
+# TabDiff DCR, alpha-precision / beta-recall) via ablation/eval_tabdiff_fidelity.py.
+# Off by default; the *-kaggle-tabdiff notebooks enable it together with
+# EVALUATOR = "xgboost". Needs `sdmetrics` installed for Shape/Trend/C2ST.
+TABDIFF_FIDELITY = False
+
 _HEADLESS_GNNS = {"gcn", "gin"}
 
 
@@ -460,6 +466,17 @@ def _run_one(
                if all_gen_metrics["mia_auc"] else "")
         )
 
+        # 2b'. TabDiff-paper fidelity metrics (per gen_seed)
+        if TABDIFF_FIDELITY:
+            from eval_tabdiff_fidelity import compute_tabdiff_fidelity
+            fid = compute_tabdiff_fidelity(gen_dir, real_data_path,
+                                           device=device)
+            for key, value in fid.items():
+                all_gen_metrics[key].append(value)
+            if fid:
+                print(f"  [gen_seed={gen_seed}] tabdiff fidelity: "
+                      + "  ".join(f"{k}={v:.4f}" for k, v in fid.items()))
+
         # 2c. ML-efficiency utility (CatBoost or XGBoost): N_CLF_SEEDS runs
         for clf_seed in range(N_CLF_SEEDS):
             clf_eval_T = {**T_dict_eval, "seed": clf_seed}
@@ -509,6 +526,24 @@ def _run_one(
             arr = np.array(all_gen_metrics[key])
             averaged[key] = {"mean": float(arr.mean()), "std": float(arr.std())}
             print(f"    {label}: {arr.mean():.4f} +/- {arr.std():.4f}")
+
+    # TabDiff-paper fidelity suite (averaged over generation seeds).
+    tabdiff_order = [
+        ("shape",           "Shape (col-wise density)      [up]  "),
+        ("trend",           "Trend (pair-wise corr)        [up]  "),
+        ("density_overall", "Density overall               [up]  "),
+        ("c2st",            "C2ST (detection)              [up]  "),
+        ("dcr_tabdiff",     "DCR (TabDiff, ~0.5 good)            "),
+        ("alpha_precision", "Alpha-precision               [up]  "),
+        ("beta_recall",     "Beta-recall                   [up]  "),
+    ]
+    if any(key in all_gen_metrics for key, _ in tabdiff_order):
+        print(f"\n  TabDiff paper suite  (averaged over {N_GEN_SEEDS} generation seeds)")
+        for key, label in tabdiff_order:
+            if key in all_gen_metrics:
+                arr = np.array(all_gen_metrics[key])
+                averaged[key] = {"mean": float(arr.mean()), "std": float(arr.std())}
+                print(f"    {label}: {arr.mean():.4f} +/- {arr.std():.4f}")
 
     lib.dump_json(averaged, results_file)
     print(f"\n  [DONE] {dir_name}  ->  {results_file}")
