@@ -96,10 +96,31 @@ def _encode(fit_num, fit_cat, *transform_sets, normalize="minmax"):
 
 # ── array-level cores (unit-testable without the pipeline) ───────────────────────
 
-def _dcr_mean_from_encoded(X_real_train, X_syn):
+def _dcr_from_encoded(X_real_train, X_syn, aggregation="mean"):
+    """Distance-to-closest-record: nearest-neighbour L2 from each synthetic row to
+    the real TRAIN set, aggregated by ``aggregation`` ("mean" or "median")."""
     from sklearn.neighbors import NearestNeighbors
     nn = NearestNeighbors(n_neighbors=1, n_jobs=-1).fit(X_real_train)
-    return float(nn.kneighbors(X_syn)[0][:, 0].mean())
+    d = nn.kneighbors(X_syn)[0][:, 0]
+    return float(np.median(d) if aggregation == "median" else d.mean())
+
+
+# Backwards-compatible alias (mean aggregation).
+def _dcr_mean_from_encoded(X_real_train, X_syn):
+    return _dcr_from_encoded(X_real_train, X_syn, aggregation="mean")
+
+
+def _append_label(num, cat, y, task_type):
+    """Fold the target into the (num, cat) matrices, matching the baseline DCR
+    (resample_privacy.privacy_metrics / ablation_runner._compute_dcr): regression
+    -> extra numeric column; classification -> extra string categorical column."""
+    if task_type == "regression":
+        yn = np.asarray(y, dtype=float)[:, None]
+        num = yn if num is None or num.shape[1] == 0 else np.concatenate([num, yn], axis=1)
+    else:
+        yc = np.asarray(y).astype(int).astype(str)[:, None]
+        cat = yc if cat is None or cat.shape[1] == 0 else np.concatenate([cat, yc], axis=1)
+    return num, cat
 
 
 def wasserstein_mean_arrays(real_num, syn_num, normalize="standard"):
@@ -168,15 +189,38 @@ def mia_auc_arrays(X_train, X_test, X_syn, mode="mia_proximity", seed=0):
 # ── public, dataset-generic entry points ─────────────────────────────────────────
 
 def compute_dcr_tabddpm_mean(dataset_name, real_data_path, gen_dir,
-                             normalize="minmax"):
-    """TabDDPM DCR: MEAN of nearest-neighbour L2 distances, synthetic -> real
-    TRAIN only. Numeric min-max normalised, categoricals one-hot (generic; works
-    with 0 or many categorical columns). Distinct from ablation_runner._compute_dcr,
-    which returns the MEDIAN nearest-neighbour distance. Label excluded."""
-    rn, rc, _ = _read(real_data_path, "train")
-    sn, sc, _ = _read(gen_dir, "train")
+                             normalize="minmax", aggregation="mean",
+                             include_label=False):
+    """TabDDPM DCR: nearest-neighbour L2 distance, synthetic -> real TRAIN only.
+    Numeric min-max normalised, categoricals one-hot/√2 (generic; works with 0 or
+    many categorical columns).
+
+    ``aggregation``   : "mean" (default, TabDDPM Table-9 style) or "median".
+    ``include_label`` : if True, fold the target into the distance (regression ->
+                        numeric col, classification -> categorical col).
+
+    NOTE: the pipeline BASELINE (exp/<ds>/ddpm_cb_best/privacy.json, written by
+    resample_privacy.privacy_metrics) uses aggregation="median" AND
+    include_label=True. To compare an ablation run against that baseline on equal
+    footing use compute_dcr_baseline() (or pass those two args), NOT the defaults —
+    the mean/median gap is large on datasets with many one-hot categorical dims."""
+    rn, rc, ry = _read(real_data_path, "train")
+    sn, sc, sy = _read(gen_dir, "train")
+    if include_label:
+        task_type = _load_info(real_data_path)["task_type"]
+        rn, rc = _append_label(rn, rc, ry, task_type)
+        sn, sc = _append_label(sn, sc, sy, task_type)
     X_real, X_syn = _encode(rn, rc, (rn, rc), (sn, sc), normalize=normalize)
-    return _dcr_mean_from_encoded(X_real, X_syn)
+    return _dcr_from_encoded(X_real, X_syn, aggregation=aggregation)
+
+
+def compute_dcr_baseline(dataset_name, real_data_path, gen_dir):
+    """DCR computed with the SAME recipe as the pipeline baseline
+    (exp/<ds>/ddpm_cb_best/privacy.json, from resample_privacy.privacy_metrics):
+    MEDIAN nearest-neighbour L2, target label INCLUDED, minmax num + onehot/√2 cat.
+    This is the number to compare ablation runs against privacy.json directly."""
+    return compute_dcr_tabddpm_mean(dataset_name, real_data_path, gen_dir,
+                                    aggregation="median", include_label=True)
 
 
 def compute_wasserstein_mean(dataset_name, real_data_path, gen_dir,

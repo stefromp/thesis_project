@@ -317,6 +317,7 @@ def _run_one(
     # efficiency (F1/R2) is produced by the CatBoost loop below.
     from eval_tabddpm_protocol import (
         compute_dcr_tabddpm_mean,
+        compute_dcr_baseline,
         compute_wasserstein_mean,
         compute_membership_inference_auc,
     )
@@ -444,6 +445,13 @@ def _run_one(
         except Exception as exc:
             print(f"    [WARN] DCR (TabDDPM mean) failed for gen_seed={gen_seed}: {exc}")
         try:
+            # Same recipe as the baseline privacy.json (median NN-L2, label
+            # included) so ablation DCR is directly comparable to ddpm_cb_best.
+            all_gen_metrics["dcr_baseline"].append(
+                compute_dcr_baseline(dataset_name, real_data_path, gen_dir))
+        except Exception as exc:
+            print(f"    [WARN] DCR (baseline recipe) failed for gen_seed={gen_seed}: {exc}")
+        try:
             w = compute_wasserstein_mean(dataset_name, real_data_path, gen_dir)
             if w is not None:
                 all_gen_metrics["wasserstein_mean"].append(w)
@@ -517,6 +525,7 @@ def _run_one(
     # TabDDPM-protocol metrics (averaged over generation seeds).
     tabddpm_order = [
         ("dcr_tabddpm_mean", "DCR (mean L2, higher=private) [down~0]"),
+        ("dcr_baseline",     "DCR (baseline recipe: median+label) "),
         ("wasserstein_mean", "Wasserstein (num mean)        [down]"),
         ("mia_auc",          "Membership-inf AUC (~0.5 good)      "),
     ]
