@@ -45,6 +45,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
+from torch.utils.checkpoint import checkpoint
+
+# Memory budget for the transient (B, H, chunk, N, d_head) pre-activation tensor
+# inside GATv2Layer.  The forward pass tiles the query dimension so this tensor
+# never exceeds the budget, bounding peak memory at O(B*H*chunk*N*d_head) instead
+# of the quadratic O(B*H*N^2*d_head).  ~2 GiB keeps a ~45-feature graph at
+# batch 4096 / d_model 512 well within a 15 GB T4 while leaving the whole-graph
+# path (single tile) untouched for small feature sets.
+GATV2_PAIR_BUDGET_BYTES = 2 * 1024 ** 3
 
 
 # ---------------------------------------------------------------------------
@@ -258,6 +267,7 @@ class GATv2Layer(nn.Module):
         n_heads: int = 4,
         dropout: float = 0.0,
         leaky_slope: float = 0.2,
+        query_chunk: int = 0,
     ) -> None:
         super().__init__()
         if d_model % n_heads != 0:
@@ -267,6 +277,10 @@ class GATv2Layer(nn.Module):
         self.n_heads = n_heads
         self.d_head = d_model // n_heads
         self.leaky_slope = leaky_slope
+        # Query-tiling control: 0 = auto-size each forward from
+        # GATV2_PAIR_BUDGET_BYTES; >0 forces a fixed number of query nodes per
+        # tile (used by tests to exercise the tiled path deterministically).
+        self.query_chunk = query_chunk
 
         self.norm = nn.LayerNorm(d_model)
         # Separate src / dst linear maps so we add features *before* the
@@ -281,33 +295,82 @@ class GATv2Layer(nn.Module):
         self.attn_drop = nn.Dropout(dropout)
         self.ffn = _FFN(d_model, dropout)
 
+    def _pick_query_chunk(self, B: int, N: int, elem_size: int) -> int:
+        """Number of query nodes processed per tile.
+
+        The transient pre-activation is (B, H, chunk, N, d_head); `chunk` is
+        sized so it stays under GATV2_PAIR_BUDGET_BYTES, bounding peak memory at
+        O(B*H*chunk*N*d_head) rather than the quadratic O(B*H*N^2*d_head).
+        A fixed `self.query_chunk > 0` overrides the auto sizing.  Small graphs
+        get chunk == N, i.e. a single tile == the original whole-graph path.
+        """
+        if self.query_chunk and self.query_chunk > 0:
+            return min(self.query_chunk, N)
+        bytes_per_query_row = B * self.n_heads * N * self.d_head * elem_size
+        if bytes_per_query_row <= 0:
+            return N
+        chunk = GATV2_PAIR_BUDGET_BYTES // bytes_per_query_row
+        return max(1, min(N, int(chunk)))
+
+    def _attn_tile(
+        self,
+        src_q: Tensor,   # (B, H, Nq, 1, d_head)  queries in this tile
+        dst: Tensor,     # (B, H, 1,  N, d_head)  all keys (shared across tiles)
+        Vh: Tensor,      # (B, H, N,  d_head)     all values
+        adj_q: Tensor,   # (B, 1, Nq, N)          log-space adjacency gate
+        a: Tensor,       # (1, H, 1, 1, d_head)   scoring vector
+    ) -> Tensor:
+        """GATv2 scores + masked softmax + value aggregation for one query tile.
+
+        Returns (B, H, Nq, d_head).  Isolated so each tile can be wrapped in
+        gradient checkpointing: the (B,H,Nq,N,d_head) pre-activation is then
+        recomputed in backward instead of retained, keeping total retained
+        activation for the layer at O(B*N*d_model), not O(B*N^2*d_model).
+        """
+        # a^T applied AFTER the nonlinearity -- the defining GATv2 property.
+        pair = F.leaky_relu(src_q + dst, negative_slope=self.leaky_slope)  # (B,H,Nq,N,dh)
+        scores = (pair * a).sum(dim=-1) + adj_q                            # (B,H,Nq,N)
+        attn = F.softmax(scores, dim=-1)
+        attn = self.attn_drop(attn)
+        return torch.matmul(attn, Vh)                                      # (B,H,Nq,dh)
+
     def forward(self, x: Tensor, adj: Tensor) -> Tensor:
         B, N, D = x.shape
         h_in = x
         h = self.norm(x)
 
-        Wh_src = self.W_src(h).view(B, N, self.n_heads, self.d_head)   # (B,N,H,dh)
-        Wh_dst = self.W_dst(h).view(B, N, self.n_heads, self.d_head)
-        V      = self.W_val(h).view(B, N, self.n_heads, self.d_head)
+        # (B, N, H, dh) -> (B, H, N, dh) for all three projections.
+        Wh_src = self.W_src(h).view(B, N, self.n_heads, self.d_head).permute(0, 2, 1, 3)
+        Wh_dst = self.W_dst(h).view(B, N, self.n_heads, self.d_head).permute(0, 2, 1, 3)
+        Vh     = self.W_val(h).view(B, N, self.n_heads, self.d_head).permute(0, 2, 1, 3)
 
-        # Broadcast-add to form (B, H, N, N, dh): pre-activation pairs.
-        src = Wh_src.permute(0, 2, 1, 3).unsqueeze(-2)   # (B, H, N, 1, dh)
-        dst = Wh_dst.permute(0, 2, 1, 3).unsqueeze(-3)   # (B, H, 1, N, dh)
-        pair = F.leaky_relu(src + dst, negative_slope=self.leaky_slope)
+        a = self.a.view(1, self.n_heads, 1, 1, self.d_head)
+        # Adjacency gating in log-space (handles hard 0 and soft values), (B,1,N,N).
+        adj_gate = torch.log(_expand_adj(adj, B).unsqueeze(1).clamp(min=1e-12))
+        dst = Wh_dst.unsqueeze(-3)                         # (B, H, 1, N, dh), shared keys
 
-        # Dynamic scoring: a^T applied AFTER the nonlinearity.
-        scores = (pair * self.a.view(1, self.n_heads, 1, 1, self.d_head)) \
-                    .sum(dim=-1)                          # (B, H, N, N)
+        chunk = self._pick_query_chunk(B, N, h.element_size())
+        # Recompute the pre-activation in backward (instead of retaining it) only
+        # when we actually tile and gradients are needed.  Single-tile small
+        # graphs and inference take the plain path: no checkpoint overhead and a
+        # bit-for-bit match with the original whole-graph implementation.
+        use_ckpt = chunk < N and self.training and torch.is_grad_enabled()
 
-        # Adjacency gating in log-space (handles hard 0 and soft values).
-        adj_b = _expand_adj(adj, B).unsqueeze(1)          # (B, 1, N, N)
-        scores = scores + torch.log(adj_b.clamp(min=1e-12))
+        outs = []
+        for start in range(0, N, chunk):
+            end = min(start + chunk, N)
+            src_q = Wh_src[:, :, start:end, :].unsqueeze(-2)   # (B,H,Nq,1,dh)
+            adj_q = adj_gate[:, :, start:end, :]               # (B,1,Nq,N)
+            if use_ckpt:
+                out_q = checkpoint(
+                    self._attn_tile, src_q, dst, Vh, adj_q, a,
+                    use_reentrant=False,
+                )
+            else:
+                out_q = self._attn_tile(src_q, dst, Vh, adj_q, a)
+            outs.append(out_q)
 
-        attn = F.softmax(scores, dim=-1)
-        attn = self.attn_drop(attn)
-
-        Vh = V.permute(0, 2, 1, 3)                        # (B, H, N, dh)
-        out = torch.matmul(attn, Vh)                      # (B, H, N, dh)
+        out = torch.cat(outs, dim=2)                          # (B, H, N, dh)
         out = out.permute(0, 2, 1, 3).contiguous().view(B, N, D)
         out = self.out_proj(out)
 

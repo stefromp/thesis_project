@@ -1,0 +1,762 @@
+[
+  {
+    "dataset": "churn2",
+    "exp_name": "gnn_gatv2_layers2_dim32_topk5_heads4_noattn",
+    "gnn_type": "gatv2",
+    "n_layers": 2,
+    "d_model": 32,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.8540099999999999,
+        "std": 0.0028696515467910026
+      },
+      "macro avg/precision": {
+        "mean": 0.8014328781084368,
+        "std": 0.007246688673862586
+      },
+      "macro avg/recall": {
+        "mean": 0.7025274118494457,
+        "std": 0.006195426509654519
+      },
+      "macro avg/f1-score": {
+        "mean": 0.7337172467008302,
+        "std": 0.006165064487336488
+      },
+      "macro avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "weighted avg/precision": {
+        "mean": 0.8429808661748439,
+        "std": 0.0036128337276167596
+      },
+      "weighted avg/recall": {
+        "mean": 0.8540099999999999,
+        "std": 0.0028696515467910026
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.839846595594715,
+        "std": 0.0033746280501976557
+      },
+      "weighted avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "roc_auc": {
+        "mean": 0.8470924391263375,
+        "std": 0.0035306294373991815
+      },
+      "score": {
+        "mean": 0.8540099999999999,
+        "std": 0.0028696515467910026
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.22397362079308603,
+        "std": 0.000505847156806789
+      },
+      "dcr_baseline": {
+        "mean": 0.22859020928099133,
+        "std": 0.00041188881935113377
+      },
+      "wasserstein_mean": {
+        "mean": 0.017208066257040744,
+        "std": 0.0005137786070036518
+      },
+      "mia_auc": {
+        "mean": 0.5021961,
+        "std": 0.004537109180414296
+      }
+    }
+  },
+  {
+    "dataset": "churn2",
+    "exp_name": "gnn_gatv2_layers2_dim64_topk5_heads4_noattn",
+    "gnn_type": "gatv2",
+    "n_layers": 2,
+    "d_model": 64,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.85332,
+        "std": 0.0027942082957431794
+      },
+      "macro avg/precision": {
+        "mean": 0.805642606224551,
+        "std": 0.008179388324461221
+      },
+      "macro avg/recall": {
+        "mean": 0.6945394392852022,
+        "std": 0.004402554526212454
+      },
+      "macro avg/f1-score": {
+        "mean": 0.7274092999278298,
+        "std": 0.00497488965372783
+      },
+      "macro avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "weighted avg/precision": {
+        "mean": 0.842569952303453,
+        "std": 0.0038457583455215848
+      },
+      "weighted avg/recall": {
+        "mean": 0.85332,
+        "std": 0.0027942082957431794
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.8372685232413123,
+        "std": 0.0029496743307570812
+      },
+      "weighted avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "roc_auc": {
+        "mean": 0.8422545349663995,
+        "std": 0.0030385859157279057
+      },
+      "score": {
+        "mean": 0.85332,
+        "std": 0.0027942082957431794
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.24220216878782028,
+        "std": 0.00034861777285221177
+      },
+      "dcr_baseline": {
+        "mean": 0.2377370572843081,
+        "std": 0.00047538899010936525
+      },
+      "wasserstein_mean": {
+        "mean": 0.014344133389871441,
+        "std": 0.0007228947077064876
+      },
+      "mia_auc": {
+        "mean": 0.5050035499999999,
+        "std": 0.004534690924969389
+      }
+    }
+  },
+  {
+    "dataset": "churn2",
+    "exp_name": "gnn_gatv2_layers2_dim128_topk5_heads4_noattn",
+    "gnn_type": "gatv2",
+    "n_layers": 2,
+    "d_model": 128,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.85826,
+        "std": 0.0027843132007732184
+      },
+      "macro avg/precision": {
+        "mean": 0.8099025197585309,
+        "std": 0.008198079396158499
+      },
+      "macro avg/recall": {
+        "mean": 0.7107196873298569,
+        "std": 0.005080965790108587
+      },
+      "macro avg/f1-score": {
+        "mean": 0.7426146450760639,
+        "std": 0.004966505187551745
+      },
+      "macro avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "weighted avg/precision": {
+        "mean": 0.8483205227110306,
+        "std": 0.003568801279596079
+      },
+      "weighted avg/recall": {
+        "mean": 0.85826,
+        "std": 0.0027843132007732184
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.8449201774525382,
+        "std": 0.0028749468192240768
+      },
+      "weighted avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "roc_auc": {
+        "mean": 0.8525466452585096,
+        "std": 0.003914105912358762
+      },
+      "score": {
+        "mean": 0.85826,
+        "std": 0.0027843132007732184
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.20699324862981455,
+        "std": 0.0002694769706271964
+      },
+      "dcr_baseline": {
+        "mean": 0.21078394232571024,
+        "std": 0.0004498105298138432
+      },
+      "wasserstein_mean": {
+        "mean": 0.011546450713415224,
+        "std": 0.0009850477321235957
+      },
+      "mia_auc": {
+        "mean": 0.5009509,
+        "std": 0.004357808562224816
+      }
+    }
+  },
+  {
+    "dataset": "churn2",
+    "exp_name": "gnn_gatv2_layers3_dim32_topk5_heads4_noattn",
+    "gnn_type": "gatv2",
+    "n_layers": 3,
+    "d_model": 32,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.85268,
+        "std": 0.0025860394428546514
+      },
+      "macro avg/precision": {
+        "mean": 0.8155487806995642,
+        "std": 0.00861676272546373
+      },
+      "macro avg/recall": {
+        "mean": 0.682485320451422,
+        "std": 0.004898611824946123
+      },
+      "macro avg/f1-score": {
+        "mean": 0.7174904830039303,
+        "std": 0.005354359538212357
+      },
+      "macro avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "weighted avg/precision": {
+        "mean": 0.843442401135545,
+        "std": 0.003879448020021487
+      },
+      "weighted avg/recall": {
+        "mean": 0.85268,
+        "std": 0.0025860394428546514
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.833377868905969,
+        "std": 0.002960962075559014
+      },
+      "weighted avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "roc_auc": {
+        "mean": 0.8425095357298747,
+        "std": 0.00222628864298439
+      },
+      "score": {
+        "mean": 0.85268,
+        "std": 0.0025860394428546514
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.21831085246757978,
+        "std": 0.0004309027769070408
+      },
+      "dcr_baseline": {
+        "mean": 0.22174360307266858,
+        "std": 0.0003671696325070109
+      },
+      "wasserstein_mean": {
+        "mean": 0.018788772489110477,
+        "std": 0.0013215104230423623
+      },
+      "mia_auc": {
+        "mean": 0.4958004000000001,
+        "std": 0.0072534159049374835
+      }
+    }
+  },
+  {
+    "dataset": "churn2",
+    "exp_name": "gnn_gatv2_layers3_dim64_topk5_heads4_noattn",
+    "gnn_type": "gatv2",
+    "n_layers": 3,
+    "d_model": 64,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.85527,
+        "std": 0.0028446616670528744
+      },
+      "macro avg/precision": {
+        "mean": 0.8018287497208231,
+        "std": 0.008234109162786862
+      },
+      "macro avg/recall": {
+        "mean": 0.7078183422251219,
+        "std": 0.004989806388025992
+      },
+      "macro avg/f1-score": {
+        "mean": 0.738376083831329,
+        "std": 0.004941935381211526
+      },
+      "macro avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "weighted avg/precision": {
+        "mean": 0.8444941196523031,
+        "std": 0.003587746305140099
+      },
+      "weighted avg/recall": {
+        "mean": 0.85527,
+        "std": 0.0028446616670528744
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.8420757312277044,
+        "std": 0.0028847440590127967
+      },
+      "weighted avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "roc_auc": {
+        "mean": 0.849894640403115,
+        "std": 0.0031330082679576266
+      },
+      "score": {
+        "mean": 0.85527,
+        "std": 0.0028446616670528744
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.21351943081949482,
+        "std": 0.00033960248998483536
+      },
+      "dcr_baseline": {
+        "mean": 0.21720765935423839,
+        "std": 0.0007673469988710512
+      },
+      "wasserstein_mean": {
+        "mean": 0.013534002227208195,
+        "std": 0.001444566770971363
+      },
+      "mia_auc": {
+        "mean": 0.5084664999999999,
+        "std": 0.005215737464635259
+      }
+    }
+  },
+  {
+    "dataset": "churn2",
+    "exp_name": "gnn_gatv2_layers3_dim128_topk5_heads4_noattn",
+    "gnn_type": "gatv2",
+    "n_layers": 3,
+    "d_model": 128,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.8580500000000001,
+        "std": 0.0023879907872519147
+      },
+      "macro avg/precision": {
+        "mean": 0.8056150139163861,
+        "std": 0.006567925762108203
+      },
+      "macro avg/recall": {
+        "mean": 0.7153073412395446,
+        "std": 0.006846026764027001
+      },
+      "macro avg/f1-score": {
+        "mean": 0.7454975871486207,
+        "std": 0.005890871795505583
+      },
+      "macro avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "weighted avg/precision": {
+        "mean": 0.8478837596182042,
+        "std": 0.0029118084481061014
+      },
+      "weighted avg/recall": {
+        "mean": 0.8580500000000001,
+        "std": 0.0023879907872519147
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.8458573042467661,
+        "std": 0.0030005807663709963
+      },
+      "weighted avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "roc_auc": {
+        "mean": 0.8569734757870351,
+        "std": 0.0027499234108052393
+      },
+      "score": {
+        "mean": 0.8580500000000001,
+        "std": 0.0023879907872519147
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.20952198340415223,
+        "std": 0.00024476211377423297
+      },
+      "dcr_baseline": {
+        "mean": 0.2130739655263251,
+        "std": 0.0003436039210028644
+      },
+      "wasserstein_mean": {
+        "mean": 0.011974526467608843,
+        "std": 0.0006588196917750306
+      },
+      "mia_auc": {
+        "mean": 0.50781425,
+        "std": 0.002346018856488601
+      }
+    }
+  },
+  {
+    "dataset": "churn2",
+    "exp_name": "gnn_gin_layers2_dim32_topk5_heads4_noattn",
+    "gnn_type": "gin",
+    "n_layers": 2,
+    "d_model": 32,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.8520400000000001,
+        "std": 0.003009717594725459
+      },
+      "macro avg/precision": {
+        "mean": 0.8016654095105372,
+        "std": 0.007625048460509334
+      },
+      "macro avg/recall": {
+        "mean": 0.6935529982987609,
+        "std": 0.0066592905585235035
+      },
+      "macro avg/f1-score": {
+        "mean": 0.7257337410196512,
+        "std": 0.006792129050545901
+      },
+      "macro avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "weighted avg/precision": {
+        "mean": 0.8407926347626933,
+        "std": 0.003951217698673073
+      },
+      "weighted avg/recall": {
+        "mean": 0.8520400000000001,
+        "std": 0.003009717594725459
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.8361019290482894,
+        "std": 0.0036810819120705928
+      },
+      "weighted avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "roc_auc": {
+        "mean": 0.8451668926245197,
+        "std": 0.004891364084916872
+      },
+      "score": {
+        "mean": 0.8520400000000001,
+        "std": 0.003009717594725459
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.21665018002517536,
+        "std": 0.0007206625827658625
+      },
+      "dcr_baseline": {
+        "mean": 0.21928849985893545,
+        "std": 0.0008044090183872691
+      },
+      "wasserstein_mean": {
+        "mean": 0.0244128929416286,
+        "std": 0.0007653182162840838
+      },
+      "mia_auc": {
+        "mean": 0.50548745,
+        "std": 0.005734619763768111
+      }
+    }
+  },
+  {
+    "dataset": "churn2",
+    "exp_name": "gnn_gin_layers2_dim64_topk5_heads4_noattn",
+    "gnn_type": "gin",
+    "n_layers": 2,
+    "d_model": 64,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.85108,
+        "std": 0.003918367006802707
+      },
+      "macro avg/precision": {
+        "mean": 0.8065565536699597,
+        "std": 0.010747511684964602
+      },
+      "macro avg/recall": {
+        "mean": 0.6845174912971522,
+        "std": 0.008569173929978656
+      },
+      "macro avg/f1-score": {
+        "mean": 0.7180169598827834,
+        "std": 0.009024425927256989
+      },
+      "macro avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "weighted avg/precision": {
+        "mean": 0.8404452932088822,
+        "std": 0.005276896526195252
+      },
+      "weighted avg/recall": {
+        "mean": 0.85108,
+        "std": 0.003918367006802707
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.8328793962592842,
+        "std": 0.004837196855529561
+      },
+      "weighted avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "roc_auc": {
+        "mean": 0.8390071427359562,
+        "std": 0.006323595322441616
+      },
+      "score": {
+        "mean": 0.85108,
+        "std": 0.003918367006802707
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.24734641745975114,
+        "std": 0.0006553477019399866
+      },
+      "dcr_baseline": {
+        "mean": 0.24237434425652574,
+        "std": 0.0009126253331583917
+      },
+      "wasserstein_mean": {
+        "mean": 0.01602393665539737,
+        "std": 0.0003206505039731276
+      },
+      "mia_auc": {
+        "mean": 0.50777805,
+        "std": 0.005988896407936951
+      }
+    }
+  },
+  {
+    "dataset": "churn2",
+    "exp_name": "gnn_gin_layers2_dim128_topk5_heads4_noattn",
+    "gnn_type": "gin",
+    "n_layers": 2,
+    "d_model": 128,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.8574200000000001,
+        "std": 0.0026331729908989966
+      },
+      "macro avg/precision": {
+        "mean": 0.8062063686574206,
+        "std": 0.00723934459176215
+      },
+      "macro avg/recall": {
+        "mean": 0.711600907533111,
+        "std": 0.004805970020771555
+      },
+      "macro avg/f1-score": {
+        "mean": 0.7425826752001232,
+        "std": 0.004763312971795237
+      },
+      "macro avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "weighted avg/precision": {
+        "mean": 0.8471362428856836,
+        "std": 0.0032826828309912405
+      },
+      "weighted avg/recall": {
+        "mean": 0.8574200000000001,
+        "std": 0.0026331729908989966
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.8445370498094704,
+        "std": 0.0027601451691014653
+      },
+      "weighted avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "roc_auc": {
+        "mean": 0.8531074063277454,
+        "std": 0.003755485014296339
+      },
+      "score": {
+        "mean": 0.8574200000000001,
+        "std": 0.0026331729908989966
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.21278113357791234,
+        "std": 0.0004324457229155174
+      },
+      "dcr_baseline": {
+        "mean": 0.21552452154099414,
+        "std": 0.0009718264529059339
+      },
+      "wasserstein_mean": {
+        "mean": 0.013654377563840794,
+        "std": 0.0006989150817793488
+      },
+      "mia_auc": {
+        "mean": 0.5083700499999999,
+        "std": 0.007481968429831837
+      }
+    }
+  },
+  {
+    "dataset": "churn2",
+    "exp_name": "gnn_gin_layers3_dim32_topk5_heads4_noattn",
+    "gnn_type": "gin",
+    "n_layers": 3,
+    "d_model": 32,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.8498799999999999,
+        "std": 0.0026731255114565843
+      },
+      "macro avg/precision": {
+        "mean": 0.7994024643405113,
+        "std": 0.009120349167088487
+      },
+      "macro avg/recall": {
+        "mean": 0.6871483193517091,
+        "std": 0.006716098296597977
+      },
+      "macro avg/f1-score": {
+        "mean": 0.7193210696868936,
+        "std": 0.006274647583670408
+      },
+      "macro avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "weighted avg/precision": {
+        "mean": 0.8383252699566325,
+        "std": 0.003710669581809658
+      },
+      "weighted avg/recall": {
+        "mean": 0.8498799999999999,
+        "std": 0.0026731255114565843
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.8328334000790657,
+        "std": 0.0031828210578305404
+      },
+      "weighted avg/support": {
+        "mean": 2000.0,
+        "std": 0.0
+      },
+      "roc_auc": {
+        "mean": 0.8405396459633748,
+        "std": 0.0020717154551702656
+      },
+      "score": {
+        "mean": 0.8498799999999999,
+        "std": 0.0026731255114565843
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.21513182285627508,
+        "std": 0.0004935554080787181
+      },
+      "dcr_baseline": {
+        "mean": 0.21897945799203042,
+        "std": 0.0006981287732743212
+      },
+      "wasserstein_mean": {
+        "mean": 0.0252175802525632,
+        "std": 0.0007515731772246732
+      },
+      "mia_auc": {
+        "mean": 0.50625275,
+        "std": 0.004929292499943546
+      }
+    }
+  }
+]

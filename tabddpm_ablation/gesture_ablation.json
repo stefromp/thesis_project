@@ -1,0 +1,74 @@
+[
+  {
+    "dataset": "gesture",
+    "exp_name": "gnn_gatv2_layers2_dim32_topk5_heads4_noattn",
+    "gnn_type": "gatv2",
+    "n_layers": 2,
+    "d_model": 32,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.5311392405063291,
+        "std": 0.0049609918841178316
+      },
+      "macro avg/precision": {
+        "mean": 0.48619966622871524,
+        "std": 0.007900332811152181
+      },
+      "macro avg/recall": {
+        "mean": 0.46558834596818377,
+        "std": 0.0058911615585590235
+      },
+      "macro avg/f1-score": {
+        "mean": 0.4685567628422028,
+        "std": 0.005991303747592914
+      },
+      "macro avg/support": {
+        "mean": 1975.0,
+        "std": 0.0
+      },
+      "weighted avg/precision": {
+        "mean": 0.5210444613297497,
+        "std": 0.005993695202150263
+      },
+      "weighted avg/recall": {
+        "mean": 0.5311392405063291,
+        "std": 0.0049609918841178316
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.5212811385511689,
+        "std": 0.004921759743949748
+      },
+      "weighted avg/support": {
+        "mean": 1975.0,
+        "std": 0.0
+      },
+      "score": {
+        "mean": 0.5311392405063291,
+        "std": 0.0049609918841178316
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.1681412532121734,
+        "std": 0.00027291646847290316
+      },
+      "dcr_baseline": {
+        "mean": 0.12026666129467915,
+        "std": 0.0002748130082744087
+      },
+      "wasserstein_mean": {
+        "mean": 0.074444152477677,
+        "std": 0.0010107257749640318
+      },
+      "mia_auc": {
+        "mean": 0.4971280243550713,
+        "std": 0.00032663114716343944
+      }
+    }
+  }
+]

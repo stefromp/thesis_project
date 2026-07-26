@@ -1,0 +1,146 @@
+[
+  {
+    "dataset": "buddy",
+    "exp_name": "gnn_gcn_layers2_dim128_topk5_heads4_noattn",
+    "gnn_type": "gcn",
+    "n_layers": 2,
+    "d_model": 128,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.8794796920626494,
+        "std": 0.00285518017727608
+      },
+      "macro avg/precision": {
+        "mean": 0.8884154530051193,
+        "std": 0.004440271938684132
+      },
+      "macro avg/recall": {
+        "mean": 0.8772282810261401,
+        "std": 0.004973279571416353
+      },
+      "macro avg/f1-score": {
+        "mean": 0.8797490578634017,
+        "std": 0.003511319152655327
+      },
+      "macro avg/support": {
+        "mean": 3767.0,
+        "std": 0.0
+      },
+      "weighted avg/precision": {
+        "mean": 0.885295499237499,
+        "std": 0.005229686122775583
+      },
+      "weighted avg/recall": {
+        "mean": 0.8794796920626494,
+        "std": 0.00285518017727608
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.8782278572984797,
+        "std": 0.0026460207449149065
+      },
+      "weighted avg/support": {
+        "mean": 3767.0,
+        "std": 0.0
+      },
+      "score": {
+        "mean": 0.8794796920626494,
+        "std": 0.00285518017727608
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.2994259599181575,
+        "std": 0.0012125302653156914
+      },
+      "dcr_baseline": {
+        "mean": 0.2546442062066803,
+        "std": 0.0010324403714480675
+      },
+      "wasserstein_mean": {
+        "mean": 0.01215084042882077,
+        "std": 0.0010492275017798041
+      },
+      "mia_auc": {
+        "mean": 0.49725838564669117,
+        "std": 0.00465870443756142
+      }
+    }
+  },
+  {
+    "dataset": "buddy",
+    "exp_name": "gnn_gcn_layers2_dim256_topk5_heads4_noattn",
+    "gnn_type": "gcn",
+    "n_layers": 2,
+    "d_model": 256,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.882038757632068,
+        "std": 0.0021571301247414543
+      },
+      "macro avg/precision": {
+        "mean": 0.8962345570225924,
+        "std": 0.002993660149619127
+      },
+      "macro avg/recall": {
+        "mean": 0.8887885645031942,
+        "std": 0.002702726884529914
+      },
+      "macro avg/f1-score": {
+        "mean": 0.8913822479211951,
+        "std": 0.002788222570286458
+      },
+      "macro avg/support": {
+        "mean": 3767.0,
+        "std": 0.0
+      },
+      "weighted avg/precision": {
+        "mean": 0.8838924652994848,
+        "std": 0.002475333097851374
+      },
+      "weighted avg/recall": {
+        "mean": 0.882038757632068,
+        "std": 0.0021571301247414543
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.8814433591748951,
+        "std": 0.0021478676935100167
+      },
+      "weighted avg/support": {
+        "mean": 3767.0,
+        "std": 0.0
+      },
+      "score": {
+        "mean": 0.882038757632068,
+        "std": 0.0021571301247414543
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.25950286895418434,
+        "std": 0.0007113460537847133
+      },
+      "dcr_baseline": {
+        "mean": 0.20450761813171825,
+        "std": 0.0007734947924147707
+      },
+      "wasserstein_mean": {
+        "mean": 0.00973892147133663,
+        "std": 0.0008655405208690518
+      },
+      "mia_auc": {
+        "mean": 0.5026238718605379,
+        "std": 0.0021979090787301574
+      }
+    }
+  }
+]

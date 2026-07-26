@@ -246,6 +246,59 @@ def test_GATv2_multihead_shapes():
     assert out.shape == (B, N, d)
 
 
+def test_GATv2_query_tiling_matches_single_pass():
+    """Query-tiled forward == whole-graph forward, bit-for-bit (eval, no ckpt).
+
+    Memory fix: GATv2Layer tiles the query dimension so the (B,H,N,N,dh)
+    pre-activation is never materialised in full.  Every tile size must give
+    identical results to the single-tile (original) path.
+    """
+    B, N, d = 3, 9, 8
+    layer = GATv2Layer(d, n_heads=2, dropout=0.0).eval()
+    x = _rand_x(B, N, d)
+    adj = _rand_soft_adj(B, N)
+
+    layer.query_chunk = 0                      # auto -> single tile at this size
+    ref = layer(x, adj)
+    for k in (1, 2, 3, N, N + 5):              # sub-N, exact-N and over-N tiles
+        layer.query_chunk = k
+        assert torch.allclose(layer(x, adj), ref, atol=1e-12), f"chunk={k}"
+
+
+def test_GATv2_checkpointed_tiling_matches_output_and_grads():
+    """Training-mode checkpointed tiling == non-tiled: same output AND grads.
+
+    When chunk < N in training mode each tile is gradient-checkpointed (the
+    pre-activation is recomputed in backward).  Output and every gradient must
+    match the plain whole-graph forward/backward.
+    """
+    B, N, d = 2, 8, 8
+    layer = GATv2Layer(d, n_heads=2, dropout=0.0)  # default train() mode
+    x = _rand_x(B, N, d)
+    adj = _rand_soft_adj(B, N)
+
+    # Reference: whole-graph (single tile), training mode, no checkpoint.
+    layer.query_chunk = N
+    x1 = x.clone().requires_grad_(True)
+    layer(x1, adj).sum().backward()
+    ref_out_grad = x1.grad.detach().clone()
+    ref_a_grad = layer.a.grad.detach().clone()
+    ref_wsrc_grad = layer.W_src.weight.grad.detach().clone()
+    ref_out = layer(x1, adj).detach().clone()
+
+    layer.zero_grad()
+    # Tiled + checkpointed: chunk < N triggers checkpointing in training mode.
+    layer.query_chunk = 3
+    x2 = x.clone().requires_grad_(True)
+    out2 = layer(x2, adj)
+    out2.sum().backward()
+
+    assert torch.allclose(out2, ref_out, atol=1e-10)
+    assert torch.allclose(x2.grad, ref_out_grad, atol=1e-10)
+    assert torch.allclose(layer.a.grad, ref_a_grad, atol=1e-10)
+    assert torch.allclose(layer.W_src.weight.grad, ref_wsrc_grad, atol=1e-10)
+
+
 # ===========================================================================
 # D. GIN
 # ===========================================================================
