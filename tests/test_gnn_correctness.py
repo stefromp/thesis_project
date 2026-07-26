@@ -299,6 +299,63 @@ def test_GATv2_checkpointed_tiling_matches_output_and_grads():
     assert torch.allclose(layer.W_src.weight.grad, ref_wsrc_grad, atol=1e-10)
 
 
+def test_GATv2_layer_checkpoint_matches_output_and_grads():
+    """Whole-layer grad checkpoint (nested with tiling) == plain layer.
+
+    grad_checkpoint recomputes the entire layer in backward; with tiling on
+    (query_chunk < N) this is the nested checkpoint path.  Output and every
+    parameter gradient must equal the non-checkpointed layer (dropout=0).
+    """
+    B, N, d = 2, 8, 8
+    layer = GATv2Layer(d, n_heads=2, dropout=0.0)  # train() mode
+
+    # Reference: no checkpointing, no tiling.
+    layer.grad_checkpoint = False
+    layer.query_chunk = N
+    x1 = _rand_x(B, N, d).requires_grad_(True)
+    adj = _rand_soft_adj(B, N)
+    layer(x1, adj).sum().backward()
+    ref = {
+        "x": x1.grad.detach().clone(),
+        "a": layer.a.grad.detach().clone(),
+        "wsrc": layer.W_src.weight.grad.detach().clone(),
+        "wval": layer.W_val.weight.grad.detach().clone(),
+        "ffn": layer.ffn.ff[0].weight.grad.detach().clone(),
+        "out": layer(x1, adj).detach().clone(),
+    }
+
+    layer.zero_grad()
+    # Nested: whole-layer checkpoint + query tiling (chunk < N).
+    layer.grad_checkpoint = True
+    layer.query_chunk = 3
+    x2 = _rand_x(B, N, d).requires_grad_(True)
+    out2 = layer(x2, adj)
+    out2.sum().backward()
+
+    assert torch.allclose(out2, ref["out"], atol=1e-10)
+    assert torch.allclose(x2.grad, ref["x"], atol=1e-10)
+    assert torch.allclose(layer.a.grad, ref["a"], atol=1e-10)
+    assert torch.allclose(layer.W_src.weight.grad, ref["wsrc"], atol=1e-10)
+    assert torch.allclose(layer.W_val.weight.grad, ref["wval"], atol=1e-10)
+    assert torch.allclose(layer.ffn.ff[0].weight.grad, ref["ffn"], atol=1e-10)
+
+
+def test_GATv2_checkpoint_dropout_is_finite_with_valid_grads():
+    """Nested checkpoint + dropout>0: recompute reuses the RNG state
+    (preserve_rng_state default), so output/grads are finite and non-trivial.
+    """
+    B, N, d = 2, 8, 8
+    layer = GATv2Layer(d, n_heads=2, dropout=0.3)  # dropout ON, train() mode
+    layer.grad_checkpoint = True
+    layer.query_chunk = 3
+    x = _rand_x(B, N, d).requires_grad_(True)
+    out = layer(x, _rand_soft_adj(B, N))
+    out.sum().backward()
+    assert torch.isfinite(out).all()
+    assert x.grad is not None and torch.isfinite(x.grad).all()
+    assert layer.a.grad is not None and layer.a.grad.abs().sum() > 0
+
+
 # ===========================================================================
 # D. GIN
 # ===========================================================================

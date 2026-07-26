@@ -268,6 +268,7 @@ class GATv2Layer(nn.Module):
         dropout: float = 0.0,
         leaky_slope: float = 0.2,
         query_chunk: int = 0,
+        grad_checkpoint: bool = True,
     ) -> None:
         super().__init__()
         if d_model % n_heads != 0:
@@ -281,6 +282,16 @@ class GATv2Layer(nn.Module):
         # GATV2_PAIR_BUDGET_BYTES; >0 forces a fixed number of query nodes per
         # tile (used by tests to exercise the tiled path deterministically).
         self.query_chunk = query_chunk
+        # Whole-layer gradient checkpointing: recompute this layer's activations
+        # in backward instead of retaining them.  Query-tiling bounds the single
+        # transient pair tensor, but the ordinary per-layer activations
+        # (W_src/W_dst/W_val projections + the 4x FFN) still stack across a deep
+        # backbone at O(depth * B * N * d_model) -- the actual driver of the
+        # residual OOM at ablation batch 4096.  Checkpointing drops that to
+        # O(B * N * d_model).  Active only in training with grad enabled;
+        # inference/sampling take the plain path.  Set False to trade the
+        # (~2-3x GNN recompute) cost back for memory.
+        self.grad_checkpoint = grad_checkpoint
 
         self.norm = nn.LayerNorm(d_model)
         # Separate src / dst linear maps so we add features *before* the
@@ -335,6 +346,17 @@ class GATv2Layer(nn.Module):
         return torch.matmul(attn, Vh)                                      # (B,H,Nq,dh)
 
     def forward(self, x: Tensor, adj: Tensor) -> Tensor:
+        # Whole-layer checkpoint in training: recompute _forward_impl in backward
+        # rather than retaining its activations.  The per-tile checkpoint inside
+        # _forward_impl stays active during that recompute (nested,
+        # use_reentrant=False), so the pair tensor never fully materialises even
+        # while the layer is being recomputed.  Inference / grad-disabled paths
+        # run _forward_impl directly -> bit-for-bit identical to the plain layer.
+        if self.grad_checkpoint and self.training and torch.is_grad_enabled():
+            return checkpoint(self._forward_impl, x, adj, use_reentrant=False)
+        return self._forward_impl(x, adj)
+
+    def _forward_impl(self, x: Tensor, adj: Tensor) -> Tensor:
         B, N, D = x.shape
         h_in = x
         h = self.norm(x)
