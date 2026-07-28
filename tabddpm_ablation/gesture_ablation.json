@@ -71,4 +71,77 @@
       }
     }
   }
+, 
+  {
+    "dataset": "gesture",
+    "exp_name": "gnn_gat_layers3_dim128_topk5_heads4_noattn",
+    "gnn_type": "gat",
+    "n_layers": 3,
+    "d_model": 128,
+    "top_k": 5,
+    "n_heads": 4,
+    "use_attention": false,
+    "steps": 20000,
+    "n_gen_seeds": 5,
+    "n_clf_seeds": 10,
+    "status": "done",
+    "metrics": {
+      "accuracy": {
+        "mean": 0.6018734177215189,
+        "std": 0.006220433993754909
+      },
+      "macro avg/precision": {
+        "mean": 0.5677091635133654,
+        "std": 0.008749603146570188
+      },
+      "macro avg/recall": {
+        "mean": 0.5404034068277412,
+        "std": 0.008061829004280095
+      },
+      "macro avg/f1-score": {
+        "mean": 0.5495291987378014,
+        "std": 0.008443484350995487
+      },
+      "macro avg/support": {
+        "mean": 1975.0,
+        "std": 0.0
+      },
+      "weighted avg/precision": {
+        "mean": 0.5940076711112711,
+        "std": 0.007236124020052082
+      },
+      "weighted avg/recall": {
+        "mean": 0.6018734177215189,
+        "std": 0.006220433993754909
+      },
+      "weighted avg/f1-score": {
+        "mean": 0.5943942605357875,
+        "std": 0.006857574152497879
+      },
+      "weighted avg/support": {
+        "mean": 1975.0,
+        "std": 0.0
+      },
+      "score": {
+        "mean": 0.6018734177215189,
+        "std": 0.006220433993754909
+      },
+      "dcr_tabddpm_mean": {
+        "mean": 0.10864883806746048,
+        "std": 0.0006191022267497406
+      },
+      "dcr_baseline": {
+        "mean": 0.08519126757326059,
+        "std": 0.00044212934618063026
+      },
+      "wasserstein_mean": {
+        "mean": 0.08139606058550228,
+        "std": 0.0021621587532850684
+      },
+      "mia_auc": {
+        "mean": 0.5014536388399294,
+        "std": 0.0015511069868874548
+      }
+    }
+  }
 ]

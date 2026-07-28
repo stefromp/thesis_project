@@ -301,6 +301,7 @@ def _run_one(
 
     Returns the aggregated results dict (also written to results_full_averaged.json).
     """
+    import gc
     import numpy as np
     import torch
     import lib
@@ -508,6 +509,16 @@ def _run_one(
                     for sub, subval in value.items():
                         if isinstance(subval, (int, float)):
                             all_test_metrics[f"{metric}/{sub}"].append(subval)
+
+        # Reclaim GPU memory before the next generation seed. Each seed builds a
+        # fresh model + diffusion on-device inside tabddpm_sample; without this,
+        # the caching allocator's freed-but-reserved blocks fragment and the
+        # next seed's sampling OOMs (T4 15 GB: seed 0 fine, seed 1 OOM in the
+        # GAT/FFN forward). gc.collect() drops any lingering module refs first
+        # so empty_cache() can actually return the blocks.
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
     # ---- 3. Aggregate with mean +/- std ------------------------------------
     averaged: dict = {}
