@@ -1,4 +1,4 @@
-# Graph-Aware Denoisers for Tabular Diffusion
+# Graph-Aware Denoiser for Tabular Diffusion
 
 This thesis project adds a graph neural network (GNN) denoiser to
 [TabDDPM](https://github.com/yandex-research/tab-ddpm) (Kotelnikov et al., 2023).
