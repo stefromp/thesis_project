@@ -121,6 +121,10 @@ class AttnGNNBlock(nn.Module):
         top_k: int = 0,
         n_gnn_layers: int = GNN_LAYERS_PER_BLOCK,
         use_attention: bool = True,
+        topk_mode: str = "fixed",
+        k_min: int = 1,
+        topk_warmup_steps: int = 0,
+        num_timesteps: int = 1000,
     ) -> None:
         super().__init__()
         # Dense self-attention sublayer (global, adjacency-free mixing). When
@@ -134,7 +138,12 @@ class AttnGNNBlock(nn.Module):
         # Per-block dynamic adjacency: independent q/k projections per block,
         # so the learned graph differs across depth (None in static mode).
         self.dynamic_adj: Optional[nn.Module] = (
-            DynamicAdjacency(n_nodes, d_model, top_k)
+            DynamicAdjacency(
+                n_nodes, d_model, top_k,
+                topk_mode=topk_mode, k_min=k_min,
+                topk_warmup_steps=topk_warmup_steps,
+                num_timesteps=num_timesteps,
+            )
             if graph_mode == "dynamic" else None
         )
         self.gnns = nn.ModuleList(
@@ -145,12 +154,23 @@ class AttnGNNBlock(nn.Module):
             ]
         )
 
-    def forward(self, x: Tensor, adj: Optional[Tensor] = None) -> Tensor:
+    def forward(
+        self,
+        x: Tensor,
+        adj: Optional[Tensor] = None,
+        timesteps: Optional[Tensor] = None,
+        block_idx: Optional[int] = None,
+    ) -> Tensor:
         if self.attn is not None:
             x = self.attn(x)
         # Recompute the soft adjacency once per block, from the (post-attention,
-        # if enabled) embeddings, then reuse it for both GNN layers.
-        a = self.dynamic_adj(x) if self.dynamic_adj is not None else adj
+        # if enabled) embeddings, then reuse it for both GNN layers. timesteps
+        # and block_idx are only read by DynamicAdjacency's adaptive_jenks
+        # logging; the static-adjacency path (adj passed in) ignores both.
+        a = (
+            self.dynamic_adj(x, timesteps=timesteps, block_idx=block_idx)
+            if self.dynamic_adj is not None else adj
+        )
         for gnn in self.gnns:
             x = gnn(x, a)
         return x
@@ -200,6 +220,13 @@ class GraphAwareDenoiser(nn.Module):
                     on the dynamic/static adjacency), dropping ~1/3 of the
                     backbone parameters and removing the structure-free
                     global channel.
+        topk_mode:  "fixed" (default; today's behaviour, bit-identical) or
+                    "adaptive_jenks". Dynamic mode only; ignored for static.
+        k_min:      floor on the adaptive budget (adaptive_jenks only).
+        topk_warmup_steps: training-mode forward calls before adaptive_jenks
+                    switches on (adaptive_jenks only).
+        num_timesteps: diffusion horizon T, used only to bucket logged
+                    per-sample budgets by t.
     """
 
     def __init__(
@@ -219,6 +246,10 @@ class GraphAwareDenoiser(nn.Module):
         dropout: float = 0.0,
         dim_t: int = 128,
         use_attention: bool = True,
+        topk_mode: str = "fixed",
+        k_min: int = 1,
+        topk_warmup_steps: int = 0,
+        num_timesteps: int = 1000,
     ) -> None:
         super().__init__()
 
@@ -314,6 +345,10 @@ class GraphAwareDenoiser(nn.Module):
                     n_nodes=self.N,
                     top_k=top_k,
                     use_attention=use_attention,
+                    topk_mode=topk_mode,
+                    k_min=k_min,
+                    topk_warmup_steps=topk_warmup_steps,
+                    num_timesteps=num_timesteps,
                 )
                 for _ in range(n_layers)
             ]
@@ -394,11 +429,12 @@ class GraphAwareDenoiser(nn.Module):
         # dynamic : each block recomputes the soft adjacency once, from its
         #           post-attention embeddings, and reuses it for both GNN layers.
         if self.graph_mode == "static":
-            for block in self.blocks:
-                node_emb = block(node_emb, adj=self.static_adj)
+            for i, block in enumerate(self.blocks):
+                node_emb = block(node_emb, adj=self.static_adj, timesteps=timesteps, block_idx=i)
         else:
-            for block in self.blocks:
-                node_emb = block(node_emb)  # each block uses its own dynamic_adj
+            for i, block in enumerate(self.blocks):
+                # each block uses its own dynamic_adj
+                node_emb = block(node_emb, timesteps=timesteps, block_idx=i)
 
         # ------------------------------------------------------------------
         # 5. Readout — project each node back to its original feature space

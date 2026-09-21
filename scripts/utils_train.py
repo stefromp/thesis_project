@@ -33,6 +33,10 @@ def get_model(
             gnn_type=graph_params.get('gnn_type', 'graphmha'),
             dropout=graph_params.get('dropout', 0.0),
             use_attention=graph_params.get('use_attention', True),
+            topk_mode=graph_params.get('topk_mode', 'fixed'),
+            k_min=graph_params.get('k_min', 1),
+            topk_warmup_steps=graph_params.get('topk_warmup_steps', 0),
+            num_timesteps=graph_params.get('num_timesteps', 1000),
         )
     elif model_name == 'mlp':
         model = MLPDiffusion(**model_params)

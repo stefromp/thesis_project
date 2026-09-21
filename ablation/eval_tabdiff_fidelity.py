@@ -32,6 +32,18 @@ Deliberate deviations (numerics preserved, robustness added):
     that halves the batch; distance *comparisons* are unaffected.
   * Zero-range numerical columns are scaled by 1 instead of 0 (the original
     divides by zero and NaNs out).
+
+Corrections for this repo's sampling convention (see compute_tabdiff_fidelity):
+TabDiff evaluates with |synthetic| == |train| and balanced train/test splits.
+This repo generates ~4-8x the train size (TabDDPM's ML-efficiency convention)
+and ships splits with ~3.2x more train rows than test rows. Left uncorrected:
+  * alpha-precision / beta-recall raise on the length mismatch and silently
+    vanish from every result file;
+  * DCR is biased upward by the reference-set imbalance — real held-out data,
+    which cannot have been memorised, scores 0.89 on wilt instead of 0.50.
+So the synthetic set is subsampled to |train| (``match_sizes``), and the DCR
+reference sets are balanced (``balance_reference``). Verified on wilt: the
+held-out control moves 0.886 -> 0.496.
 """
 
 import json
@@ -51,6 +63,17 @@ def _read_split(path: str, split: str):
 
     return _maybe("X_num"), _maybe("X_cat"), np.load(
         os.path.join(path, f"y_{split}.npy"), allow_pickle=True)
+
+
+def _subsample(blocks, n: int, seed: int):
+    """Take ``n`` rows (without replacement) from a (num_block, cat_block) pair."""
+    num_block, cat_block = blocks
+    total = len(num_block) if num_block is not None else len(cat_block)
+    if n >= total:
+        return blocks
+    idx = np.random.default_rng(seed).choice(total, n, replace=False)
+    return (None if num_block is None else num_block[idx],
+            None if cat_block is None else cat_block[idx])
 
 
 def _blocks(X_num, X_cat, y, task_type):
@@ -138,7 +161,28 @@ def _encode_dcr(num_block, cat_block, num_ranges, encoder):
 
 
 def compute_dcr_tabdiff(train_blocks, test_blocks, syn_blocks,
-                        device="cpu") -> dict:
+                        device="cpu", seed: int = 0,
+                        balance_reference: bool = True) -> dict:
+    """Fraction of synthetic rows whose nearest real neighbour is in TRAIN.
+
+    The "~0.5 is ideal" reading only holds when TRAIN and TEST are the same
+    size: the more rows a reference set has, the more likely it holds the
+    nearest neighbour, for reasons that have nothing to do with memorisation.
+    Every dataset here has ~3.2x more train rows than test rows, which pushes
+    the score up regardless of the model — real held-out data, which cannot
+    have been memorised, scores 0.89 instead of 0.50 on wilt.
+
+    ``balance_reference`` subsamples the larger reference set down to the
+    smaller one before measuring. Set it False only to reproduce the biased
+    numbers of an earlier run.
+    """
+    if balance_reference:
+        n_train = len(train_blocks[0]) if train_blocks[0] is not None else len(train_blocks[1])
+        n_test = len(test_blocks[0]) if test_blocks[0] is not None else len(test_blocks[1])
+        n_ref = min(n_train, n_test)
+        train_blocks = _subsample(train_blocks, n_ref, seed)
+        test_blocks = _subsample(test_blocks, n_ref, seed + 1)
+
     num_train, cat_train = train_blocks
     num_test, cat_test = test_blocks
     num_syn, cat_syn = syn_blocks
@@ -286,6 +330,8 @@ def compute_tabdiff_fidelity(
     real_data_path: str,
     device: str = "cpu",
     metrics=("density", "c2st", "dcr", "quality"),
+    seed: int = 0,
+    match_sizes: bool = True,
 ) -> dict:
     """Compute the TabDiff-paper fidelity metrics for one synthetic sample.
 
@@ -293,6 +339,20 @@ def compute_tabdiff_fidelity(
     files in raw data space (as written by sample.py). Real train and test
     come from ``real_data_path``. Metrics that fail (e.g. sdmetrics not
     installed) are skipped with a warning so the rest still land.
+
+    ``match_sizes`` subsamples the synthetic set to the size of the real train
+    split. TabDiff evaluates |synthetic| == |train|, whereas this repo's
+    sampler follows the TabDDPM convention of generating ~4-8x the train size
+    for ML efficiency. That difference is not cosmetic:
+
+      * alpha-precision / beta-recall REQUIRE equal lengths — synthcity raises
+        "The real and synthetic data must have the same length", which the
+        caller's try/except swallows, so both metrics silently never appear.
+      * Shape / Trend / C2ST tolerate the mismatch (measured: <= 0.013), but
+        matching keeps the numbers comparable to the published TabDiff tables.
+
+    Set it False only to measure on the full synthetic sample, accepting that
+    quality will be dropped.
     """
     with open(os.path.join(real_data_path, "info.json")) as fh:
         task_type = json.load(fh)["task_type"]
@@ -301,12 +361,23 @@ def compute_tabdiff_fidelity(
     test_blocks = _blocks(*_read_split(real_data_path, "test"), task_type)
     syn_blocks = _blocks(*_read_split(synthetic_dir, "train"), task_type)
 
+    n_train = len(train_blocks[0]) if train_blocks[0] is not None else len(train_blocks[1])
+    n_syn_full = len(syn_blocks[0]) if syn_blocks[0] is not None else len(syn_blocks[1])
+    if match_sizes and n_syn_full != n_train:
+        syn_blocks = _subsample(syn_blocks, n_train, seed)
+        print(f"    [tabdiff] synthetic {n_syn_full} -> {n_train} rows "
+              f"(matched to real train)")
+
     out: dict = {}
     runners = {
         "density": lambda: compute_density(train_blocks, syn_blocks),
         "c2st":    lambda: compute_c2st(train_blocks, syn_blocks),
-        "dcr":     lambda: compute_dcr_tabdiff(train_blocks, test_blocks,
-                                               syn_blocks, device=device),
+        # DCR keeps the FULL synthetic sample: each row votes independently, so
+        # extra rows cut variance without biasing the train-vs-test ratio.
+        "dcr":     lambda: compute_dcr_tabdiff(
+            train_blocks, test_blocks,
+            _blocks(*_read_split(synthetic_dir, "train"), task_type),
+            device=device, seed=seed),
         "quality": lambda: compute_alpha_beta(train_blocks, syn_blocks),
     }
     for name in metrics:

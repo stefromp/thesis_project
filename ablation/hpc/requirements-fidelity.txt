@@ -1,0 +1,18 @@
+# Extra dependencies for the TabDiff-paper fidelity suite
+# (ablation/eval_tabdiff_fidelity.py), on top of the pinned requirements.txt.
+#
+#   pip install -r ablation/hpc/requirements-fidelity.txt
+#
+# Needed for: Shape (column-wise density), Trend (pair-wise feature
+# correlation) and C2ST. The DCR and alpha-precision / beta-recall metrics are
+# pure numpy/sklearn and need nothing extra.
+#
+# Kept separate from requirements.txt so installing it cannot disturb the
+# pinned training environment (numpy 1.23.5 / torch 1.13.1). sdmetrics pulls
+# copulas + plotly; if pip tries to move numpy or pandas, install with
+# --no-deps and add `copulas` manually.
+sdmetrics==0.13.0
+
+# XGBoost is only required for --evaluator xgboost (TabDiff's eval/mle
+# protocol). The default catboost evaluator does not need it.
+xgboost==2.0.3

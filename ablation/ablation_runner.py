@@ -1,7 +1,8 @@
 """
 Shared runner for GNN ablation studies across all 16 datasets.
 
-Evaluation protocol — the original TabDDPM (Kotelnikov et al., 2023) metrics only:
+Evaluation protocol — the original TabDDPM (Kotelnikov et al., 2023) metrics,
+plus (opt-in via --tabdiff_fidelity) the TabDiff-paper fidelity suite:
   N_GEN_SEEDS = 5  : sample the trained model 5 times (different gen seeds)
   N_CLF_SEEDS = 10 : run CatBoost 10 times per generated dataset
 
@@ -12,8 +13,17 @@ Evaluation protocol — the original TabDDPM (Kotelnikov et al., 2023) metrics o
     4. Membership-inference AUC (proximity attack, train vs test)
     5. CatBoost x N_CLF_SEEDS -> ML efficiency (F1 / R2) on the real test split
 
+  Per gen_seed, when --tabdiff_fidelity is passed (eval_tabdiff_fidelity):
+    6. Shape   — column-wise density similarity (sdmetrics KS/TV complement)
+    7. Trend   — pair-wise feature-CORRELATION similarity
+    8. C2ST    — sdmetrics LogisticDetection
+    9. DCR (TabDiff recipe: fraction of synthetic rows nearer to train
+       than to test; ~0.5 is ideal)
+   10. alpha-precision / beta-recall
+
   Aggregation: mean +/- std over all 50 CatBoost runs (ML efficiency) and 5 gen
-  runs (DCR / Wasserstein / MIA). Saved to results_full_averaged.json.
+  runs (DCR / Wasserstein / MIA / TabDiff suite). Saved to
+  results_full_averaged.json.
 
 Ablation grid (per dataset):
   gnn_type : gcn | gat | gatv2 | gin
@@ -41,6 +51,12 @@ from typing import Optional
 # Ablation + evaluation constants
 # ---------------------------------------------------------------------------
 
+# Training length and seed counts, matching the Kaggle notebooks. The 5 x 10
+# seed protocol is TabDDPM's (Kotelnikov et al., 2023): 5 sampling seeds, 10
+# evaluation-model seeds, aggregated over all 50 runs.
+#
+# Note the TabDiff notebooks (notebooks_tabdiff/) instead use N_CLF_SEEDS = 1,
+# which is TabDiff's MLE protocol — do not mix the two in one table.
 ABLATION_STEPS = 20_000
 N_GEN_SEEDS    = 5
 N_CLF_SEEDS    = 10
@@ -50,14 +66,21 @@ ABLATION_NUM_TIMESTEPS = 1000
 ABLATION_BATCH_SIZE    = 4096
 ABLATION_LR            = 1e-4
 
+# The grid the Kaggle ablation notebooks sweep (notebooks_tabddpm/ and
+# notebooks_tabdiff/ set exactly these six lists before calling run_ablation).
+# Keep them in sync: the HPC runs exist to extend those results with the
+# TabDiff fidelity metrics, which only works if the combinations — and hence
+# the exp_dir_name() directories — line up.
 GNN_TYPES = ["gcn", "gatv2", "gin"]
-N_LAYERS  = [ 3,4]                   #number of blocks
-D_MODELS  = [256, 512, 1024]
-TOP_KS    = [5]
-N_HEADS   = [4]
+N_LAYERS  = [2, 3]                   # number of blocks
+D_MODELS  = [32, 64]                 # hidden dim
+TOP_KS    = [3, 5]                   # sparsity_top_k (0 = dense)
+N_HEADS   = [4]                      # attention heads (gcn/gin ignore)
 # Dense self-attention sublayer on/off. True = each block starts with global
 # adjacency-free self-attention (original behaviour); False = GNN-only blocks.
-ATTENTIONS = [True]
+# The notebooks run GNN-only, which is what puts the "_noattn" suffix on every
+# existing result directory.
+ATTENTIONS = [False]
 
 # ML-efficiency evaluator: "catboost" (original TabDDPM protocol, default) or
 # "xgboost" (TabDiff's eval/mle protocol via ablation/eval_xgboost.py).
@@ -69,6 +92,19 @@ EVALUATOR = "catboost"
 # Off by default; the *-kaggle-tabdiff notebooks enable it together with
 # EVALUATOR = "xgboost". Needs `sdmetrics` installed for Shape/Trend/C2ST.
 TABDIFF_FIDELITY = False
+
+# Which of the four TabDiff evaluators to run when TABDIFF_FIDELITY is on.
+#   density -> Shape (column-wise KSComplement/TVComplement)
+#              Trend (pair-wise correlation similarity)  <- feature correlation
+#   c2st    -> sdmetrics LogisticDetection
+#   dcr     -> TabDiff's train-vs-test nearest-neighbour ratio
+#   quality -> alpha-precision / beta-recall
+TABDIFF_METRICS = ("density", "c2st", "dcr", "quality")
+
+# Every constant in this block is overridable from the command line via
+# apply_cli_overrides() (see make_parser()), so HPC batch jobs do not need to
+# edit this file — unlike the Kaggle notebooks, which patch the module in
+# memory before calling run_ablation().
 
 _HEADLESS_GNNS = {"gcn", "gin"}
 
@@ -99,6 +135,88 @@ def iter_ablation_grid():
         if gnn_type in _HEADLESS_GNNS and n_heads != N_HEADS[0]:
             continue
         yield combo
+
+
+# Which keys each TabDiff evaluator contributes to results_full_averaged.json.
+# Used to decide whether an existing result already carries the suite.
+_TABDIFF_KEYS = {
+    "density": ("shape", "trend", "density_overall"),
+    "c2st":    ("c2st",),
+    "dcr":     ("dcr_tabdiff",),
+    "quality": ("alpha_precision", "beta_recall"),
+}
+
+
+def _tabdiff_keys(metrics) -> list:
+    return [key for metric in metrics for key in _TABDIFF_KEYS.get(metric, ())]
+
+
+def apply_cli_overrides(args: argparse.Namespace) -> None:
+    """Patch the module-level ablation/evaluation constants from parsed args.
+
+    Called at the top of run_ablation(), so a SLURM job can select the
+    evaluator, switch the TabDiff fidelity suite on and restrict the grid
+    without touching this file. Any argument left at None is ignored, which
+    keeps the notebook workflow (assign to the module globals directly, then
+    call run_ablation) working unchanged.
+    """
+    global EVALUATOR, TABDIFF_FIDELITY, TABDIFF_METRICS
+    global ABLATION_STEPS, N_GEN_SEEDS, N_CLF_SEEDS
+    global GNN_TYPES, N_LAYERS, D_MODELS, TOP_KS, N_HEADS, ATTENTIONS
+
+    scalars = {
+        "evaluator":        "EVALUATOR",
+        "tabdiff_fidelity": "TABDIFF_FIDELITY",
+        "steps":            "ABLATION_STEPS",
+        "n_gen_seeds":      "N_GEN_SEEDS",
+        "n_clf_seeds":      "N_CLF_SEEDS",
+    }
+    grids = {
+        "grid_gnn_types": "GNN_TYPES",
+        "grid_n_layers":  "N_LAYERS",
+        "grid_d_models":  "D_MODELS",
+        "grid_top_ks":    "TOP_KS",
+        "grid_n_heads":   "N_HEADS",
+    }
+
+    for arg_name, const_name in {**scalars, **grids}.items():
+        value = getattr(args, arg_name, None)
+        if value is not None:
+            globals()[const_name] = value
+
+    if getattr(args, "tabdiff_metrics", None) is not None:
+        TABDIFF_METRICS = tuple(args.tabdiff_metrics)
+
+    # argparse cannot express a list of bools; 0/1 ints are converted here.
+    if getattr(args, "grid_attentions", None) is not None:
+        ATTENTIONS = [bool(a) for a in args.grid_attentions]
+
+
+def describe_config(show_grid: bool = True) -> str:
+    """One-block summary of the active constants, for the job log header.
+
+    ``show_grid`` is off when the combinations come from an explicit manifest
+    rather than the cartesian product, where printing the grid constants would
+    describe combinations that are not going to run.
+    """
+    lines = [
+        f"  evaluator        : {EVALUATOR}",
+        f"  tabdiff fidelity : {TABDIFF_FIDELITY}"
+        + (f"  {list(TABDIFF_METRICS)}" if TABDIFF_FIDELITY else ""),
+        f"  steps            : {ABLATION_STEPS}",
+        f"  seeds            : {N_GEN_SEEDS} gen x {N_CLF_SEEDS} clf",
+    ]
+    if show_grid:
+        lines += [
+            f"  gnn_types        : {GNN_TYPES}",
+            f"  n_layers         : {N_LAYERS}",
+            f"  d_models         : {D_MODELS}",
+            f"  top_ks           : {TOP_KS}",
+            f"  n_heads          : {N_HEADS}",
+            f"  attentions       : {ATTENTIONS}",
+            f"  grid size        : {len(list(iter_ablation_grid()))} combinations",
+        ]
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
@@ -296,6 +414,10 @@ def _run_one(
     device: str,
     seed: int,
     skip_if_done: bool,
+    topk_mode: str = "fixed",
+    k_min: int = 1,
+    topk_warmup_steps: int = 0,
+    topk_log_every: int = 100,
 ) -> dict:
     """Train once, then evaluate with N_GEN_SEEDS x N_CLF_SEEDS protocol.
 
@@ -307,6 +429,7 @@ def _run_one(
     import lib
     from train import train as tabddpm_train
     from sample import sample as tabddpm_sample
+    from tab_ddpm import topk_logging
     if EVALUATOR == "xgboost":
         from eval_xgboost import train_xgboost as train_eval_model
         eval_results_json = "results_xgboost.json"
@@ -325,14 +448,32 @@ def _run_one(
 
     dir_name       = exp_dir_name(gnn_type, n_layers, d_model, top_k, n_heads,
                                   use_attention)
-    parent_dir     = os.path.join(exp_root, "exp", dataset_name, "ablation", dir_name)
+    # adaptive_jenks runs land in a sibling tree so they can never collide with
+    # (or be mistaken for) a fixed-mode result directory of the same combo.
+    ablation_subdir = "ablation_adaptive_jenks" if topk_mode == "adaptive_jenks" else "ablation"
+    parent_dir     = os.path.join(exp_root, "exp", dataset_name, ablation_subdir, dir_name)
     real_data_path = os.path.join(data_root, dataset_cfg["real_data_path"])
     results_file   = os.path.join(parent_dir, "results_full_averaged.json")
 
+    # Called unconditionally, for every combo, before the skip check below --
+    # so a combo that gets skipped (or a later combo) can never append to a
+    # previous combo's topk_stats.csv. A no-op for topk_mode="fixed" runs
+    # (DynamicAdjacency never calls log_rows on that path), but cheap and
+    # literal is safer than conditional.
+    topk_logging.set_context(output_dir=parent_dir, log_every=topk_log_every, tag="")
+
     if skip_if_done and os.path.exists(results_file):
-        print(f"  [SKIP] {dir_name} -- already done")
         with open(results_file) as fh:
-            return json.load(fh)
+            previous = json.load(fh)
+        # A results file written before --tabdiff_fidelity was requested is not
+        # "done" for this run: skipping it would silently return the old metrics
+        # and the Shape/Trend columns would never appear. Re-run instead.
+        wanted = set(_tabdiff_keys(TABDIFF_METRICS)) if TABDIFF_FIDELITY else set()
+        if not wanted - set(previous):
+            print(f"  [SKIP] {dir_name} -- already done")
+            return previous
+        print(f"  [RERUN] {dir_name} -- existing results lack "
+              f"{sorted(wanted - set(previous))}")
 
     os.makedirs(parent_dir, exist_ok=True)
 
@@ -381,6 +522,10 @@ def _run_one(
         sparsity_top_k=top_k,
         dropout=0.0,
         use_attention=use_attention,
+        topk_mode=topk_mode,
+        k_min=k_min,
+        topk_warmup_steps=topk_warmup_steps,
+        num_timesteps=ABLATION_NUM_TIMESTEPS,
     )
 
     # ---- 1. Train (single run) ---------------------------------------------
@@ -415,6 +560,11 @@ def _run_one(
     for gen_seed in range(N_GEN_SEEDS):
         gen_dir = os.path.join(parent_dir, f"gen_seed_{gen_seed}")
         os.makedirs(gen_dir, exist_ok=True)
+
+        # All 5 sample() calls of this combo write into the same
+        # topk_stats.csv (parent_dir); tag each call's rows with its gen
+        # seed so they stay attributable after the fact.
+        topk_logging.set_tag(str(gen_seed))
 
         # 2a. Generate synthetic dataset
         tabddpm_sample(
@@ -475,11 +625,28 @@ def _run_one(
                if all_gen_metrics["mia_auc"] else "")
         )
 
-        # 2b'. TabDiff-paper fidelity metrics (per gen_seed)
+        # 2b'. TabDiff-paper fidelity metrics (per gen_seed): Shape / Trend
+        #      (feature-correlation similarity), C2ST, TabDiff DCR and
+        #      alpha-precision / beta-recall.
         if TABDIFF_FIDELITY:
-            from eval_tabdiff_fidelity import compute_tabdiff_fidelity
-            fid = compute_tabdiff_fidelity(gen_dir, real_data_path,
-                                           device=device)
+            # The TabDiff DCR builds |syn| x |train| distance blocks on the
+            # GPU. The sampler's model + diffusion are still resident at this
+            # point, so release them first or the DCR OOMs on small cards.
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            try:
+                from eval_tabdiff_fidelity import compute_tabdiff_fidelity
+                fid = compute_tabdiff_fidelity(gen_dir, real_data_path,
+                                               device=device,
+                                               metrics=TABDIFF_METRICS,
+                                               seed=gen_seed)
+            except Exception as exc:
+                # A missing sdmetrics must not cost us the whole combination:
+                # the TabDDPM protocol metrics above are already computed.
+                print(f"    [WARN] TabDiff fidelity suite failed for "
+                      f"gen_seed={gen_seed}: {exc}")
+                fid = {}
             for key, value in fid.items():
                 all_gen_metrics[key].append(value)
             if fid:
@@ -553,7 +720,7 @@ def _run_one(
         ("trend",           "Trend (pair-wise corr)        [up]  "),
         ("density_overall", "Density overall               [up]  "),
         ("c2st",            "C2ST (detection)              [up]  "),
-        ("dcr_tabdiff",     "DCR (TabDiff, ~0.5 good)            "),
+        ("dcr_tabdiff",     "DCR (TabDiff, balanced, ~0.5 good)  "),
         ("alpha_precision", "Alpha-precision               [up]  "),
         ("beta_recall",     "Beta-recall                   [up]  "),
     ]
@@ -577,11 +744,16 @@ def _run_one(
 def aggregate_summary(
     dataset_name: str,
     args: argparse.Namespace,
+    combos: Optional[list] = None,
 ) -> list:
     """Build ablation_summary.json from per-combo results_full_averaged.json files.
 
     Safe to call after all SLURM array tasks finish — reads only per-combo
     files that are never shared between tasks, so there is no race condition.
+
+    ``combos`` overrides the cartesian grid with an explicit combination list;
+    the HPC re-run passes the manifest read from tabddpm_ablation/ so the
+    summary covers exactly the combinations that were submitted.
     """
     exp_root     = os.path.abspath(args.exp_root if args.exp_root else args.repo_root)
     ablation_dir = os.path.join(exp_root, "exp", dataset_name, "ablation")
@@ -589,7 +761,8 @@ def aggregate_summary(
     os.makedirs(ablation_dir, exist_ok=True)
 
     summary: list = []
-    for gnn_type, n_layers, d_model, top_k, n_heads, use_attention in iter_ablation_grid():
+    for gnn_type, n_layers, d_model, top_k, n_heads, use_attention in (
+            combos if combos is not None else iter_ablation_grid()):
         name         = exp_dir_name(gnn_type, n_layers, d_model, top_k, n_heads,
                                     use_attention)
         results_file = os.path.join(ablation_dir, name, "results_full_averaged.json")
@@ -621,7 +794,49 @@ def aggregate_summary(
     n_missing = sum(1 for e in summary if e["status"] == "missing")
     print(f"  [{dataset_name}] Aggregated: done={n_done}  missing={n_missing}"
           f"  -> {summary_path}")
+
+    if getattr(args, "csv", False):
+        summary_to_csv(summary, os.path.join(ablation_dir, "ablation_summary.csv"))
+
     return summary
+
+
+def summary_to_csv(summary: list, csv_path: str) -> str:
+    """Flatten ablation_summary.json into one row per combination.
+
+    Each `metrics` entry is a {"mean": ..., "std": ...} pair, so it becomes two
+    columns (`<metric>_mean`, `<metric>_std`) — the shape a thesis table or a
+    pandas groupby wants. Columns are the union over all rows, so combos that
+    ran without the TabDiff suite simply leave those cells empty.
+    """
+    import csv
+
+    config_cols = ["dataset", "exp_name", "gnn_type", "n_layers", "d_model",
+                   "top_k", "n_heads", "use_attention", "steps",
+                   "n_gen_seeds", "n_clf_seeds", "status"]
+
+    rows, metric_cols = [], []
+    for entry in summary:
+        row = {k: entry.get(k) for k in config_cols}
+        for metric, value in (entry.get("metrics") or {}).items():
+            if isinstance(value, dict) and "mean" in value:
+                pairs = [(f"{metric}_mean", value["mean"]),
+                         (f"{metric}_std", value.get("std"))]
+            else:
+                pairs = [(metric, value)]
+            for col, val in pairs:
+                if col not in metric_cols:
+                    metric_cols.append(col)
+                row[col] = val
+        rows.append(row)
+
+    with open(csv_path, "w", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=config_cols + metric_cols)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    print(f"  CSV -> {csv_path}")
+    return csv_path
 
 
 def run_ablation(
@@ -644,8 +859,13 @@ def run_ablation(
     single_combo  : optional (gnn_type, n_layers, d_model, top_k, n_heads)
                     tuple for cluster single-job mode; if None, run all.
     """
+    apply_cli_overrides(args)
+
     if getattr(args, "aggregate", False):
         return aggregate_summary(dataset_name, args)
+
+    print(f"\nAblation configuration for {dataset_name}:")
+    print(describe_config(show_grid=single_combo is None))
 
     repo_root = os.path.abspath(args.repo_root)
     data_root = os.path.abspath(args.data_root if args.data_root else repo_root)
@@ -688,6 +908,13 @@ def run_ablation(
                 device=args.device,
                 seed=args.seed,
                 skip_if_done=skip_flag,
+                # getattr with a default: the Kaggle notebooks build this
+                # Namespace by hand (see run_ablation docstring) and don't
+                # set these fields, so a plain attribute access would raise.
+                topk_mode=getattr(args, "topk_mode", "fixed"),
+                k_min=getattr(args, "k_min", 1),
+                topk_warmup_steps=getattr(args, "topk_warmup_steps", 0),
+                topk_log_every=getattr(args, "topk_log_every", 100),
             )
         except Exception:
             traceback.print_exc()
@@ -746,6 +973,10 @@ def run_ablation(
                 device=args.device,
                 seed=args.seed,
                 skip_if_done=skip_flag,
+                topk_mode=getattr(args, "topk_mode", "fixed"),
+                k_min=getattr(args, "k_min", 1),
+                topk_warmup_steps=getattr(args, "topk_warmup_steps", 0),
+                topk_log_every=getattr(args, "topk_log_every", 100),
             )
             entry["status"]  = "done"
             entry["metrics"] = result
@@ -774,14 +1005,17 @@ def make_parser(dataset_name: str = "") -> argparse.ArgumentParser:
     desc = f"Ablation study{f' for {dataset_name}' if dataset_name else ''}."
     p = argparse.ArgumentParser(description=desc)
 
+    # NOTE: no choices= on these. The grid constants are overridable per run
+    # (--grid_* below), so pinning the accepted values to the module defaults
+    # would reject perfectly valid SLURM array tasks.
     grp = p.add_argument_group("Ablation combination (all required for single-job mode)")
-    grp.add_argument("--gnn_type", type=str, choices=GNN_TYPES, default=None,
+    grp.add_argument("--gnn_type", type=str, default=None,
                      metavar="TYPE", help="gcn | gat | gatv2 | gin")
-    grp.add_argument("--n_layers", type=int, choices=N_LAYERS,  default=None, metavar="N")
-    grp.add_argument("--d_model",  type=int, choices=D_MODELS,  default=None, metavar="D")
-    grp.add_argument("--top_k",    type=int, choices=TOP_KS,    default=None, metavar="K",
+    grp.add_argument("--n_layers", type=int, default=None, metavar="N")
+    grp.add_argument("--d_model",  type=int, default=None, metavar="D")
+    grp.add_argument("--top_k",    type=int, default=None, metavar="K",
                      help="sparsity_top_k (0 = dense)")
-    grp.add_argument("--n_heads",  type=int, choices=N_HEADS,   default=None, metavar="H",
+    grp.add_argument("--n_heads",  type=int, default=None, metavar="H",
                      help="Attention heads (ignored by gcn/gin)")
     grp.add_argument("--use_attention", type=int, choices=[0, 1], default=None, metavar="A",
                      help="Dense self-attention sublayer per block: 1=on (default), "
@@ -799,9 +1033,66 @@ def make_parser(dataset_name: str = "") -> argparse.ArgumentParser:
     env.add_argument("--no_skip",   action="store_true", default=False,
                      help="Re-run even if results already exist")
 
+    ev = p.add_argument_group("Evaluation protocol")
+    ev.add_argument("--evaluator", type=str, choices=["catboost", "xgboost"],
+                    default=None,
+                    help="ML-efficiency model: catboost (TabDDPM protocol, default) "
+                         "or xgboost (TabDiff eval/mle protocol)")
+    ev.add_argument("--tabdiff_fidelity", dest="tabdiff_fidelity",
+                    action="store_const", const=True, default=None,
+                    help="Also compute the TabDiff-paper suite: Shape (column "
+                         "densities), Trend (pair-wise feature correlations), "
+                         "C2ST, TabDiff DCR, alpha-precision / beta-recall. "
+                         "Requires sdmetrics for Shape/Trend/C2ST.")
+    ev.add_argument("--no_tabdiff_fidelity", dest="tabdiff_fidelity",
+                    action="store_const", const=False,
+                    help="Force the TabDiff suite off (overrides the module default)")
+    ev.add_argument("--tabdiff_metrics", nargs="+", default=None, metavar="M",
+                    choices=["density", "c2st", "dcr", "quality"],
+                    help="Subset of the TabDiff suite to run "
+                         "(default: density c2st dcr quality). "
+                         "'density' is the Shape/Trend pair.")
+    ev.add_argument("--steps",       type=int, default=None, metavar="S",
+                    help=f"Training steps per combination (default: {ABLATION_STEPS})")
+    ev.add_argument("--n_gen_seeds", type=int, default=None, metavar="G",
+                    help=f"Generation seeds per combination (default: {N_GEN_SEEDS})")
+    ev.add_argument("--n_clf_seeds", type=int, default=None, metavar="C",
+                    help=f"Classifier seeds per generated set (default: {N_CLF_SEEDS})")
+
+    tk = p.add_argument_group("Adaptive top-k (Section 5.4.4)")
+    tk.add_argument("--topk_mode", type=str, choices=["fixed", "adaptive_jenks"],
+                    default="fixed",
+                    help="fixed (default): today's top-k masking, bit-identical. "
+                         "adaptive_jenks: per-node budget from a 2-class Jenks "
+                         "split of the raw scores (adaptive_adjacency.py).")
+    tk.add_argument("--k_min", type=int, default=1, metavar="K",
+                    help="Floor on the adaptive budget (adaptive_jenks only, default: 1)")
+    tk.add_argument("--topk_warmup_steps", type=int, default=0, metavar="S",
+                    help="Training-mode forward calls before adaptive_jenks "
+                         "switches on; before that, use the fixed top_k path "
+                         "(adaptive_jenks only, default: 0)")
+    tk.add_argument("--topk_log_every", type=int, default=100, metavar="N",
+                    help="Write a topk_stats.csv row every N training steps "
+                         "(adaptive_jenks only; sampling rows are unthrottled, "
+                         "default: 100)")
+
+    gr = p.add_argument_group(
+        "Grid overrides (affect the full-grid and --aggregate modes)")
+    gr.add_argument("--grid_gnn_types", nargs="+", type=str,   default=None, metavar="T")
+    gr.add_argument("--grid_n_layers",  nargs="+", type=int,   default=None, metavar="N")
+    gr.add_argument("--grid_d_models",  nargs="+", type=int,   default=None, metavar="D")
+    gr.add_argument("--grid_top_ks",    nargs="+", type=int,   default=None, metavar="K")
+    gr.add_argument("--grid_n_heads",   nargs="+", type=int,   default=None, metavar="H")
+    gr.add_argument("--grid_attentions", nargs="+", type=int, choices=[0, 1],
+                    default=None, metavar="A",
+                    help="Self-attention sublayer values to sweep, e.g. `0 1`")
+
     p.add_argument("--aggregate", action="store_true", default=False,
                    help="Build ablation_summary.json from finished per-combo results "
                         "(run this after all SLURM array tasks complete)")
+    p.add_argument("--csv", action="store_true", default=False,
+                   help="With --aggregate, also write a flat ablation_summary.csv "
+                        "(one row per combination, one column per metric)")
 
     p.set_defaults(skip_if_done=True)
     return p
