@@ -1,0 +1,3 @@
+# Transfer artifacts (e.g. the tarball shipped to ARIS), not code.
+*.tar.gz
+update.tar.gz
