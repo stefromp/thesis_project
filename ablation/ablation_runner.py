@@ -395,6 +395,37 @@ def _load_raw_syn(gen_dir: str, cat_enc):
 
 
 # ---------------------------------------------------------------------------
+# Per-seed records (additive: results_full_averaged.json is not affected)
+# ---------------------------------------------------------------------------
+
+PER_SEED_FILE = "per_seed_scores.csv"
+
+
+def _append_per_seed(path: str, gen_seed: int, clf_seed, metrics: dict,
+                     len_before: dict) -> None:
+    """Append one row per metric that gained a value since ``len_before``.
+
+    Long format (gen_seed, clf_seed, metric, value), so classification and
+    regression reports need no fixed column set; clf_seed is empty for the
+    per-generation-seed metrics (DCR, Wasserstein, MIA, TabDiff suite). Only
+    reads the lists the aggregation already builds and never creates a key in
+    them: they are defaultdicts, and a new empty key would add a NaN entry to
+    results_full_averaged.json.
+    """
+    import csv
+    rows = [(gen_seed, "" if clf_seed is None else clf_seed, key, repr(float(values[-1])))
+            for key, values in metrics.items() if len(values) > len_before.get(key, 0)]
+    if not rows:
+        return
+    new_file = not os.path.exists(path)
+    with open(path, "a", newline="") as fh:
+        writer = csv.writer(fh)
+        if new_file:
+            writer.writerow(["gen_seed", "clf_seed", "metric", "value"])
+        writer.writerows(rows)
+
+
+# ---------------------------------------------------------------------------
 # Single ablation run  (train -> multi-seed sample+eval loop)
 # ---------------------------------------------------------------------------
 
@@ -477,6 +508,12 @@ def _run_one(
               f"{sorted(wanted - set(previous))}")
 
     os.makedirs(parent_dir, exist_ok=True)
+
+    # One row per (gen_seed, clf_seed) for paired comparisons. A partial file
+    # from an interrupted attempt would mix two runs' seeds: start clean.
+    per_seed_path = os.path.join(parent_dir, PER_SEED_FILE)
+    if os.path.exists(per_seed_path):
+        os.remove(per_seed_path)
 
     print(f"\n{'=' * 72}")
     print(f"  DATASET : {dataset_name}")
@@ -561,6 +598,7 @@ def _run_one(
     for gen_seed in range(N_GEN_SEEDS):
         gen_dir = os.path.join(parent_dir, f"gen_seed_{gen_seed}")
         os.makedirs(gen_dir, exist_ok=True)
+        gen_len_before = {k: len(v) for k, v in all_gen_metrics.items()}
 
         # All 5 sample() calls of this combo write into the same
         # topk_stats.csv (parent_dir); tag each call's rows with its gen
@@ -654,6 +692,8 @@ def _run_one(
                 print(f"  [gen_seed={gen_seed}] tabdiff fidelity: "
                       + "  ".join(f"{k}={v:.4f}" for k, v in fid.items()))
 
+        _append_per_seed(per_seed_path, gen_seed, None, all_gen_metrics, gen_len_before)
+
         # 2c. ML-efficiency utility (CatBoost or XGBoost): N_CLF_SEEDS runs
         for clf_seed in range(N_CLF_SEEDS):
             clf_eval_T = {**T_dict_eval, "seed": clf_seed}
@@ -666,6 +706,7 @@ def _run_one(
                 change_val=False,
             )
             run_report = lib.load_json(os.path.join(gen_dir, eval_results_json))
+            clf_len_before = {k: len(v) for k, v in all_test_metrics.items()}
             # For classification, metrics["test"] is sklearn's classification_report
             # (output_dict=True): scalar entries (accuracy, roc_auc, score) sit
             # alongside nested per-class / averaged dicts. Keep the scalars and
@@ -677,6 +718,7 @@ def _run_one(
                     for sub, subval in value.items():
                         if isinstance(subval, (int, float)):
                             all_test_metrics[f"{metric}/{sub}"].append(subval)
+            _append_per_seed(per_seed_path, gen_seed, clf_seed, all_test_metrics, clf_len_before)
 
         # Reclaim GPU memory before the next generation seed. Each seed builds a
         # fresh model + diffusion on-device inside tabddpm_sample; without this,
