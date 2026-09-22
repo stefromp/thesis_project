@@ -58,7 +58,11 @@ DATASET_CFG: dict = {
     "batch_size":              4096,
     # Sampling
     "num_samples":             1264000,
-    "sample_batch_size":       150000,
+    # 50 000, not TabDDPM's 150 000 (sized for its MLP): with the graph
+    # denoiser (52 nodes, GATv2 d_model 128, 3 blocks) a 150 000-row sampling
+    # batch peaks at ~38 GiB, ~15 GiB at 50 000. Only the batching of
+    # sampling changes -- sample_all trims to num_samples either way.
+    "sample_batch_size":       50000,
     # Transformations
     "train_normalization":     "quantile",
     "eval_normalization":      None,

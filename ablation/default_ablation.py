@@ -45,7 +45,10 @@ DATASET_CFG: dict = {
     # Paths
     "real_data_path":          "data/default/",
     # Model
-    "num_numerical_features":  20,
+    # 14, not TabDDPM's config value of 20: data/default/ has 14 numerical +
+    # 9 categorical columns, and sample.py splits the generated matrix at this
+    # index (20 crashes the cat inverse-transform). The Kaggle notebook uses 14.
+    "num_numerical_features":  14,
     "num_classes":             2,
     "is_y_cond":               True,
     "rtdl_d_layers":           [256, 1024, 1024, 1024, 1024, 512],

@@ -1,3 +1,8 @@
 # Transfer artifacts (e.g. the tarball shipped to ARIS), not code.
 *.tar.gz
 update.tar.gz
+
+# Python bytecode and CatBoost training logs (runtime artifacts). Files already
+# tracked under these paths stay tracked until removed with git rm --cached.
+__pycache__/
+catboost_info/

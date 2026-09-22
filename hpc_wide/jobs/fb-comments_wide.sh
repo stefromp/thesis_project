@@ -1,0 +1,78 @@
+#!/bin/bash -l
+
+#SBATCH --job-name=fb-comments_wide
+#SBATCH --output=/work/pr019/atvoulo/Rompos/jobs_out/%x_%j.out
+#SBATCH --error=/work/pr019/atvoulo/Rompos/jobs_out/%x_%j.err
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=26
+#SBATCH --time=24:00:00
+#SBATCH --mem=120G
+#SBATCH --partition=gpu
+#SBATCH --gres=gpu:a100:1
+#SBATCH --account=pr019022_gpu
+
+# NOTE: the #SBATCH --output/--error paths are literal on purpose: SLURM parses
+# these directives before any shell expansion, so they cannot use $HPC_ROOT.
+# %x (job name) + %j (job id) make every log file unique. hpc_wide/submit_all.sh
+# additionally overrides --job-name/--output/--error per mode on the command line.
+
+# ---------------------------------------------------------------------------
+# Adaptive rule: adaptive_jenks (default), adaptive_sparsemax or
+# adaptive_entmax15. Protocol: budget (default; full training, 1 x 1 seeds)
+# or full (5 x 10). Override from the environment, e.g.
+#   TOPK_MODE=adaptive_entmax15 PROTOCOL=budget sbatch hpc_wide/jobs/fb-comments_wide.sh
+# (hpc_wide/submit_all.sh passes both via --export.)
+# ---------------------------------------------------------------------------
+TOPK_MODE="${TOPK_MODE:-adaptive_jenks}"
+PROTOCOL="${PROTOCOL:-budget}"
+
+# Verbatim from the cluster's job template -- kept byte-for-byte on purpose,
+# so the x-prefix comparison and unquoted expansion are intentional here.
+# shellcheck disable=SC2268,SC2086
+if [ x$SLURM_CPUS_PER_TASK == x ]; then
+  export OMP_NUM_THREADS=1
+else
+  export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+fi
+
+module purge
+module load hdf5
+module load python/3.10
+module load cuda/11.8
+module load cmake
+
+export TORCH_CUDA_ARCH_LIST="8.0"
+
+# --- not -e: a failing combination must not kill the loop -------------------
+set -uo pipefail
+
+# ---------------------------------------------------------------------------
+# Paths. Defined once, overridable from the environment.
+# ---------------------------------------------------------------------------
+HPC_ROOT="${HPC_ROOT:-/work/pr019/atvoulo/Rompos}"
+REPO_ROOT="${REPO_ROOT:-${HPC_ROOT}/thesis_project}"
+PYTHON_BIN="${PYTHON_BIN:-${HPC_ROOT}/venvs/tabddpm310/bin/python}"
+
+# ---------------------------------------------------------------------------
+# Warm-up: training steps that keep the fixed top-k path before the adaptive
+# rule takes over. 0 = adaptive from step 0, as in every other adaptive run.
+# ---------------------------------------------------------------------------
+TOPK_WARMUP_STEPS="${TOPK_WARMUP_STEPS:-0}"
+
+K_MIN="${K_MIN:-1}"
+TOPK_LOG_EVERY="${TOPK_LOG_EVERY:-100}"
+DEVICE="${DEVICE:-cuda:0}"
+SEED="${SEED:-0}"
+
+DATASET="fb-comments"
+
+export HPC_ROOT REPO_ROOT PYTHON_BIN DATASET TOPK_MODE PROTOCOL \
+       TOPK_WARMUP_STEPS K_MIN TOPK_LOG_EVERY DEVICE SEED
+
+# shellcheck source-path=SCRIPTDIR
+# shellcheck source=../common.sh
+. "${REPO_ROOT}/hpc_wide/common.sh"
+
+run_dataset
