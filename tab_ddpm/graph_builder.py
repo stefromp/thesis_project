@@ -27,9 +27,18 @@ _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
-from adaptive_adjacency import build_adjacency  # noqa: E402
+from adaptive_adjacency import (  # noqa: E402
+    ENTMAX_ALPHA,
+    build_adjacency,
+    build_adjacency_entmax,
+)
 
 from . import topk_logging
+
+# Every value DynamicAdjacency accepts for topk_mode. Anything else raises in
+# __init__ -- the forward only tests for "fixed", so an unchecked typo would
+# otherwise run an adaptive rule silently.
+TOPK_MODES = ("fixed", "adaptive_jenks", *ENTMAX_ALPHA)
 
 
 # ---------------------------------------------------------------------------
@@ -149,13 +158,19 @@ class DynamicAdjacency(nn.Module):
         d_model: node embedding dimension.
         top_k:   if > 0, keep only the top-k off-diagonal entries per row;
                  0 means dense soft adjacency (full sigmoid). Also the k used
-                 during adaptive_jenks's warm-up phase (see topk_mode).
-        topk_mode: "fixed" (default; today's behaviour, bit-identical) or
+                 during the adaptive modes' warm-up phase (see topk_mode).
+        topk_mode: one of TOPK_MODES.
+                 "fixed" (default; today's behaviour, bit-identical);
                  "adaptive_jenks" (per-node budget via a 2-class Jenks split
-                 of the raw scores, see adaptive_adjacency.build_adjacency).
-        k_min:   floor on the adaptive budget (adaptive_jenks only).
+                 of the raw scores, see adaptive_adjacency.build_adjacency);
+                 "adaptive_sparsemax" / "adaptive_entmax15" (kept edges = the
+                 support of sparsemax / entmax-1.5 over each row, see
+                 adaptive_adjacency.build_adjacency_entmax). All three
+                 adaptive modes only choose the mask; the weights are the same
+                 sigmoid gates as in "fixed".
+        k_min:   floor on the adaptive budget (adaptive modes only).
         topk_warmup_steps: while the number of training-mode forward calls
-                 seen so far is below this, adaptive_jenks uses the fixed
+                 seen so far is below this, the adaptive modes use the fixed
                  top_k path instead (warm-up). Ignored in "fixed" mode.
         num_timesteps: diffusion horizon T, used only to bucket the logged
                  per-sample budgets by t (10 equal-width buckets over
@@ -173,6 +188,8 @@ class DynamicAdjacency(nn.Module):
         num_timesteps: int = 1000,
     ) -> None:
         super().__init__()
+        if topk_mode not in TOPK_MODES:
+            raise ValueError(f"topk_mode must be one of {TOPK_MODES}, got {topk_mode!r}")
         self.n_nodes = n_nodes
         self.top_k = top_k
         self.scale = math.sqrt(d_model)
@@ -203,7 +220,7 @@ class DynamicAdjacency(nn.Module):
         Args:
             node_emb:  (B, N, d_model) node embedding tensor.
             timesteps: (B,) diffusion timestep per sample, or None. Used only
-                       for adaptive_jenks logging (t-bucket assignment); the
+                       for adaptive-mode logging (t-bucket assignment); the
                        "fixed" path never reads it.
             block_idx: index of the owning block, for logging only.
 
@@ -241,7 +258,9 @@ class DynamicAdjacency(nn.Module):
             return adj
 
         # -------------------------------------------------------------------
-        # topk_mode == "adaptive_jenks"
+        # Adaptive modes: "adaptive_jenks", "adaptive_sparsemax",
+        # "adaptive_entmax15". Warm-up, the dense fallback and logging are
+        # shared; only the rule applied after warm-up differs.
         # -------------------------------------------------------------------
         train_step = self._train_step
         warmed_up = (not self.training) or (train_step >= self.topk_warmup_steps)
@@ -262,7 +281,14 @@ class DynamicAdjacency(nn.Module):
             A = A.masked_fill(eye_bool, 1.0)
             k_dense = torch.full((B,), float(N - 1), device=scores.device, dtype=scores.dtype)
             stats = {"k_mean": k_dense.mean(), "k_per_sample": k_dense}
+        elif warmed_up and self.topk_mode in ENTMAX_ALPHA:
+            A, stats = build_adjacency_entmax(
+                scores,
+                alpha=ENTMAX_ALPHA[self.topk_mode],
+                k_min=self.k_min,
+            )
         else:
+            # adaptive_jenks after warm-up, or any adaptive mode during it
             k_fixed = None if warmed_up else self.top_k
             A, stats = build_adjacency(
                 scores,

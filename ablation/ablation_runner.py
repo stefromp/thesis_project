@@ -448,9 +448,10 @@ def _run_one(
 
     dir_name       = exp_dir_name(gnn_type, n_layers, d_model, top_k, n_heads,
                                   use_attention)
-    # adaptive_jenks runs land in a sibling tree so they can never collide with
-    # (or be mistaken for) a fixed-mode result directory of the same combo.
-    ablation_subdir = "ablation_adaptive_jenks" if topk_mode == "adaptive_jenks" else "ablation"
+    # Each adaptive mode lands in its own sibling tree (ablation_adaptive_jenks,
+    # ablation_adaptive_sparsemax, ablation_adaptive_entmax15) so it can never
+    # collide with (or be mistaken for) a fixed-mode directory of the same combo.
+    ablation_subdir = "ablation" if topk_mode == "fixed" else f"ablation_{topk_mode}"
     parent_dir     = os.path.join(exp_root, "exp", dataset_name, ablation_subdir, dir_name)
     real_data_path = os.path.join(data_root, dataset_cfg["real_data_path"])
     results_file   = os.path.join(parent_dir, "results_full_averaged.json")
@@ -1060,20 +1061,26 @@ def make_parser(dataset_name: str = "") -> argparse.ArgumentParser:
                     help=f"Classifier seeds per generated set (default: {N_CLF_SEEDS})")
 
     tk = p.add_argument_group("Adaptive top-k (Section 5.4.4)")
-    tk.add_argument("--topk_mode", type=str, choices=["fixed", "adaptive_jenks"],
+    tk.add_argument("--topk_mode", type=str,
+                    choices=["fixed", "adaptive_jenks",
+                             "adaptive_sparsemax", "adaptive_entmax15"],
                     default="fixed",
                     help="fixed (default): today's top-k masking, bit-identical. "
                          "adaptive_jenks: per-node budget from a 2-class Jenks "
-                         "split of the raw scores (adaptive_adjacency.py).")
+                         "split of the raw scores. adaptive_sparsemax / "
+                         "adaptive_entmax15: kept edges = support of sparsemax "
+                         "(alpha=2) / entmax-1.5 over each row; needs the "
+                         "entmax package. All adaptive modes only choose the "
+                         "mask (adaptive_adjacency.py).")
     tk.add_argument("--k_min", type=int, default=1, metavar="K",
-                    help="Floor on the adaptive budget (adaptive_jenks only, default: 1)")
+                    help="Floor on the adaptive budget (adaptive modes only, default: 1)")
     tk.add_argument("--topk_warmup_steps", type=int, default=0, metavar="S",
-                    help="Training-mode forward calls before adaptive_jenks "
+                    help="Training-mode forward calls before the adaptive rule "
                          "switches on; before that, use the fixed top_k path "
-                         "(adaptive_jenks only, default: 0)")
+                         "(adaptive modes only, default: 0)")
     tk.add_argument("--topk_log_every", type=int, default=100, metavar="N",
                     help="Write a topk_stats.csv row every N training steps "
-                         "(adaptive_jenks only; sampling rows are unthrottled, "
+                         "(adaptive modes only; sampling rows are unthrottled, "
                          "default: 100)")
 
     gr = p.add_argument_group(

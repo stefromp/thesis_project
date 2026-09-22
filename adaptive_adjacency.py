@@ -6,6 +6,11 @@ budget obtained by a 2-class Jenks natural-breaks split of the raw scores phi.
 
 Drop-in: call build_adjacency(phi, ...) where top-k is currently applied,
 i.e. after Eq. (5.4.7) and before Eq. (5.4.8).
+
+build_adjacency_entmax(phi, alpha, ...) is a second rule for the same slot:
+the kept edges are the support of alpha-entmax (sparsemax for alpha=2,
+entmax-1.5 for alpha=1.5) over each row. Mask-only -- the weights on the kept
+edges are the same sigmoid gates in both.
 """
 
 import torch
@@ -86,4 +91,68 @@ def build_adjacency(phi, k_fixed=None, k_min=1, sym="none",
     k_float = k.float()
     stats["k_mean"] = k_float.mean()
     stats["k_per_sample"] = k_float.mean(dim=-1)              # [B], for per-t-bucket logging
+    return A, stats
+
+
+# ---------------------------------------------------------------------------
+# alpha-entmax support (second adaptive rule, same role as the Jenks budget)
+# ---------------------------------------------------------------------------
+
+# alpha per topk_mode. Fixed, not learned: no new trainable parameters.
+ENTMAX_ALPHA = {"adaptive_sparsemax": 2.0, "adaptive_entmax15": 1.5}
+
+
+@torch.no_grad()
+def entmax_support(phi, alpha, k_min=1):
+    """
+    Support of alpha-entmax over each row's off-diagonal scores.
+
+    phi   : [B, F, F] raw scores; row i = neighbours of node i
+    alpha : 2.0 (sparsemax) or 1.5 (entmax-1.5); both exact, sort-based
+    returns
+        mask : [B, F, F] bool, True = kept edge; diagonal always False
+        k    : [B, F]    support size per node (>= k_min)
+    """
+    # Lazy: only these two modes need the package (Peters, Niculae & Martins).
+    from entmax import entmax15, sparsemax
+
+    B, F, _ = phi.shape
+    eye = torch.eye(F, dtype=torch.bool, device=phi.device).expand(B, F, F)
+    phi_off = phi.detach().masked_fill(eye, float("-inf"))   # drop self-loops
+
+    if alpha == 2.0:
+        p = sparsemax(phi_off, dim=-1)
+    elif alpha == 1.5:
+        p = entmax15(phi_off, dim=-1)
+    else:
+        raise ValueError(f"alpha must be 2.0 (sparsemax) or 1.5 (entmax15), got {alpha}")
+    mask = p > 0                                             # the support
+
+    # Floor of k_min kept edges per node. Both maps always keep the row max,
+    # so for k_min=1 this is a no-op; it is explicit so the guarantee does not
+    # rest on that property.
+    top = phi_off.topk(min(k_min, F - 1), dim=-1).indices
+    mask = mask.scatter(-1, top, True)
+    return mask, mask.sum(dim=-1)
+
+
+def build_adjacency_entmax(phi, alpha, k_min=1):
+    """
+    Same contract as build_adjacency, but the kept edges are the support of
+    alpha-entmax over each row instead of a top-k / Jenks budget.
+
+    Mask-only: entmax decides WHICH edges exist. It never supplies the edge
+    weights -- those stay the independent sigmoid gates of Eq. (5.4.8), built
+    by the same two lines as build_adjacency. The support is computed under
+    no_grad, so gradients reach phi only through sigmoid(phi) on kept edges.
+    """
+    B, F, _ = phi.shape
+    eye = torch.eye(F, dtype=torch.bool, device=phi.device).expand(B, F, F)
+    mask, k = entmax_support(phi, alpha, k_min)
+
+    A = torch.sigmoid(phi.masked_fill(~mask, NEG))           # Eq. (5.4.8)
+    A = A.masked_fill(eye, 1.0)                              # enforced self-loops
+    k_float = k.float()
+    stats = {"k_mean": k_float.mean(),
+             "k_per_sample": k_float.mean(dim=-1)}           # [B], for per-t-bucket logging
     return A, stats

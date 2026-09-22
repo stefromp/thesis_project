@@ -165,7 +165,7 @@ class AttnGNNBlock(nn.Module):
             x = self.attn(x)
         # Recompute the soft adjacency once per block, from the (post-attention,
         # if enabled) embeddings, then reuse it for both GNN layers. timesteps
-        # and block_idx are only read by DynamicAdjacency's adaptive_jenks
+        # and block_idx are only read by DynamicAdjacency's adaptive-mode
         # logging; the static-adjacency path (adj passed in) ignores both.
         a = (
             self.dynamic_adj(x, timesteps=timesteps, block_idx=block_idx)
@@ -220,11 +220,13 @@ class GraphAwareDenoiser(nn.Module):
                     on the dynamic/static adjacency), dropping ~1/3 of the
                     backbone parameters and removing the structure-free
                     global channel.
-        topk_mode:  "fixed" (default; today's behaviour, bit-identical) or
-                    "adaptive_jenks". Dynamic mode only; ignored for static.
-        k_min:      floor on the adaptive budget (adaptive_jenks only).
-        topk_warmup_steps: training-mode forward calls before adaptive_jenks
-                    switches on (adaptive_jenks only).
+        topk_mode:  "fixed" (default; today's behaviour, bit-identical),
+                    "adaptive_jenks", "adaptive_sparsemax" or
+                    "adaptive_entmax15" (see DynamicAdjacency). Dynamic mode
+                    only; ignored for static.
+        k_min:      floor on the adaptive budget (adaptive modes only).
+        topk_warmup_steps: training-mode forward calls before the adaptive
+                    rule switches on (adaptive modes only).
         num_timesteps: diffusion horizon T, used only to bucket logged
                     per-sample budgets by t.
     """

@@ -81,7 +81,15 @@ def _encode(fit_num, fit_cat, *transform_sets, normalize="minmax"):
 
     ohe = None
     if fit_cat is not None and fit_cat.shape[1] > 0:
-        ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False).fit(fit_cat)
+        # sparse_output is sklearn >= 1.2 (Kaggle); the ARIS venv pins 1.1.3,
+        # where it raises TypeError and every metric that encodes a
+        # categorical column (incl. the label in compute_dcr_baseline) was
+        # lost. Both spellings give the same dense one-hot matrix.
+        try:
+            ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
+        except TypeError:  # sklearn < 1.2
+            ohe = OneHotEncoder(handle_unknown="ignore", sparse=False)
+        ohe.fit(fit_cat)
 
     out = []
     for Xn, Xc in transform_sets:
