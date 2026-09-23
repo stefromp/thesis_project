@@ -28,6 +28,13 @@ from typing import Iterable, Optional, Tuple
 
 CSV_COLUMNS = ["step", "block", "t_bucket", "k_mean", "n_samples", "phase", "tag"]
 
+# Second, separate file: the fraction of (sample, node) rows whose Jenks
+# strong-class mean is <= 0 -- i.e. where the pre-plain-Jenks acceptance test
+# would have rejected the split. It lives beside topk_stats.csv rather than as
+# a column in it, so that file's columns never change meaning.
+GATE_CSV_NAME = "jenks_gate_stats.csv"
+GATE_CSV_COLUMNS = ["step", "block", "t_bucket", "frac_gate_off", "n_samples", "phase", "tag"]
+
 _lock = threading.Lock()
 _state = {"output_dir": None, "log_every": 100, "tag": ""}
 
@@ -53,9 +60,22 @@ def set_tag(tag: str) -> None:
         _state["tag"] = tag
 
 
-def _csv_path() -> Optional[str]:
+def _csv_path(name: str = "topk_stats.csv") -> Optional[str]:
     output_dir = _state.get("output_dir")
-    return os.path.join(output_dir, "topk_stats.csv") if output_dir else None
+    return os.path.join(output_dir, name) if output_dir else None
+
+
+def will_log(step: int, phase: str) -> bool:
+    """True when :func:`log_rows` / :func:`log_gate_rows` would write this row.
+
+    Lets a caller skip computing statistics the throttle would discard (the
+    gate fraction needs a GPU->CPU sync per bucket).
+    """
+    if _state.get("output_dir") is None:
+        return False
+    if phase == "train":
+        return step % _state["log_every"] == 0
+    return True
 
 
 def log_rows(
@@ -77,13 +97,33 @@ def log_rows(
     :func:`set_context`); phase="sample" rows are written unconditionally.
     Never raises.
     """
+    _append(_csv_path(), CSV_COLUMNS, step, block, rows, phase)
+
+
+def log_gate_rows(
+    step: int,
+    block,
+    rows: Iterable[Tuple[int, float, int]],
+    phase: str,
+) -> None:
+    """Append one row per occupied timestep bucket to ``jenks_gate_stats.csv``.
+
+    Same arguments, throttle and guarantees as :func:`log_rows`; ``rows`` holds
+    (t_bucket, frac_gate_off, n_samples). Written only by the Jenks path, which
+    is the only one with a strong-class mean. Never raises.
+    """
+    _append(_csv_path(GATE_CSV_NAME), GATE_CSV_COLUMNS, step, block, rows, phase)
+
+
+def _append(path, columns, step, block, rows, phase) -> None:
+    """Shared appender for both files: open, append, close (no buffering), so a
+    crash mid-run loses at most the one in-flight row. Never raises."""
     try:
         if _state.get("output_dir") is None:
             return
         if phase == "train" and (step % _state["log_every"] != 0):
             return
 
-        path = _csv_path()
         if path is None:
             return
 
@@ -97,9 +137,9 @@ def log_rows(
             with open(path, "a", newline="") as fh:
                 writer = csv.writer(fh)
                 if write_header:
-                    writer.writerow(CSV_COLUMNS)
-                for t_bucket, k_mean, n_samples in rows:
-                    writer.writerow([step, block, t_bucket, k_mean, n_samples, phase, tag])
+                    writer.writerow(columns)
+                for t_bucket, value, n_samples in rows:
+                    writer.writerow([step, block, t_bucket, value, n_samples, phase, tag])
     except Exception:
         # A logging failure must never be able to kill a training/sampling run.
         pass

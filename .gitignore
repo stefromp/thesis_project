@@ -6,3 +6,6 @@ update.tar.gz
 # tracked under these paths stay tracked until removed with git rm --cached.
 __pycache__/
 catboost_info/
+
+# Generated plot inputs (23 MB of .npy), not code.
+results_plots/

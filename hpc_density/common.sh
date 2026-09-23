@@ -231,6 +231,8 @@ PYEOF
   "n_nodes": ${n_nodes},
   "k_max": $((n_nodes - 1)),
   "entmax_alpha": $(entmax_alpha "${TOPK_MODE}"),
+  "use_gate_rule": $([ "${TOPK_MODE}" = "adaptive_jenks" ] && echo false || echo null),
+  "jenks_variant": $([ "${TOPK_MODE}" = "adaptive_jenks" ] && echo '"plain: 2-class split, every split accepted, no acceptance test"' || echo null),
   "gnn_type": "${gnn_type}",
   "n_layers": ${n_layers},
   "d_model": ${d_model},

@@ -1108,14 +1108,17 @@ def make_parser(dataset_name: str = "") -> argparse.ArgumentParser:
                              "adaptive_sparsemax", "adaptive_entmax15"],
                     default="fixed",
                     help="fixed (default): today's top-k masking, bit-identical. "
-                         "adaptive_jenks: per-node budget from a 2-class Jenks "
-                         "split of the raw scores. adaptive_sparsemax / "
+                         "adaptive_jenks: per-node budget from a plain 2-class "
+                         "Jenks split of the raw scores (every split accepted; "
+                         "no hyperparameters -- k_min is inert at 1). "
+                         "adaptive_sparsemax / "
                          "adaptive_entmax15: kept edges = support of sparsemax "
                          "(alpha=2) / entmax-1.5 over each row; needs the "
                          "entmax package. All adaptive modes only choose the "
                          "mask (adaptive_adjacency.py).")
     tk.add_argument("--k_min", type=int, default=1, metavar="K",
-                    help="Floor on the adaptive budget (adaptive modes only, default: 1)")
+                    help="Floor on the adaptive budget (adaptive modes only, default: 1; "
+                         "inert for adaptive_jenks, whose k is >= 1 by construction)")
     tk.add_argument("--topk_warmup_steps", type=int, default=0, metavar="S",
                     help="Training-mode forward calls before the adaptive rule "
                          "switches on; before that, use the fixed top_k path "

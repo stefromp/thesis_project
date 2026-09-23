@@ -30,6 +30,13 @@ new — no earlier run is reused, so every comparison is paired.
 Each dataset also runs `adaptive_jenks`, `adaptive_sparsemax` and
 `adaptive_entmax15` (included in the run counts).
 
+**`adaptive_jenks` is plain Jenks**: the 2-class split, strong class kept,
+every split accepted. There is no acceptance test on the strong-class mean,
+and no hyperparameters beyond the 2 classes — `k_min` stays 1 and never binds,
+because a 2-class split always leaves at least one element in the strong
+class. Each run records `topk_mode` and the effective `use_gate_rule` (false)
+in `run_meta.json`, so a directory is never ambiguous.
+
 - **Architecture**: the best GATv2 run by `score.mean` in
   `tabddpm_ablation/` — a rule fixed before the study, deliberately not
   Wasserstein (the metric that judges it). Documented in `density_manifest.py`:
@@ -117,7 +124,10 @@ metric for each of the 50 generation × classifier seeds — 550 rows for
 classification, fewer for regression — plus 5 × 4 per-generation rows for
 DCR ×2, Wasserstein and MIA) and, for adaptive conditions,
 `topk_stats.csv`; `run_meta.json` records condition, k, k/(N−1),
-architecture, seeds and versions.
+architecture, seeds, versions and `use_gate_rule`. Jenks runs additionally
+write `jenks_gate_stats.csv` (`frac_gate_off` per t-bucket): the fraction of
+(sample, node) rows whose strong-class mean is ≤ 0, i.e. where the dropped
+acceptance test *would* have fired. `topk_stats.csv` keeps its own columns.
 
 ## Analysis
 
@@ -139,11 +149,15 @@ python3 hpc_density/density_curve.py --repo_root "$PWD"
 - **Directions**: lower is better for `wasserstein_mean` (primary) and
   `mia_auc`; higher for `score` (secondary) and `dcr_tabddpm_mean` (context
   only, reported next to Wasserstein, never a privacy claim on its own).
+- **Gate report**: for each dataset, plain Jenks's mean k and the fraction of
+  rows where the old acceptance test would have fired — per t-bucket for the
+  curve, and one aggregate number per dataset for the text. That measures what
+  the safeguard was doing without spending runs on the gated variant.
 
 Written to `hpc_density/results/`: `density_points.csv`,
-`density_verdicts.csv`, `figures/density_<ds>.{png,pdf}` (Wasserstein and score
-vs mean k) and `figures/density_all.{png,pdf}` (Wasserstein vs k/(N−1), one
-panel per dataset). It refuses to write under `hpc/`, `hpc_entmax/` or
+`density_verdicts.csv`, `jenks_gate.csv`, `figures/density_<ds>.{png,pdf}`
+(Wasserstein and score vs mean k) and `figures/density_all.{png,pdf}`
+(Wasserstein vs k/(N−1), one panel per dataset). It refuses to write under `hpc/`, `hpc_entmax/` or
 `hpc_wide/`.
 
 ## Files

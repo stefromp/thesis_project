@@ -161,14 +161,17 @@ class DynamicAdjacency(nn.Module):
                  during the adaptive modes' warm-up phase (see topk_mode).
         topk_mode: one of TOPK_MODES.
                  "fixed" (default; today's behaviour, bit-identical);
-                 "adaptive_jenks" (per-node budget via a 2-class Jenks split
-                 of the raw scores, see adaptive_adjacency.build_adjacency);
+                 "adaptive_jenks" (per-node budget from a plain 2-class Jenks
+                 split of the raw scores -- every split accepted, no acceptance
+                 test; see adaptive_adjacency.build_adjacency);
                  "adaptive_sparsemax" / "adaptive_entmax15" (kept edges = the
                  support of sparsemax / entmax-1.5 over each row, see
                  adaptive_adjacency.build_adjacency_entmax). All three
                  adaptive modes only choose the mask; the weights are the same
                  sigmoid gates as in "fixed".
-        k_min:   floor on the adaptive budget (adaptive modes only).
+        k_min:   floor on the adaptive budget (adaptive modes only). Inert for
+                 adaptive_jenks at its default of 1: a 2-class split always
+                 leaves at least one element in the strong class.
         topk_warmup_steps: while the number of training-mode forward calls
                  seen so far is below this, the adaptive modes use the fixed
                  top_k path instead (warm-up). Ignored in "fixed" mode.
@@ -295,8 +298,11 @@ class DynamicAdjacency(nn.Module):
                 k_fixed=k_fixed,
                 k_min=self.k_min,
                 sym="none",
-                use_gate_rule=True,
-                delta=None,
+                # Plain Jenks: the 2-class split is accepted whatever the scores
+                # look like. build_adjacency keeps its acceptance parameters
+                # (use_gate_rule / delta) for callers that want them -- the
+                # tests exercise both -- but this path never uses one.
+                use_gate_rule=False,
                 share_across_batch=False,
             )
 
@@ -316,16 +322,34 @@ class DynamicAdjacency(nn.Module):
         k_per_sample = stats["k_per_sample"].detach().float()
         t_horizon = max(self.num_timesteps, 1)
 
+        # How often the dropped acceptance test WOULD have rejected the split
+        # (strong-class mean <= 0), per sample, over nodes. Only the Jenks path
+        # produces mu_strong, and only when it actually ran (not during warm-up).
+        # Computed solely for rows that will be written -- each one costs a sync.
+        phase = "train" if self.training else "sample"
+        step_now = train_step if self.training else self._sample_call_count
+        mu_strong = stats.get("mu_strong")
+        gate_per_sample = (
+            (mu_strong <= 0).float().mean(dim=-1).detach()
+            if mu_strong is not None and topk_logging.will_log(step_now, phase)
+            else None
+        )
+
         if self.training:
             t = timesteps.detach().float()
             t_bucket = torch.clamp((t / t_horizon * 10).long(), 0, 9)
-            rows = []
+            rows, gate_rows = [], []
             for bucket in t_bucket.unique().tolist():
                 in_bucket = t_bucket == bucket
                 n_samples = int(in_bucket.sum().item())
                 k_mean = float(k_per_sample[in_bucket].mean().item())
                 rows.append((bucket, k_mean, n_samples))
+                if gate_per_sample is not None:
+                    gate_rows.append((bucket, float(gate_per_sample[in_bucket].mean().item()), n_samples))
             topk_logging.log_rows(step=train_step, block=block_idx, rows=rows, phase="train")
+            if gate_rows:
+                topk_logging.log_gate_rows(step=train_step, block=block_idx,
+                                           rows=gate_rows, phase="train")
         else:
             t_val = float(timesteps.detach().float().reshape(-1)[0].item())
             t_bucket_val = max(0, min(9, int(t_val / t_horizon * 10)))
@@ -338,3 +362,9 @@ class DynamicAdjacency(nn.Module):
                 rows=[(t_bucket_val, k_mean, n_samples)],
                 phase="sample",
             )
+            if gate_per_sample is not None:
+                topk_logging.log_gate_rows(
+                    step=step, block=block_idx,
+                    rows=[(t_bucket_val, float(gate_per_sample.mean().item()), n_samples)],
+                    phase="sample",
+                )

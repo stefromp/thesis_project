@@ -221,10 +221,12 @@ class GraphAwareDenoiser(nn.Module):
                     backbone parameters and removing the structure-free
                     global channel.
         topk_mode:  "fixed" (default; today's behaviour, bit-identical),
-                    "adaptive_jenks", "adaptive_sparsemax" or
-                    "adaptive_entmax15" (see DynamicAdjacency). Dynamic mode
-                    only; ignored for static.
-        k_min:      floor on the adaptive budget (adaptive modes only).
+                    "adaptive_jenks" (plain 2-class Jenks, every split
+                    accepted), "adaptive_sparsemax" or "adaptive_entmax15"
+                    (see DynamicAdjacency). Dynamic mode only; ignored for
+                    static.
+        k_min:      floor on the adaptive budget (adaptive modes only; inert
+                    for adaptive_jenks at its default of 1).
         topk_warmup_steps: training-mode forward calls before the adaptive
                     rule switches on (adaptive modes only).
         num_timesteps: diffusion horizon T, used only to bucket logged

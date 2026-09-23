@@ -10,6 +10,10 @@ so that an adaptive rule can be judged against fixed top-k AT THE SAME DENSITY:
 below the curve (Wasserstein) = adaptivity adds something beyond density; on the
 curve = the rule is just choosing a density.
 
+adaptive_jenks is PLAIN Jenks: the 2-class split, strong class kept, every
+split accepted (no acceptance test on the strong-class mean) and no
+hyperparameters beyond the 2 classes -- k_min stays 1 and never binds.
+
 Every condition uses the same seed protocol (training seed 0, generation seeds
 0-4, classifier seeds 0-9: ablation_runner's module defaults), which is what
 makes the comparison paired. All 3 adaptive modes are rerun on all 5 datasets:

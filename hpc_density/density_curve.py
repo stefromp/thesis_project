@@ -37,10 +37,19 @@ Verdict per adaptive point and metric:
   Primary metric: wasserstein_mean. score is secondary. DCR is context only,
   reported next to Wasserstein, never a privacy claim on its own.
 
+adaptive_jenks is PLAIN Jenks (every 2-class split accepted). Its runs also log
+jenks_gate_stats.csv: the fraction of (sample, node) rows whose strong-class
+mean is <= 0, i.e. where the dropped acceptance test WOULD have fired. The gate
+report gives that fraction per t-bucket and aggregated per dataset, next to the
+mean k per t-bucket -- how much the old safeguard was doing, from the plain runs
+alone.
+
 Outputs (default <repo_root>/hpc_density/results/; never under hpc/,
 hpc_entmax/ or hpc_wide/):
   density_points.csv     one row per (dataset, condition)
   density_verdicts.csv   one row per (dataset, adaptive rule, metric)
+  jenks_gate.csv         plain-Jenks mean k and "would have fired" fraction,
+                         per dataset x t-bucket plus an "all" row per dataset
   figures/density_<ds>.{png,pdf}   Wasserstein and score vs mean k (log)
   figures/density_all.{png,pdf}    Wasserstein vs k/(N-1), one panel per dataset
 
@@ -73,14 +82,15 @@ METRICS = (
 DIRECTION = {m: d for m, d, _ in METRICS}
 ROLE = {m: r for m, _, r in METRICS}
 
-LABEL = {"adaptive_jenks": "Jenks", "adaptive_sparsemax": "sparsemax", "adaptive_entmax15": "entmax-1.5"}
+LABEL = {"adaptive_jenks": "Jenks (plain)", "adaptive_sparsemax": "sparsemax",
+         "adaptive_entmax15": "entmax-1.5"}
 
 # Validated categorical slots 1-3 (dataviz reference palette, light mode, all
 # pairs: CVD dE 9.2, normal-vision dE 24.0). Aqua is below 3:1 contrast, so
 # every adaptive point also carries a direct label and a distinct marker.
 STYLE = {
     "fixed":              {"color": "#52514e", "marker": "o", "label": "fixed top-k"},
-    "adaptive_jenks":     {"color": "#2a78d6", "marker": "s", "label": "Jenks"},
+    "adaptive_jenks":     {"color": "#2a78d6", "marker": "s", "label": "Jenks (plain)"},
     "adaptive_sparsemax": {"color": "#eb6834", "marker": "^", "label": "sparsemax"},
     "adaptive_entmax15":  {"color": "#1baf7a", "marker": "D", "label": "entmax-1.5"},
 }
@@ -143,6 +153,50 @@ def read_budget(path: str):
         return NAN, NAN
     per_seed = [s / n for s, n in by_tag.values() if n]
     return total / count, (_pstd(per_seed) if len(per_seed) > 1 else NAN)
+
+
+def read_bucketed(path: str, value_column: str):
+    """{t_bucket: (n_samples-weighted mean, n_samples)} over the sampling phase."""
+    if not os.path.exists(path):
+        return {}
+    acc = defaultdict(lambda: [0.0, 0.0])
+    with open(path, newline="") as fh:
+        for row in csv.DictReader(fh):
+            if row.get("phase") != "sample":
+                continue
+            try:
+                v, n, b = float(row[value_column]), float(row["n_samples"]), int(row["t_bucket"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            acc[b][0] += v * n
+            acc[b][1] += n
+    return {b: (tot / n, n) for b, (tot, n) in sorted(acc.items()) if n}
+
+
+def gate_report(points_by_ds: dict) -> list:
+    """Plain-Jenks mean k and "the dropped acceptance test would have fired"
+    fraction, per t-bucket and aggregated, one block per dataset."""
+    rows = []
+    for ds, pts in points_by_ds.items():
+        jenks = next((q for q in pts if q["condition"] == "adaptive_jenks"), None)
+        if jenks is None or jenks["status"] != "done":
+            continue
+        k_by_bucket = read_bucketed(os.path.join(jenks["run_dir"], "topk_stats.csv"), "k_mean")
+        g_by_bucket = read_bucketed(os.path.join(jenks["run_dir"], "jenks_gate_stats.csv"), "frac_gate_off")
+        if not k_by_bucket and not g_by_bucket:
+            continue
+        for b in sorted(set(k_by_bucket) | set(g_by_bucket)):
+            k, kn = k_by_bucket.get(b, (NAN, 0))
+            g, gn = g_by_bucket.get(b, (NAN, 0))
+            rows.append({"dataset": ds, "n_nodes": jenks["n_nodes"], "t_bucket": b, "k_mean": k,
+                         "frac_gate_off": g, "n_samples": int(max(kn, gn))})
+        tot_k = sum(k * n for k, n in k_by_bucket.values()), sum(n for _, n in k_by_bucket.values())
+        tot_g = sum(g * n for g, n in g_by_bucket.values()), sum(n for _, n in g_by_bucket.values())
+        rows.append({"dataset": ds, "n_nodes": jenks["n_nodes"], "t_bucket": "all",
+                     "k_mean": tot_k[0] / tot_k[1] if tot_k[1] else NAN,
+                     "frac_gate_off": tot_g[0] / tot_g[1] if tot_g[1] else NAN,
+                     "n_samples": int(max(tot_k[1], tot_g[1]))})
+    return rows
 
 
 def load_point(repo_root: str, runs_root: str, dm, dataset: str, condition: str) -> dict:
@@ -434,6 +488,15 @@ def main() -> int:
         for row in verdict_rows:
             w.writerow({c: fmt(row.get(c, "")) for c in verdict_cols})
 
+    gate_rows = gate_report(points_by_ds)
+    gate_csv = os.path.join(out_dir, "jenks_gate.csv")
+    with open(gate_csv, "w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=["dataset", "n_nodes", "t_bucket", "k_mean",
+                                           "frac_gate_off", "n_samples"])
+        w.writeheader()
+        for row in gate_rows:
+            w.writerow({c: fmt(row[c]) for c in w.fieldnames})
+
     figures = [] if args.no_figures else make_figures(points_by_ds, os.path.join(out_dir, "figures"))
 
     # ---- summary ---------------------------------------------------------------
@@ -460,8 +523,24 @@ def main() -> int:
                       f"of {row['n_pairs']})" if row["n_pairs"] else "")
             print(f"    -> {LABEL[row['condition']]:10s} {row['metric']:17s} {row['position']:26s} "
                   f"{row['effect']:6s} diff {f(row['difference'])}{paired}")
+    if gate_rows:
+        print()
+        print("  Plain Jenks: mean k and how often the dropped acceptance test WOULD have fired")
+        print("  (strong-class mean <= 0), sampling phase; t-bucket 0 = t near 0, 9 = t near T.")
+        for ds in points_by_ds:
+            block = [r for r in gate_rows if r["dataset"] == ds]
+            if not block:
+                continue
+            total = next((r for r in block if r["t_bucket"] == "all"), None)
+            per_bucket = [r for r in block if r["t_bucket"] != "all"]
+            print(f"\n    {ds}: fired on {f(total['frac_gate_off'] * 100, 1) if total and _finite(total['frac_gate_off']) else '--'}"
+                  f" % of (sample, node) rows overall, mean k {f(total['k_mean'], 2) if total else '--'}")
+            print("      t-bucket " + " ".join(f"{r['t_bucket']:>6}" for r in per_bucket))
+            print("      k        " + " ".join(f"{f(r['k_mean'], 2):>6}" for r in per_bucket))
+            print("      fired %  " + " ".join(f"{f(r['frac_gate_off'] * 100, 1):>6}" for r in per_bucket))
+
     print()
-    for path in [points_csv, verdicts_csv] + figures:
+    for path in [points_csv, verdicts_csv, gate_csv] + figures:
         print(f"  -> {path}")
     return 0
 

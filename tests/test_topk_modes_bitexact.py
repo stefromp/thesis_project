@@ -1,9 +1,14 @@
 """
 Bit-exactness of the topk_mode paths against the code that produced results.
 
-  fixed           vs  jenks-ref^  (tab_ddpm before adaptive top-k existed)
-  adaptive_jenks  vs  jenks-ref   (the code that produced the ARIS Jenks runs;
-                                   md5s verified against the cluster copy)
+  fixed               vs  jenks-ref^   (tab_ddpm before adaptive top-k existed)
+  fixed / sparsemax / entmax15  vs  density-ref   (unchanged by the plain-Jenks
+                                   routing: these three must stay bit-identical)
+  adaptive_jenks      vs  density-ref  INTENTIONALLY DIFFERENT: adaptive_jenks is
+                                   now plain Jenks (every 2-class split accepted),
+                                   where density-ref applied an acceptance test on
+                                   the strong-class mean. The test reports how many
+                                   comparisons differ instead of asserting equality.
 
 The reference ``tab_ddpm`` package (plus ``adaptive_adjacency.py`` where it
 exists) is read straight from git at that revision and imported under its own
@@ -49,7 +54,7 @@ from tab_ddpm.graph_builder import DynamicAdjacency as NewDA  # noqa: E402
 from tab_ddpm.graph_denoiser import GraphAwareDenoiser as NewModel  # noqa: E402
 
 FIXED_REV = "jenks-ref^"
-JENKS_REV = "jenks-ref"
+DENSITY_REV = "density-ref"
 T = 1000  # ablation_runner.ABLATION_NUM_TIMESTEPS
 
 # (name, d_num, cat_sizes, num_classes, is_y_cond) -- as GraphAwareDenoiser sees
@@ -126,8 +131,11 @@ def ref_fixed():
     return load_reference(FIXED_REV, "ref_fixed_tab_ddpm")
 
 
-def ref_jenks():
-    return load_reference(JENKS_REV, "ref_jenks_tab_ddpm")
+def ref_density():
+    return load_reference(DENSITY_REV, "ref_density_tab_ddpm")
+
+
+REFS = {"pre": ref_fixed, "density": ref_density}
 
 
 # ---------------------------------------------------------------------------
@@ -181,15 +189,16 @@ def _read(path):
 # Level 1: DynamicAdjacency alone
 # ---------------------------------------------------------------------------
 
-def _da_pair(mode, n, d, top_k, warmup, seed):
+def _da_pair(ref_key, mode, n, d, top_k, warmup, seed):
     torch.manual_seed(seed)
-    if mode == "fixed":
-        ref = ref_fixed().graph_builder.DynamicAdjacency(n, d, top_k)
-        new = NewDA(n, d, top_k, topk_mode="fixed")
+    pkg = REFS[ref_key]()
+    if ref_key == "pre":        # pre-adaptive DynamicAdjacency: (n, d, top_k) only
+        ref = pkg.graph_builder.DynamicAdjacency(n, d, top_k)
     else:
-        kw = dict(topk_mode=mode, k_min=1, topk_warmup_steps=warmup, num_timesteps=T)
-        ref = ref_jenks().graph_builder.DynamicAdjacency(n, d, top_k, **kw)
-        new = NewDA(n, d, top_k, **kw)
+        ref = pkg.graph_builder.DynamicAdjacency(
+            n, d, top_k, topk_mode=mode, k_min=1, topk_warmup_steps=warmup, num_timesteps=T)
+    new = (NewDA(n, d, top_k, topk_mode="fixed") if mode == "fixed" else
+           NewDA(n, d, top_k, topk_mode=mode, k_min=1, topk_warmup_steps=warmup, num_timesteps=T))
     new.load_state_dict(ref.state_dict())
     return ref, new
 
@@ -198,10 +207,27 @@ def _call(mod, x, t, legacy):
     return mod(x) if legacy else mod(x, timesteps=t, block_idx=0)
 
 
-def run_da_case(mode, n, top_k, warmup, seed=0, d=16, B=32, steps=8):
-    legacy = mode == "fixed"
+def run_da_diff_case(ref_key, mode, n, top_k, warmup, seed=0, d=16, B=32, steps=6):
+    """Forward-only: count the comparisons whose A differs (the two rules take
+    different budgets, so stepping optimizers in lockstep would be meaningless)."""
     with float32_default():
-        ref, new = _da_pair(mode, n, d, top_k, warmup, seed)
+        ref, new = _da_pair(ref_key, mode, n, d, top_k, warmup, seed)
+        g = torch.Generator().manual_seed(1000 + seed)
+        differing = rows = 0
+        for _ in range(steps):
+            x = torch.randn(B, n, d, generator=g)
+            t = torch.randint(0, T, (B,), generator=g)
+            a_r, a_n = ref(x, timesteps=t, block_idx=0), new(x, timesteps=t, block_idx=0)
+            if not torch.equal(a_r, a_n):
+                differing += 1
+                rows += int((a_r != a_n).any(dim=-1).sum())
+        return differing, rows, steps
+
+
+def run_da_case(ref_key, mode, n, top_k, warmup, seed=0, d=16, B=32, steps=8):
+    legacy = ref_key == "pre"
+    with float32_default():
+        ref, new = _da_pair(ref_key, mode, n, d, top_k, warmup, seed)
         opt_r = torch.optim.Adam(ref.parameters(), lr=1e-2)
         opt_n = torch.optim.Adam(new.parameters(), lr=1e-2)
         g = torch.Generator().manual_seed(1000 + seed)
@@ -231,13 +257,22 @@ def run_da_case(mode, n, top_k, warmup, seed=0, d=16, B=32, steps=8):
 
 
 def da_cases():
+    """(ref_key, mode, n, top_k, warmup) that must be bit-identical."""
     cases = []
     for n in (5, 9, 32):
         for top_k in (0, 3, 5, n - 1, n + 2):
-            cases.append(("fixed", n, top_k, 0))
-            for warmup in (0, 4):
-                cases.append(("adaptive_jenks", n, top_k, warmup))
+            cases.append(("pre", "fixed", n, top_k, 0))
+            cases.append(("density", "fixed", n, top_k, 0))
+            for mode in ENTMAX_MODES:
+                for warmup in (0, 4):
+                    cases.append(("density", mode, n, top_k, warmup))
     return cases
+
+
+def da_diff_cases():
+    """adaptive_jenks vs density-ref: intentionally different (plain Jenks)."""
+    return [("density", "adaptive_jenks", n, top_k, 0)
+            for n in (5, 9, 32) for top_k in (0, 3, 5, n - 1, n + 2)]
 
 
 # ---------------------------------------------------------------------------
@@ -266,19 +301,37 @@ def _batch(shape, g, B, eval_t=None):
     return x, t, y
 
 
-def run_model_case(mode, shape, gnn_type, top_k, warmup, seed=0, B=64, steps=8):
+def run_model_diff_case(ref_key, mode, shape, gnn_type, top_k, warmup, seed=0, B=64, steps=4):
+    """Forward-only: how many outputs differ between the new rule and the reference."""
     kw = _model_kwargs(shape, gnn_type, top_k)
-    what = f"model {mode} {shape[0]} {gnn_type} k={top_k} warm={warmup}"
+    with float32_default():
+        torch.manual_seed(seed)
+        extra = dict(topk_mode=mode, k_min=1, topk_warmup_steps=warmup, num_timesteps=T)
+        ref = REFS[ref_key]().GraphAwareDenoiser(**kw, **extra)
+        new = NewModel(**kw, **extra)
+        new.load_state_dict(ref.state_dict())
+        g = torch.Generator().manual_seed(2000 + seed)
+        differing = 0
+        with torch.no_grad():
+            for _ in range(steps):
+                x, t, y = _batch(shape, g, B)
+                if not torch.equal(ref(x, t, y), new(x, t, y)):
+                    differing += 1
+        return differing, steps
+
+
+def run_model_case(ref_key, mode, shape, gnn_type, top_k, warmup, seed=0, B=64, steps=8):
+    kw = _model_kwargs(shape, gnn_type, top_k)
+    what = f"model {ref_key}/{mode} {shape[0]} {gnn_type} k={top_k} warm={warmup}"
     log_dir = tempfile.mkdtemp(prefix="topk_log_")
     try:
         with float32_default():
             torch.manual_seed(seed)
-            if mode == "fixed":
-                ref_pkg = ref_fixed()
+            ref_pkg = REFS[ref_key]()
+            if ref_key == "pre":
                 ref = ref_pkg.GraphAwareDenoiser(**kw)
                 new = NewModel(**kw, topk_mode="fixed")
             else:
-                ref_pkg = ref_jenks()
                 extra = dict(topk_mode=mode, k_min=1, topk_warmup_steps=warmup,
                              num_timesteps=T)
                 ref = ref_pkg.GraphAwareDenoiser(**kw, **extra)
@@ -291,7 +344,7 @@ def run_model_case(mode, shape, gnn_type, top_k, warmup, seed=0, B=64, steps=8):
             opt_r = torch.optim.Adam(ref.parameters(), lr=1e-3)
             opt_n = torch.optim.Adam(new.parameters(), lr=1e-3)
             g = torch.Generator().manual_seed(2000 + seed)
-            with logging_to(ref_pkg.topk_logging, ref_log) if mode != "fixed" \
+            with logging_to(ref_pkg.topk_logging, ref_log) if ref_key != "pre" \
                     else contextlib.nullcontext(), logging_to(new_logging, new_log):
                 for step in range(steps):
                     x, t, y = _batch(shape, g, B)
@@ -322,21 +375,31 @@ def run_model_case(mode, shape, gnn_type, top_k, warmup, seed=0, B=64, steps=8):
             else:
                 assert not os.path.exists(os.path.join(new_log, "topk_stats.csv")), \
                     f"{what}: fixed mode must not log"
+            assert not os.path.exists(os.path.join(new_log, "jenks_gate_stats.csv")), \
+                f"{what}: only the Jenks path writes jenks_gate_stats.csv"
     finally:
         shutil.rmtree(log_dir, ignore_errors=True)
 
 
 def model_cases():
+    """(ref_key, mode, shape, gnn_type, top_k, warmup) that must be bit-identical."""
     cases = []
     for shape in SHAPES:
         n = shape[1] + len(shape[2])
         top_ks = sorted({3, 5, 0, n - 1} & set(range(0, n)) | {0})
         for gnn_type in GNN_TYPES:
             for top_k in top_ks:
-                cases.append(("fixed", shape, gnn_type, top_k, 0))
-                for warmup in (0, 4):
-                    cases.append(("adaptive_jenks", shape, gnn_type, top_k, warmup))
+                cases.append(("pre", "fixed", shape, gnn_type, top_k, 0))
+                cases.append(("density", "fixed", shape, gnn_type, top_k, 0))
+                for mode in ENTMAX_MODES:
+                    cases.append(("density", mode, shape, gnn_type, top_k, 0))
     return cases
+
+
+def model_diff_cases():
+    return [("density", "adaptive_jenks", shape, gnn_type, top_k, 0)
+            for shape in SHAPES for gnn_type in GNN_TYPES
+            for top_k in sorted({3, 5, 0} & set(range(0, shape[1] + len(shape[2]))) | {0})]
 
 
 # ---------------------------------------------------------------------------
@@ -457,6 +520,75 @@ def check_entmax_logging(mode):
         shutil.rmtree(log_dir, ignore_errors=True)
 
 
+def check_plain_vs_gated_routing():
+    """build_adjacency(use_gate_rule=False) is plain Jenks, unit level.
+
+    Identical to the gated variant wherever the acceptance test would pass
+    (strong-class mean > 0), different wherever it would fire AND Jenks' own k
+    is not already k_min (a flat row gives k = 1 either way). Both populations
+    must be non-empty, or the comparison proves nothing.
+    """
+    from adaptive_adjacency import build_adjacency, jenks_budget
+    with float32_default():
+        g = torch.Generator().manual_seed(11)
+        B, F, NEG = 128, 9, -1e9
+        seen_same = seen_diff = 0
+        for offset in (0.0, -8.0, +8.0):
+            phi = torch.randn(B, F, F, generator=g) + offset
+            eye = torch.eye(F, dtype=torch.bool).expand(B, F, F)
+            s_sorted, _ = phi.masked_fill(eye, NEG).sort(dim=-1, descending=True)
+            k_plain, stats = jenks_budget(s_sorted[..., : F - 1], k_min=1,
+                                          use_gate_rule=False, delta=None)
+            k_gated, _ = jenks_budget(s_sorted[..., : F - 1], k_min=1,
+                                      use_gate_rule=True, delta=None)
+            fires = stats["mu_strong"] <= 0
+            assert torch.equal(k_plain[~fires], k_gated[~fires]), \
+                "plain and gated differ on a row the acceptance test would have passed"
+            assert torch.all(k_gated[fires] == 1), "gated did not fall back to k_min where it fired"
+            A_p, _ = build_adjacency(phi, k_fixed=None, k_min=1, use_gate_rule=False)
+            A_g, _ = build_adjacency(phi, k_fixed=None, k_min=1, use_gate_rule=True)
+            differs = fires & (k_plain != 1)
+            row_diff = (A_p != A_g).any(dim=-1)
+            assert torch.equal(row_diff, differs), \
+                "adjacency rows differ exactly where the gate fires and Jenks k != k_min"
+            seen_same += int((~fires).sum())
+            seen_diff += int(differs.sum())
+        assert seen_same > 0 and seen_diff > 0, \
+            f"both populations must be exercised (same={seen_same}, differ={seen_diff})"
+
+
+def check_jenks_gate_log():
+    """adaptive_jenks writes jenks_gate_stats.csv; the other modes do not, and
+    topk_stats.csv keeps its columns."""
+    for mode, expect_gate in (("adaptive_jenks", True), ("adaptive_sparsemax", False),
+                              ("fixed", False)):
+        log_dir = tempfile.mkdtemp(prefix="gate_log_")
+        try:
+            with float32_default(), logging_to(new_logging, log_dir):
+                torch.manual_seed(12)
+                da = NewDA(9, 16, 3, topk_mode=mode, num_timesteps=T)
+                g = torch.Generator().manual_seed(13)
+                x = torch.randn(32, 9, 16, generator=g)
+                da(x, timesteps=torch.randint(0, T, (32,), generator=g), block_idx=0)
+                da.eval()
+                with torch.no_grad():
+                    da(x, timesteps=torch.full((32,), 950), block_idx=0)
+            gate_path = os.path.join(log_dir, new_logging.GATE_CSV_NAME)
+            assert os.path.exists(gate_path) == expect_gate, \
+                f"{mode}: jenks_gate_stats.csv presence should be {expect_gate}"
+            if expect_gate:
+                with open(gate_path, newline="") as fh:
+                    rows = list(csv.DictReader(fh))
+                assert list(rows[0].keys()) == new_logging.GATE_CSV_COLUMNS
+                assert all(0.0 <= float(r["frac_gate_off"]) <= 1.0 for r in rows)
+                assert any(r["phase"] == "sample" for r in rows)
+                with open(os.path.join(log_dir, "topk_stats.csv"), newline="") as fh:
+                    assert list(next(csv.DictReader(fh)).keys()) == new_logging.CSV_COLUMNS, \
+                        "topk_stats.csv columns must not change"
+        finally:
+            shutil.rmtree(log_dir, ignore_errors=True)
+
+
 def check_invalid_mode_raises():
     for bad in ("adaptive_Jenks", "sparsemax", "entmax15", ""):
         try:
@@ -470,14 +602,27 @@ def check_invalid_mode_raises():
 # pytest entry points
 # ---------------------------------------------------------------------------
 
-def test_fixed_and_jenks_dynamic_adjacency_bitexact():
+def test_unchanged_modes_dynamic_adjacency_bitexact():
     for case in da_cases():
         run_da_case(*case)
 
 
-def test_fixed_and_jenks_full_model_bitexact():
+def test_unchanged_modes_full_model_bitexact():
     for case in model_cases():
         run_model_case(*case)
+
+
+def test_plain_jenks_differs_from_density_ref():
+    """The intended change: adaptive_jenks is no longer the gated variant."""
+    total = sum(run_da_diff_case(*case)[0] for case in da_diff_cases())
+    assert total > 0, "adaptive_jenks is still identical to density-ref: routing did not take effect"
+    total_model = sum(run_model_diff_case(*case)[0] for case in model_diff_cases())
+    assert total_model > 0
+
+
+def test_plain_jenks_routing_unit():
+    check_plain_vs_gated_routing()
+    check_jenks_gate_log()
 
 
 def test_entmax_modes():
@@ -505,7 +650,7 @@ def main() -> int:
     import entmax
     print(f"torch {torch.__version__}   entmax {getattr(entmax, '__version__', '?')}   "
           f"device cpu   default dtype float32 (forced)")
-    for label, rev in (("fixed", FIXED_REV), ("jenks", JENKS_REV)):
+    for label, rev in (("pre-adaptive", FIXED_REV), ("density", DENSITY_REV)):
         commit = subprocess.run(["git", "-C", REPO, "rev-parse", "--short", f"{rev}^{{commit}}"],
                                 capture_output=True, text=True).stdout.strip()
         print(f"{label} reference : {rev} ({commit})")
@@ -513,20 +658,35 @@ def main() -> int:
 
     groups = {}
     for case in da_cases():
-        groups.setdefault(("DynamicAdjacency", case[0]), []).append(_run("", run_da_case, *case))
+        groups.setdefault(("DynamicAdjacency", case[0], case[1]), []).append(_run("", run_da_case, *case))
     for case in model_cases():
-        groups.setdefault(("GraphAwareDenoiser", case[0]), []).append(_run("", run_model_case, *case))
+        groups.setdefault(("GraphAwareDenoiser", case[0], case[1]), []).append(_run("", run_model_case, *case))
 
     all_ok = True
-    print(f"{'level':20s} {'mode':16s} {'cases':>6s} {'passed':>7s}  result")
-    for (level, mode), results in groups.items():
+    print("  must be BIT-IDENTICAL to the reference")
+    print(f"  {'level':20s} {'reference':10s} {'mode':19s} {'cases':>6s} {'passed':>7s}  result")
+    for (level, ref_key, mode), results in groups.items():
         n_ok = sum(ok for ok, _ in results)
         ok = n_ok == len(results)
         all_ok &= ok
-        print(f"{level:20s} {mode:16s} {len(results):6d} {n_ok:7d}  {'PASS' if ok else 'FAIL'}")
+        print(f"  {level:20s} {ref_key:10s} {mode:19s} {len(results):6d} {n_ok:7d}  {'PASS' if ok else 'FAIL'}")
         for passed, msg in results:
             if not passed:
-                print(f"    {msg}")
+                print(f"      {msg}")
+
+    print()
+    print("  INTENDED DIFFERENCE: adaptive_jenks (plain Jenks) vs density-ref (gated)")
+    da_diff = [run_da_diff_case(*case) for case in da_diff_cases()]
+    md_diff = [run_model_diff_case(*case) for case in model_diff_cases()]
+    da_cmp, da_rows = sum(d for d, _, _ in da_diff), sum(r for _, r, _ in da_diff)
+    da_tot, md_cmp, md_tot = sum(t for _, _, t in da_diff), sum(d for d, _ in md_diff), sum(t for _, t in md_diff)
+    print(f"  {'DynamicAdjacency':20s} {'density':10s} {'adaptive_jenks':19s} {len(da_diff):6d} cases: "
+          f"{da_cmp}/{da_tot} forward comparisons differ, {da_rows} adjacency rows")
+    print(f"  {'GraphAwareDenoiser':20s} {'density':10s} {'adaptive_jenks':19s} {len(md_diff):6d} cases: "
+          f"{md_cmp}/{md_tot} forward comparisons differ")
+    differs_ok = da_cmp > 0 and md_cmp > 0
+    all_ok &= differs_ok
+    print(f"  {'':20s} {'':10s} {'':19s} {'':6s} {'PASS (the change took effect)' if differs_ok else 'FAIL: still identical'}")
 
     print()
     checks = []
@@ -535,6 +695,8 @@ def main() -> int:
                    (f"{mode}: k_min floor", check_entmax_k_min, mode),
                    (f"{mode}: warm-up == Jenks warm-up", check_entmax_warmup_is_jenks_warmup, mode),
                    (f"{mode}: topk_stats.csv", check_entmax_logging, mode)]
+    checks.append(("plain vs gated routing (build_adjacency unit)", check_plain_vs_gated_routing))
+    checks.append(("jenks_gate_stats.csv written by Jenks only", check_jenks_gate_log))
     checks.append(("invalid topk_mode raises", check_invalid_mode_raises))
     for label, fn, *args in checks:
         ok, msg = _run(label, fn, *args)
