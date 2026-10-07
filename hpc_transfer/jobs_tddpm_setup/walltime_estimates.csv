@@ -1,0 +1,8 @@
+dataset,group,cat_input,current_run,train_h_measured,seed_h_measured,seed_h_how,new_steps,new_num_timesteps,estimate_h,walltime,mode
+cardio,main,prob,transfer_runs/exp/cardio/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn,0.6,0.87,median of 4 consecutive seed gaps,30000,1000,5.3,8:00:00,single job
+house,main,log,transfer_runs/exp/house/ablation/gnn_gatv2_layers3_dim128_topk5_heads8_noattn,0.94,0.45,median of 4 consecutive seed gaps,30000,1000,3.7,6:00:00,single job
+king,main,prob,transfer_runs/exp/king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn,1.18,0.21,median of 4 consecutive seed gaps,30000,100,2.8,5:00:00,single job
+gesture,main,log,transfer_runs/exp/gesture/ablation_fixed_seed0/gnn_gat_layers3_dim128_topk5_heads4_noattn,0.58,0.52,median of 4 consecutive seed gaps,30000,1000,3.4,6:00:00,single job
+california,main,log,transfer_runs/exp/california/ablation_fixed_seed0/gnn_gcn_layers2_dim256_topk5_heads4_noattn,0.24,0.1,median of 4 consecutive seed gaps,30000,1000,0.9,2:00:00,single job
+higgs-small,expensive,log,transfer_runs/exp/higgs-small/ablation/gnn_gatv2_layers3_dim128_topk5_heads8_noattn,1.93,4.47,median of 4 consecutive seed gaps,30000,1000,25.2,38:00:00,single job
+miniboone,expensive,log,transfer_runs/exp/miniboone/ablation/gnn_gatv2_layers3_dim128_topk5_heads8_noattn,6.4,13.72,split run: seed-0 sampling 13.14 h (end of training -> gen_seed_0) + median eval 0.58 h,30000,1000,78.2,21:00:00,split chain

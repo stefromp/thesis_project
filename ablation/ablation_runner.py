@@ -192,6 +192,14 @@ def apply_cli_overrides(args: argparse.Namespace) -> None:
         ATTENTIONS = [bool(a) for a in args.grid_attentions]
 
 
+def check_train_setup_args(args: argparse.Namespace) -> None:
+    """--train_setup tabddpm takes steps from the authors' config.toml; an
+    explicit --steps alongside it would be silently ignored, so refuse."""
+    if getattr(args, "train_setup", "ablation") != "ablation" and getattr(args, "steps", None) is not None:
+        raise SystemExit("--steps cannot be combined with --train_setup tabddpm: the steps "
+                         "come from exp/<ds>/ddpm_cb_best/config.toml")
+
+
 def describe_config(show_grid: bool = True) -> str:
     """One-block summary of the active constants, for the job log header.
 
@@ -426,6 +434,203 @@ def _append_per_seed(path: str, gen_seed: int, clf_seed, metrics: dict,
 
 
 # ---------------------------------------------------------------------------
+# Categorical input representation of the GNN denoiser
+# ---------------------------------------------------------------------------
+# "log"  : the log one-hot (every run before 2026-10; default, unchanged).
+# "prob" : one-hot probabilities -- the categorical-input fix. A different
+#          model, so its runs live in their own sibling trees (suffix below)
+#          and a checkpoint records which one it was trained with.
+CAT_INPUTS = ("log", "prob")
+CATFIX_SUFFIX = "_catfix"
+DENOISER_CONFIG_FILE = "denoiser_config.json"
+
+
+# ---------------------------------------------------------------------------
+# Training setup: whose lr / steps / batch / diffusion horizon to train with.
+# ---------------------------------------------------------------------------
+# "ablation" : the module constants above (ABLATION_LR, ABLATION_STEPS,
+#              ABLATION_BATCH_SIZE, ABLATION_NUM_TIMESTEPS) plus the dataset
+#              config's weight_decay / scheduler / sample_batch_size. Default;
+#              every run before 2026-10 used it, unchanged.
+# "tabddpm"  : the same quantities read from the TabDDPM authors' tuned
+#              exp/<ds>/ddpm_cb_best/config.toml, so that only the denoiser
+#              differs from TabDDPM ("budget-matched" runs). Its results live
+#              in their own sibling trees (suffix below) and its checkpoint
+#              records the setup.
+TRAIN_SETUPS = ("ablation", "tabddpm")
+TDDPM_SETUP_SUFFIX = "_tddpm_setup"
+TABDDPM_CONFIG_REL = ("exp", "{dataset}", "ddpm_cb_best", "config.toml")
+TRAIN_SETUP_FILE = "train_setup.json"
+# key -> (config.toml section, key). Every one must be present: no fallback.
+_TDDPM_REQUIRED = {
+    "lr":                ("train.main", "lr"),
+    "steps":             ("train.main", "steps"),
+    "batch_size":        ("train.main", "batch_size"),
+    "weight_decay":      ("train.main", "weight_decay"),
+    "num_timesteps":     ("diffusion_params", "num_timesteps"),
+    "sample_batch_size": ("sample", "batch_size"),
+}
+# Optional: absent in 12 of the 16 authors' configs. Their pipeline then runs
+# with scripts/train.py's default, which is what we use and record.
+_TDDPM_OPTIONAL = {"scheduler": ("diffusion_params", "scheduler", "cosine")}
+
+
+def _load_toml(path: str) -> dict:
+    try:
+        import tomllib                      # Python >= 3.11
+    except ImportError:                     # the cluster runs 3.10
+        import tomli as tomllib             # requirements.txt pins tomli
+    with open(path, "rb") as fh:
+        return tomllib.load(fh)
+
+
+def _toml_line(text: str, section: str, key: str):
+    """1-based line of `key = ...` inside `[section]`, or None."""
+    cur = ""
+    for i, line in enumerate(text.splitlines(), 1):
+        s = line.strip()
+        if s.startswith("[") and s.endswith("]"):
+            cur = s[1:-1].strip()
+        elif cur == section and s.split("=", 1)[0].strip() == key and "=" in s:
+            return i
+    return None
+
+
+def training_setup(dataset_name: str, dataset_cfg: dict, train_setup: str = "ablation",
+                   repo_root: str = "."):
+    """(values, sources) for the training / diffusion / sampling-batch settings.
+
+    values  : lr, steps, batch_size, weight_decay, num_timesteps, scheduler,
+              sample_batch_size
+    sources : the same keys -> where each value was read (file:line for
+              "tabddpm"). Everything else (architecture, cat_input, seeds,
+              EMA, num_samples, normalisation, evaluator) is not touched.
+    """
+    if train_setup not in TRAIN_SETUPS:
+        raise ValueError(f"train_setup must be one of {TRAIN_SETUPS}, got {train_setup!r}")
+    if train_setup == "ablation":
+        values = dict(lr=ABLATION_LR, steps=ABLATION_STEPS, batch_size=ABLATION_BATCH_SIZE,
+                      weight_decay=dataset_cfg["weight_decay"],
+                      num_timesteps=ABLATION_NUM_TIMESTEPS,
+                      scheduler=dataset_cfg["scheduler"],
+                      sample_batch_size=dataset_cfg["sample_batch_size"])
+        sources = dict(lr="ablation_runner.ABLATION_LR", steps="ablation_runner.ABLATION_STEPS",
+                       batch_size="ablation_runner.ABLATION_BATCH_SIZE",
+                       weight_decay="DATASET_CFG['weight_decay']",
+                       num_timesteps="ablation_runner.ABLATION_NUM_TIMESTEPS",
+                       scheduler="DATASET_CFG['scheduler']",
+                       sample_batch_size="DATASET_CFG['sample_batch_size']")
+        return values, sources
+
+    rel = os.path.join(*TABDDPM_CONFIG_REL).format(dataset=dataset_name)
+    path = os.path.join(repo_root, rel)
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"--train_setup tabddpm needs the authors' tuned config at {path} "
+            f"(upload exp/{dataset_name}/ddpm_cb_best/config.toml)")
+    cfg = _load_toml(path)
+    with open(path) as fh:
+        text = fh.read()
+    values, sources, missing = {}, {}, []
+    for name, (section, key) in _TDDPM_REQUIRED.items():
+        node = cfg
+        for part in section.split("."):
+            node = node.get(part, {}) if isinstance(node, dict) else {}
+        if key not in node:
+            missing.append(f"[{section}] {key}")
+            continue
+        values[name] = node[key]
+        sources[name] = f"{rel}:{_toml_line(text, section, key)} [{section}] {key}"
+    if missing:
+        raise KeyError(f"{rel} lacks required key(s) {missing} for --train_setup tabddpm; "
+                       f"refusing to guess")
+    for name, (section, key, default) in _TDDPM_OPTIONAL.items():
+        node = cfg.get(section, {})
+        if key in node:
+            values[name] = node[key]
+            sources[name] = f"{rel}:{_toml_line(text, section, key)} [{section}] {key}"
+        else:
+            values[name] = default
+            sources[name] = (f"absent from {rel}; scripts/train.py default "
+                             f"scheduler={default!r} (what TabDDPM's pipeline.py ran with)")
+    # type sanity: a quoted number in the toml would silently change the run
+    for name in ("steps", "batch_size", "num_timesteps", "sample_batch_size"):
+        if not isinstance(values[name], int) or isinstance(values[name], bool):
+            raise TypeError(f"{sources[name]} is {values[name]!r}, expected an int")
+    for name in ("lr", "weight_decay"):
+        if not isinstance(values[name], (int, float)) or isinstance(values[name], bool):
+            raise TypeError(f"{sources[name]} is {values[name]!r}, expected a number")
+        values[name] = float(values[name])
+    return values, sources
+
+
+def denoiser_record(cat_input: str, topk_mode: str, train_setup: str = "ablation") -> dict:
+    """What DENOISER_CONFIG_FILE holds after training. The default setup writes
+    exactly the pre-option record, so existing files and checks are unchanged."""
+    rec = {"cat_input": cat_input, "topk_mode": topk_mode}
+    if train_setup != "ablation":
+        rec["train_setup"] = train_setup
+    return rec
+
+
+def results_subdir(topk_mode: str = "fixed", cat_input: str = "log",
+                   train_setup: str = "ablation") -> str:
+    """Sibling tree for one (topk_mode, cat_input, train_setup) triple, e.g.
+    "ablation", "ablation_adaptive_jenks", "ablation_catfix",
+    "ablation_tddpm_setup", "ablation_tddpm_setup_catfix".
+    """
+    if cat_input not in CAT_INPUTS:
+        raise ValueError(f"cat_input must be one of {CAT_INPUTS}, got {cat_input!r}")
+    if train_setup not in TRAIN_SETUPS:
+        raise ValueError(f"train_setup must be one of {TRAIN_SETUPS}, got {train_setup!r}")
+    base = "ablation" if topk_mode == "fixed" else f"ablation_{topk_mode}"
+    if train_setup == "tabddpm":
+        base += TDDPM_SETUP_SUFFIX
+    return base + (CATFIX_SUFFIX if cat_input == "prob" else "")
+
+
+def checkpoint_record(parent_dir: str):
+    """The DENOISER_CONFIG_FILE written after training ({"cat_input", "topk_mode"}),
+    or None for a checkpoint that predates it."""
+    path = os.path.join(parent_dir, DENOISER_CONFIG_FILE)
+    if not os.path.exists(path):
+        return None
+    with open(path) as fh:
+        return json.load(fh)
+
+
+def checkpoint_cat_input(parent_dir: str) -> str:
+    """cat_input a checkpoint in parent_dir was trained with. Checkpoints that
+    predate the option have no DENOISER_CONFIG_FILE and were all trained with
+    "log"."""
+    path = os.path.join(parent_dir, DENOISER_CONFIG_FILE)
+    if not os.path.exists(path):
+        return "log"
+    with open(path) as fh:
+        return json.load(fh).get("cat_input", "log")
+
+
+def _record_train_setup(parent_dir: str, train_setup: str, values: dict, sources: dict) -> None:
+    """Write TRAIN_SETUP_FILE and fold the same block into run_meta.json (the
+    job script writes run_meta.json first; its "steps" placeholder is replaced
+    by the value actually used). Only for a non-default setup, so default runs
+    leave run_meta.json byte-identical."""
+    os.makedirs(parent_dir, exist_ok=True)
+    block = {"train_setup": train_setup, "values": values, "sources": sources}
+    with open(os.path.join(parent_dir, TRAIN_SETUP_FILE), "w") as fh:
+        json.dump(block, fh, indent=2)
+    meta_path = os.path.join(parent_dir, "run_meta.json")
+    meta = {}
+    if os.path.exists(meta_path):
+        with open(meta_path) as fh:
+            meta = json.load(fh)
+    meta.update({"train_setup": train_setup, "train_setup_values": values,
+                 "train_setup_sources": sources, "steps": values["steps"]})
+    with open(meta_path, "w") as fh:
+        json.dump(meta, fh, indent=2)
+
+
+# ---------------------------------------------------------------------------
 # Single ablation run  (train -> multi-seed sample+eval loop)
 # ---------------------------------------------------------------------------
 
@@ -449,6 +654,8 @@ def _run_one(
     k_min: int = 1,
     topk_warmup_steps: int = 0,
     topk_log_every: int = 100,
+    cat_input: str = "log",
+    train_setup: str = "ablation",
 ) -> dict:
     """Train once, then evaluate with N_GEN_SEEDS x N_CLF_SEEDS protocol.
 
@@ -482,7 +689,8 @@ def _run_one(
     # Each adaptive mode lands in its own sibling tree (ablation_adaptive_jenks,
     # ablation_adaptive_sparsemax, ablation_adaptive_entmax15) so it can never
     # collide with (or be mistaken for) a fixed-mode directory of the same combo.
-    ablation_subdir = "ablation" if topk_mode == "fixed" else f"ablation_{topk_mode}"
+    # cat_input="prob" runs get a "_catfix" suffix on top (results_subdir).
+    ablation_subdir = results_subdir(topk_mode, cat_input, train_setup)
     parent_dir     = os.path.join(exp_root, "exp", dataset_name, ablation_subdir, dir_name)
     real_data_path = os.path.join(data_root, dataset_cfg["real_data_path"])
     results_file   = os.path.join(parent_dir, "results_full_averaged.json")
@@ -550,6 +758,11 @@ def _run_one(
         y_policy="default",
     )
 
+    # lr / steps / batch / weight decay / diffusion horizon / scheduler /
+    # sampling batch: the module constants ("ablation", default) or the
+    # authors' tuned config.toml ("tabddpm"). See training_setup().
+    setup, setup_sources = training_setup(dataset_name, dataset_cfg, train_setup, repo_root)
+
     graph_params = dict(
         enabled=True,
         mode="dynamic",
@@ -563,8 +776,12 @@ def _run_one(
         topk_mode=topk_mode,
         k_min=k_min,
         topk_warmup_steps=topk_warmup_steps,
-        num_timesteps=ABLATION_NUM_TIMESTEPS,
+        num_timesteps=setup["num_timesteps"],
+        cat_input=cat_input,
     )
+
+    if train_setup != "ablation":
+        _record_train_setup(parent_dir, train_setup, setup, setup_sources)
 
     # ---- 1. Train (single run) ---------------------------------------------
     tabddpm_train(
@@ -578,15 +795,20 @@ def _run_one(
         seed=seed,
         change_val=False,
         graph_params=graph_params,
-        num_timesteps=ABLATION_NUM_TIMESTEPS,
+        num_timesteps=setup["num_timesteps"],
         gaussian_loss_type="mse",
-        scheduler=dataset_cfg["scheduler"],
-        lr=ABLATION_LR,
-        weight_decay=dataset_cfg["weight_decay"],
-        batch_size=ABLATION_BATCH_SIZE,
-        steps=ABLATION_STEPS,
+        scheduler=setup["scheduler"],
+        lr=setup["lr"],
+        weight_decay=setup["weight_decay"],
+        batch_size=setup["batch_size"],
+        steps=setup["steps"],
         checkpoint_every=0,
+        divergence_check=train_setup != "ablation",
     )
+    # Record what the checkpoint was trained with, so a later load
+    # (split_runner --load_checkpoint) can refuse a mismatched cat_input.
+    with open(os.path.join(parent_dir, DENOISER_CONFIG_FILE), "w") as fh:
+        json.dump(denoiser_record(cat_input, topk_mode, train_setup), fh, indent=2)
 
     # Load raw real data once (shared across all gen seeds for fidelity)
     X_num_real, X_cat_real, cat_sizes, cat_enc = _load_raw_real(real_data_path)
@@ -618,11 +840,11 @@ def _run_one(
             seed=gen_seed,
             change_val=False,
             graph_params=graph_params,
-            num_timesteps=ABLATION_NUM_TIMESTEPS,
+            num_timesteps=setup["num_timesteps"],
             gaussian_loss_type="mse",
-            scheduler=dataset_cfg["scheduler"],
+            scheduler=setup["scheduler"],
             num_samples=dataset_cfg["num_samples"],
-            batch_size=dataset_cfg["sample_batch_size"],
+            batch_size=setup["sample_batch_size"],
         )
 
         # 2b. TabDDPM-protocol metrics (per gen_seed): mean-L2 DCR, mean numerical
@@ -903,6 +1125,7 @@ def run_ablation(
                     tuple for cluster single-job mode; if None, run all.
     """
     apply_cli_overrides(args)
+    check_train_setup_args(args)
 
     if getattr(args, "aggregate", False):
         return aggregate_summary(dataset_name, args)
@@ -958,6 +1181,8 @@ def run_ablation(
                 k_min=getattr(args, "k_min", 1),
                 topk_warmup_steps=getattr(args, "topk_warmup_steps", 0),
                 topk_log_every=getattr(args, "topk_log_every", 100),
+                cat_input=getattr(args, "cat_input", "log"),
+                train_setup=getattr(args, "train_setup", "ablation"),
             )
         except Exception:
             traceback.print_exc()
@@ -1020,6 +1245,8 @@ def run_ablation(
                 k_min=getattr(args, "k_min", 1),
                 topk_warmup_steps=getattr(args, "topk_warmup_steps", 0),
                 topk_log_every=getattr(args, "topk_log_every", 100),
+                cat_input=getattr(args, "cat_input", "log"),
+                train_setup=getattr(args, "train_setup", "ablation"),
             )
             entry["status"]  = "done"
             entry["metrics"] = result
@@ -1127,6 +1354,21 @@ def make_parser(dataset_name: str = "") -> argparse.ArgumentParser:
                     help="Write a topk_stats.csv row every N training steps "
                          "(adaptive modes only; sampling rows are unthrottled, "
                          "default: 100)")
+
+    ci = p.add_argument_group("Categorical input of the GNN denoiser")
+    ci.add_argument("--cat_input", type=str, choices=list(CAT_INPUTS), default="log",
+                    help="log (default): categorical nodes see the diffusion's log one-hot, as "
+                         "every run before 2026-10 did. prob: they see the one-hot probabilities "
+                         "(the categorical-input fix); results go to *_catfix sibling trees. "
+                         "No effect on datasets without categorical columns.")
+
+    ts = p.add_argument_group("Training setup")
+    ts.add_argument("--train_setup", type=str, choices=list(TRAIN_SETUPS), default="ablation",
+                    help="ablation (default): lr / steps / batch / num_timesteps from the module "
+                         "constants, as every run before 2026-10. tabddpm: lr, steps, batch_size, "
+                         "weight_decay, num_timesteps, scheduler and the sampling batch from the "
+                         "authors' exp/<ds>/ddpm_cb_best/config.toml (budget-matched runs); results "
+                         "go to *_tddpm_setup sibling trees and training aborts on divergence.")
 
     gr = p.add_argument_group(
         "Grid overrides (affect the full-grid and --aggregate modes)")

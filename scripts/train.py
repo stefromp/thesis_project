@@ -8,10 +8,25 @@ from tab_ddpm.graph_builder import build_static_adjacency
 from utils_train import get_model, make_dataset, update_ema
 import lib
 import pandas as pd
+import json
+import math
+
+
+# Divergence detection (opt-in, --train_setup tabddpm). Detection only: it
+# reads the per-step loss values the loop already computes and aborts with a
+# report; it never changes the update (no clipping, no skipping, no lr change).
+DIVERGENCE_FACTOR = 10.0     # a 100-step window loss above 10x the best window ...
+DIVERGENCE_MIN_STEP = 1000   # ... counts only after this many steps
+DIVERGENCE_REPORT = 'divergence.json'
+
+
+class TrainingDiverged(RuntimeError):
+    """Raised when the loss becomes non-finite or explodes. No model is saved."""
+
 
 class Trainer:
     def __init__(self, diffusion, train_iter, lr, weight_decay, steps, device=torch.device('cuda:1'),
-                 checkpoint_every=0, parent_dir=None):
+                 checkpoint_every=0, parent_dir=None, divergence_check=False):
         self.diffusion = diffusion
         self.ema_model = deepcopy(self.diffusion._denoise_fn)
         for param in self.ema_model.parameters():
@@ -28,6 +43,8 @@ class Trainer:
         self.ema_every = 1000
         self.checkpoint_every = checkpoint_every
         self.parent_dir = parent_dir
+        self.divergence_check = divergence_check
+        self._best_window = math.inf
 
     def _anneal_lr(self, step):
         frac_done = step / self.steps
@@ -47,6 +64,22 @@ class Trainer:
 
         return loss_multi, loss_gauss
 
+    def _diverged(self, step, reason, mloss, gloss):
+        lr_now = self.optimizer.param_groups[0]['lr']
+        report = {'step': step, 'of_steps': self.steps, 'reason': reason, 'mloss': mloss, 'gloss': gloss,
+                  'init_lr': self.init_lr, 'lr_at_step': lr_now,
+                  'best_window_loss': None if math.isinf(self._best_window) else self._best_window,
+                  'factor': DIVERGENCE_FACTOR, 'min_step': DIVERGENCE_MIN_STEP}
+        if self.parent_dir is not None:
+            os.makedirs(self.parent_dir, exist_ok=True)
+            with open(os.path.join(self.parent_dir, DIVERGENCE_REPORT), 'w') as fh:
+                json.dump(report, fh, indent=2)
+            self.loss_history.to_csv(os.path.join(self.parent_dir, 'loss_diverged.csv'), index=False)
+        raise TrainingDiverged(
+            f'TRAINING DIVERGED at step {step}/{self.steps} (init lr {self.init_lr:g}): {reason}. '
+            f'Aborted; no model was saved. Report: '
+            f'{os.path.join(self.parent_dir or ".", DIVERGENCE_REPORT)}')
+
     def run_loop(self):
         step = 0
         curr_loss_multi = 0.0
@@ -60,9 +93,13 @@ class Trainer:
 
             self._anneal_lr(step)
 
+            lm, lg = batch_loss_multi.item(), batch_loss_gauss.item()
+            if self.divergence_check and not (math.isfinite(lm) and math.isfinite(lg)):
+                self._diverged(step + 1, f'non-finite loss (mloss={lm}, gloss={lg})', lm, lg)
+
             curr_count += len(x)
-            curr_loss_multi += batch_loss_multi.item() * len(x)
-            curr_loss_gauss += batch_loss_gauss.item() * len(x)
+            curr_loss_multi += lm * len(x)
+            curr_loss_gauss += lg * len(x)
 
             if (step + 1) % self.log_every == 0:
                 mloss = np.around(curr_loss_multi / curr_count, 4)
@@ -70,6 +107,13 @@ class Trainer:
                 if (step + 1) % self.print_every == 0:
                     print(f'Step {(step + 1)}/{self.steps} MLoss: {mloss} GLoss: {gloss} Sum: {mloss + gloss}')
                 self.loss_history.loc[len(self.loss_history)] =[step + 1, mloss, gloss, mloss + gloss]
+                if self.divergence_check:
+                    window = float(mloss + gloss)
+                    if (step + 1) >= DIVERGENCE_MIN_STEP and window > DIVERGENCE_FACTOR * self._best_window:
+                        self._diverged(step + 1, f'loss explosion: 100-step mean {window:.4g} > '
+                                       f'{DIVERGENCE_FACTOR:g} x best window {self._best_window:.4g}',
+                                       float(mloss), float(gloss))
+                    self._best_window = min(self._best_window, window)
                 curr_count = 0
                 curr_loss_gauss = 0.0
                 curr_loss_multi = 0.0
@@ -106,6 +150,7 @@ def train(
     change_val = False,
     graph_params = None,
     checkpoint_every = 0,
+    divergence_check = False,
 ):
     real_data_path = os.path.normpath(real_data_path)
     parent_dir = os.path.normpath(parent_dir)
@@ -196,6 +241,7 @@ def train(
         device=device,
         checkpoint_every=checkpoint_every,
         parent_dir=parent_dir,
+        divergence_check=divergence_check,
     )
     trainer.run_loop()
 
