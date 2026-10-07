@@ -37,6 +37,7 @@ def get_model(
             k_min=graph_params.get('k_min', 1),
             topk_warmup_steps=graph_params.get('topk_warmup_steps', 0),
             num_timesteps=graph_params.get('num_timesteps', 1000),
+            cat_input=graph_params.get('cat_input', 'log'),
         )
     elif model_name == 'mlp':
         model = MLPDiffusion(**model_params)

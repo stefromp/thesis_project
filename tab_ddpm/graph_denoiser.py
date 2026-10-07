@@ -180,6 +180,10 @@ class AttnGNNBlock(nn.Module):
 # Graph-aware denoiser
 # ---------------------------------------------------------------------------
 
+# Input representation of categorical nodes (see GraphAwareDenoiser.cat_input).
+CAT_INPUTS = ("log", "prob")
+
+
 class GraphAwareDenoiser(nn.Module):
     """Graph-aware denoiser; drop-in replacement for MLPDiffusion.
 
@@ -231,6 +235,18 @@ class GraphAwareDenoiser(nn.Module):
                     rule switches on (adaptive modes only).
         num_timesteps: diffusion horizon T, used only to bucket logged
                     per-sample budgets by t.
+        cat_input:  what a categorical node's input projection sees.
+                    "log" (default; the behaviour every existing checkpoint
+                    was trained with): the diffusion's log one-hot, whose
+                    empty classes are log(1e-30) ~ -69. Through a per-column
+                    Linear(K, d_model) this gives categorical node embeddings
+                    ~200x the timestep embedding at init, and some columns
+                    learn to copy x_t instead of denoising it.
+                    "prob": exp() of that slice, i.e. the one-hot class
+                    probabilities, O(1) like the numerical nodes. Changes
+                    the model, so a "log" checkpoint must not be loaded as
+                    "prob" or vice versa. No effect when there are no
+                    categorical features.
     """
 
     def __init__(
@@ -254,9 +270,13 @@ class GraphAwareDenoiser(nn.Module):
         k_min: int = 1,
         topk_warmup_steps: int = 0,
         num_timesteps: int = 1000,
+        cat_input: str = "log",
     ) -> None:
         super().__init__()
 
+        if cat_input not in CAT_INPUTS:
+            raise ValueError(f"unknown cat_input {cat_input!r}; expected one of {CAT_INPUTS}")
+        self.cat_input = cat_input
         self.use_attention = use_attention
         self.d_num = d_num
         self.cat_sizes = list(cat_sizes)
@@ -406,7 +426,9 @@ class GraphAwareDenoiser(nn.Module):
             offset = self.d_num
             cat_nodes: List[Tensor] = []
             for i, K in enumerate(self.cat_sizes):
-                slice_i = x[:, offset : offset + K].float()  # (B, K)
+                slice_i = x[:, offset : offset + K].float()  # (B, K) log one-hot
+                if self.cat_input == "prob":
+                    slice_i = slice_i.exp()  # one-hot class probabilities
                 cat_nodes.append(self.cat_in_projs[i](slice_i))  # (B, d_model)
                 offset += K
             parts.append(torch.stack(cat_nodes, dim=1))  # (B, n_cat, d_model)
