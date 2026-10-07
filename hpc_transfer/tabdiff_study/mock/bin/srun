@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# mock: run the step in-process
+exec "$@"

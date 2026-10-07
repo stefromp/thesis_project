@@ -1,0 +1,46 @@
+dataset,source,target,stage,hours_pessimistic,n_train,nodes,source_nodes,steps,T,batch,measured_run
+magic,wilt,tabdiff_magic,train,0.815,17117,10,5,30000,100,256,transfer_runs/exp/wilt/ablation_fixed_seed0/gnn_gatv2_layers2_dim64_topk3_heads8_noattn
+magic,wilt,tabdiff_magic,sample,0.097,17117,10,5,30000,100,256,transfer_runs/exp/wilt/ablation_fixed_seed0/gnn_gatv2_layers2_dim64_topk3_heads8_noattn
+magic,wilt,tabdiff_magic,eval_main,0.019,17117,10,5,30000,100,256,transfer_runs/exp/wilt/ablation_fixed_seed0/gnn_gatv2_layers2_dim64_topk3_heads8_noattn
+magic,wilt,tabdiff_magic,eval_quality,0.132,17117,10,5,30000,100,256,transfer_runs/exp/wilt/ablation_fixed_seed0/gnn_gatv2_layers2_dim64_topk3_heads8_noattn
+magic,wilt,JOB magic.sh (part all),walltime,2,,,,,,,
+shoppers,adult,tabdiff_shoppers,train,0.559,11097,17,14,30000,100,4096,transfer_runs/exp/adult/ablation_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+shoppers,adult,tabdiff_shoppers,sample,0.074,11097,17,14,30000,100,4096,transfer_runs/exp/adult/ablation_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+shoppers,adult,tabdiff_shoppers,eval_main,0.02,11097,17,14,30000,100,4096,transfer_runs/exp/adult/ablation_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+shoppers,adult,tabdiff_shoppers,eval_quality,0.056,11097,17,14,30000,100,4096,transfer_runs/exp/adult/ablation_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+shoppers,adult,tabdiff_shoppers_dcr,train,0.559,6165,17,14,30000,100,4096,transfer_runs/exp/adult/ablation_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+shoppers,adult,tabdiff_shoppers_dcr,sample,0.064,6165,17,14,30000,100,4096,transfer_runs/exp/adult/ablation_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+shoppers,adult,tabdiff_shoppers_dcr,eval_dcr,0.1,6165,17,14,30000,100,4096,transfer_runs/exp/adult/ablation_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+shoppers,adult,JOB shoppers.sh (part all),walltime,2,,,,,,,
+adult,adult,tabdiff_adult,train,0.395,32561,14,14,30000,100,4096,transfer_runs/exp/adult/ablation_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+adult,adult,tabdiff_adult,sample,0.099,32561,14,14,30000,100,4096,transfer_runs/exp/adult/ablation_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+adult,adult,tabdiff_adult,eval_main,0.049,32561,14,14,30000,100,4096,transfer_runs/exp/adult/ablation_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+adult,adult,tabdiff_adult,eval_quality,0.478,32561,14,14,30000,100,4096,transfer_runs/exp/adult/ablation_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+adult,adult,tabdiff_adult_dcr,train,0.395,24421,14,14,30000,100,4096,transfer_runs/exp/adult/ablation_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+adult,adult,tabdiff_adult_dcr,sample,0.087,24421,14,14,30000,100,4096,transfer_runs/exp/adult/ablation_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+adult,adult,tabdiff_adult_dcr,eval_dcr,0.1,24421,14,14,30000,100,4096,transfer_runs/exp/adult/ablation_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+adult,adult,JOB adult.sh (part all),walltime,3,,,,,,,
+default,default,tabdiff_default,train,2.308,27000,23,23,30000,1000,4096,transfer_runs/exp/default/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+default,default,tabdiff_default,sample,3.277,27000,23,23,30000,1000,4096,transfer_runs/exp/default/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+default,default,tabdiff_default,eval_main,0.065,27000,23,23,30000,1000,4096,transfer_runs/exp/default/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+default,default,tabdiff_default,eval_quality,0.329,27000,23,23,30000,1000,4096,transfer_runs/exp/default/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+default,default,tabdiff_default_dcr,train,2.308,15000,23,23,30000,1000,4096,transfer_runs/exp/default/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+default,default,tabdiff_default_dcr,sample,1.843,15000,23,23,30000,1000,4096,transfer_runs/exp/default/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+default,default,tabdiff_default_dcr,eval_dcr,0.1,15000,23,23,30000,1000,4096,transfer_runs/exp/default/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+default,default,JOB default.sh (part all),walltime,14,,,,,,,
+beijing,king,tabdiff_beijing,train,1.062,37581,12,21,30000,100,4096,transfer_runs/exp/king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+beijing,king,tabdiff_beijing,sample,0.338,37581,12,21,30000,100,4096,transfer_runs/exp/king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+beijing,king,tabdiff_beijing,eval_main,0.045,37581,12,21,30000,100,4096,transfer_runs/exp/king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+beijing,king,tabdiff_beijing,eval_quality,0.637,37581,12,21,30000,100,4096,transfer_runs/exp/king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+beijing,king,tabdiff_beijing_dcr,train,1.062,20878,12,21,30000,100,4096,transfer_runs/exp/king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+beijing,king,tabdiff_beijing_dcr,sample,0.21,20878,12,21,30000,100,4096,transfer_runs/exp/king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+beijing,king,tabdiff_beijing_dcr,eval_dcr,0.1,20878,12,21,30000,100,4096,transfer_runs/exp/king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+beijing,king,JOB beijing.sh (part all),walltime,5,,,,,,,
+news,king,tabdiff_news,train,9.302,35679,48,21,30000,100,4096,transfer_runs/exp/king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+news,king,tabdiff_news,sample,2.549,35679,48,21,30000,100,4096,transfer_runs/exp/king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+news,king,tabdiff_news,eval_main,0.172,35679,48,21,30000,100,4096,transfer_runs/exp/king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+news,king,tabdiff_news,eval_quality,0.574,35679,48,21,30000,100,4096,transfer_runs/exp/king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+news,king,tabdiff_news_dcr,train,9.302,19822,48,21,30000,100,4096,transfer_runs/exp/king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+news,king,tabdiff_news_dcr,sample,1.438,19822,48,21,30000,100,4096,transfer_runs/exp/king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+news,king,tabdiff_news_dcr,eval_dcr,0.1,19822,48,21,30000,100,4096,transfer_runs/exp/king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+news,king,JOB news.sh (part all),walltime,31,,,,,,,

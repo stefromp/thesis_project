@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# mock: environment modules are a no-op off the cluster
+exit 0
