@@ -9,3 +9,38 @@ catboost_info/
 
 # Generated plot inputs (23 MB of .npy), not code.
 results_plots/
+
+# TabDiff-transfer study: raw UCI downloads + TabDiff's processing work dir
+# (264 MB, rebuilt by hpc_transfer/tabdiff_study/prepare_data.py), and the
+# per-upload commit stamp (written at upload time, see that folder's README).
+data/tabdiff_raw/
+hpc_transfer/tabdiff_study/UPLOAD_COMMIT
+tabdiff_gnn/UPLOAD_COMMIT
+
+# Results, runs and data: never committed. Datasets already tracked under data/
+# stay tracked; only new files there are ignored, except the small notes and
+# provenance manifests re-included below.
+transfer_runs/
+tddpm_setup_runs/
+wandb/
+hpc_transfer/logs/
+data/**
+!data/**/
+!data/*_tabdiff_split/README.md
+!data/tabdiff_manifest.json
+!data/tabdiff_gnn/manifest.json
+
+# Model / array / sample artifacts anywhere (small association matrices that
+# back the dependency-fidelity figures are kept)
+*.pt
+*.pth
+*.npy
+*.npz
+*.pkl
+!analysis/dependency_fidelity/**/*.npz
+**/gen_seed_*/
+**/all_samples/
+samples_*.csv
+
+# OS
+.DS_Store
