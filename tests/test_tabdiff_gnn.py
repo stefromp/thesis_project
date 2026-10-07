@@ -612,71 +612,103 @@ def _over_cap(ds):
     return mj.over_cap("gnn", ds)
 
 
-def test_job_scripts():
+REF_JOB = os.path.join(REPO, "hpc_transfer", "jobs", "king_transfer.sh")
+
+
+def _blocks(text):
+    """The verbatim blocks shared with hpc_transfer/jobs (everything up to the Paths section)."""
+    return text.split("# Paths. Defined once")[0]
+
+
+def test_job_scripts_follow_hpc_transfer_jobs():
     files = sorted(f for f in glob.glob(os.path.join(JOBS, "*.sh")) if not f.endswith("common_tabdiff_gnn.sh"))
-    assert files
-    names = {os.path.basename(f) for f in files}
-    assert all(n.startswith("gnn_") for n in names)            # no TabDiff (tf) or d384 jobs
-    for ds in C.ORDER:
-        for seed in C.TRAIN_SEEDS:
-            assert any(n.startswith(f"gnn_{ds}_s{seed}") for n in names), (ds, seed)
+    names = {os.path.basename(f)[:-3] for f in files}
+    want = {f"{ds}_tabdiff_gnn" for ds in C.ORDER if ds != "news"} | {"news_tabdiff_gnn_train",
+                                                                      "news_tabdiff_gnn_sample_eval"}
+    assert names == want                                     # one script per dataset, no per-seed copies
+    ref = open(REF_JOB).read()
+    norm = lambda t: re.sub(r"(--job-name=|jobs_out/)\S+|--time=\S+", "X", t)
     for f in files:
-        s = open(f).read()
-        assert "#SBATCH --partition=gpu" in s and "#SBATCH --gres=gpu:a100:1" in s and "#SBATCH --mem=24G" in s
-        h = int(re.search(r"#SBATCH --time=(\d+):00:00", s).group(1))
+        t = open(f).read()
+        stem = os.path.basename(f)[:-3]
+        # header + TODO(GPU) block + account + template block: as in hpc_transfer/jobs, except
+        # the job name/time and our 3-line note on per-seed logs
+        ours = norm(_blocks(t)).replace(
+            " For SEED=1 / 2\n# pass --job-name/--output/--error on the sbatch command line (see\n"
+            "# hpc_transfer/submit_tabdiff_gnn.sh) so the seeds do not share one log.", "")
+        assert ours == norm(_blocks(ref)), stem
+        assert f"#SBATCH --job-name={stem}\n" in t and f"jobs_out/{stem}.out" in t and f"jobs_out/{stem}.err" in t
+        assert "#SBATCH --mem=120G" in t and "#SBATCH --partition=gpu" in t
+        assert "\n#SBATCH --gres" not in t and "##SBATCH --gres=gpu:1" in t     # TODO(GPU), commented
+        h = int(re.search(r"#SBATCH --time=(\d+):00:00", t).group(1))
         assert 2 <= h <= 48
-        assert 'cd "${REPO_ROOT}"' in s and "run_route_a" in s and "d256" in s
-        assert 'DENOISER="attngnn"' in s
-        stages = re.search(r'STAGE_GROUPS="([^"]+)"', s).group(1).split(",")
+        for var in ("HPC_ROOT", "REPO_ROOT", "PYTHON_BIN", "TRANSFER_ROOT", "DEVICE", "SEED", "STAGES"):
+            assert re.search(rf'^{var}="\${{{var}:-', t, re.M), (stem, var)  # overridable from the environment
+        assert 'cd "${REPO_ROOT}"' in t and 'SEED="${SEED:-0}"' in t and 'DENOISER="attngnn"' in t
+        assert t.rstrip().endswith("run_route_a") and "common_tabdiff_gnn.sh" in t
+        stages = re.search(r'STAGES="\$\{STAGES:-([^}]*)\}"', t).group(1).split(",")
         assert stages in (["train", "sample", "eval_main", "eval_quality", "eval_tabpc"], ["train"],
                           ["sample", "eval_main", "eval_quality", "eval_tabpc"])
+        assert "d256" in t
 
 
 def test_over_cap_jobs_are_flagged_and_blocked():
     sub = open(os.path.join(REPO, "hpc_transfer", "submit_tabdiff_gnn.sh")).read()
     for ds in C.ORDER:
-        first = sorted(glob.glob(os.path.join(JOBS, f"gnn_{ds}_s0*.sh")))[0]
+        first = sorted(glob.glob(os.path.join(JOBS, f"{ds}_tabdiff_gnn*.sh")))[-1]
         txt = open(first).read()
-        lines = [ln for ln in sub.splitlines() if f"gnn_{ds}_s0" in ln and "sbatch" in ln]
+        lines = [ln for ln in sub.split("# === training seed 1")[0].splitlines()
+                 if f"/{ds}_tabdiff_gnn" in ln and "sbatch" in ln]
+        assert lines, ds
         if _over_cap(ds):
-            assert "OVER_CAP" in txt and "#SBATCH --time=48:00:00" in txt
-            assert all(ln.startswith("### ") for ln in lines)
-            assert 'STAGE_GROUPS="train"' in txt                  # training alone in its job
+            assert "OVER_CAP" in txt and all(ln.startswith("### ") for ln in lines)
         else:
-            assert "OVER_CAP" not in txt
-            assert all(ln.startswith("# ") for ln in lines)
+            assert "OVER_CAP" not in txt and all(ln.startswith("# ") for ln in lines)
 
 
 def test_news_is_a_resumable_training_chain():
-    files = sorted(glob.glob(os.path.join(JOBS, "gnn_news_s0_p*.sh")))
-    assert len(files) >= 3
-    *trains, post = [open(f).read() for f in files]
-    for i, t in enumerate(trains):
-        assert 'STAGE_GROUPS="train"' in t and 'TRAIN_BUDGET_H="46.5"' in t and "#SBATCH --time=48:00:00" in t
-        assert "resumable copy of TabDiff's Trainer.run_loop" in t and "OVER_CAP" not in t
-        assert ("--dependency=afterok" in t) == (i > 0)
-    assert 'STAGE_GROUPS="sample,eval_main,eval_quality,eval_tabpc"' in post and 'TRAIN_BUDGET_H=""' in post
+    train = open(os.path.join(JOBS, "news_tabdiff_gnn_train.sh")).read()
+    post = open(os.path.join(JOBS, "news_tabdiff_gnn_sample_eval.sh")).read()
+    assert 'STAGES="${STAGES:-train}"' in train and 'TRAIN_BUDGET_H="${TRAIN_BUDGET_H:-46.5}"' in train
+    assert "#SBATCH --time=48:00:00" in train and "resumable copy of TabDiff's Trainer.run_loop" in train
+    assert 'STAGES="${STAGES:-sample,eval_main,eval_quality,eval_tabpc}"' in post
+    assert 'TRAIN_BUDGET_H="${TRAIN_BUDGET_H:-}"' in post
     for ds in C.ORDER:                                          # only news uses the resumable copy
-        txt = open(sorted(glob.glob(os.path.join(JOBS, f"gnn_{ds}_s0*.sh")))[0]).read()
-        assert ("resumable copy" in txt) == (ds == "news")
-        if ds != "news":
-            assert "TabDiff's Trainer, unchanged" in txt and 'TRAIN_BUDGET_H=""' in txt
+        for f in glob.glob(os.path.join(JOBS, f"{ds}_tabdiff_gnn*.sh")):
+            txt = open(f).read()
+            assert ("resumable copy" in txt) == (ds == "news")
+            if ds != "news":
+                assert "TabDiff's Trainer, unchanged" in txt and 'TRAIN_BUDGET_H="${TRAIN_BUDGET_H:-}"' in txt
     sub = open(os.path.join(REPO, "hpc_transfer", "submit_tabdiff_gnn.sh")).read()
-    assert "### " not in sub                                     # nothing blocked any more
+    seed0 = sub.split("# === training seed 1")[0]
+    news = [ln for ln in seed0.splitlines() if "news_tabdiff_gnn" in ln and "sbatch" in ln]
+    mj = _load_route_a("make_jobs")
+    parts = mj.train_parts("gnn", "news")
+    assert len(news) == parts + 1
+    assert all("news_tabdiff_gnn_train.sh" in ln for ln in news[:parts]) and "sample_eval.sh" in news[-1]
+    assert all("--dependency=afterok:${jid}" in ln for ln in news[1:])
+    eff = [re.search(r"--job-name=(\S+)", ln).group(1) if "--job-name" in ln
+           else re.search(r"jobs_tabdiff_gnn/(\w+)\.sh", ln).group(1) for ln in news]
+    assert len(set(eff)) == len(news)                            # every part has its own job name / log
+    assert "### " not in sub
 
 
 def test_submission_loop_commented_and_ordered():
     s = open(os.path.join(REPO, "hpc_transfer", "submit_tabdiff_gnn.sh")).read()
     active = [ln for ln in s.splitlines() if "sbatch" in ln and not ln.lstrip().startswith("#")]
     assert active == []
-    assert "tf_" not in s and "gnn384" not in s
-    seed0 = s.split("# ==== training seed 1")[0]
-    order = re.findall(r"sbatch (?:--parsable )?(?:--dependency=\S+ )?(\w+?)_s0(?:_p1)?\.sh", seed0)
-    assert order == ["gnn_magic", "gnn_shoppers", "gnn_adult", "gnn_beijing", "gnn_default", "gnn_news",
-                     "gnn_diabetes"]
-    for ln in s.split("# ==== training seed 1")[1].splitlines():
+    assert "exit 0" in s and 'export GRES=' in s and all('--gres="${GRES}"' in ln for ln in s.splitlines()
+                                                         if "sbatch --" in ln and "hpc_transfer/jobs_tabdiff_gnn/" in ln)
+    seed0 = s.split("# === training seed 1")[0]
+    order = []
+    for m in re.finditer(r"jobs_tabdiff_gnn/(\w+?)_tabdiff_gnn", seed0):
+        if m.group(1) not in order:
+            order.append(m.group(1))
+    assert order == ["magic", "shoppers", "adult", "beijing", "default", "news", "diabetes"]
+    later = s.split("# === training seed 1")[1]
+    for ln in later.splitlines():
         if "sbatch" in ln:
-            assert ln.startswith("## ") or ln.startswith("### ")
+            assert ln.startswith("## ") and re.search(r"SEED=[12] sbatch", ln) and "--job-name=" in ln
 
 
 def test_route_a_report_is_reported_vs_computed(tmp_path):

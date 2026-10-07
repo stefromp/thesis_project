@@ -180,7 +180,7 @@ cd $HPC_ROOT/thesis_project
 EV=$HPC_ROOT/venvs/tabdiff_eval310/bin/python
 SY=$HPC_ROOT/venvs/tabdiff_synthcity310/bin/python
 TP=$HPC_ROOT/venvs/tabpc310/bin/python
-GPU="--partition=gpu --gres=gpu:a100:1 --cpus-per-task=26 --mem=24G"
+GPU="--partition=gpu --gres=${GRES} --cpus-per-task=26 --mem=120G"   # GRES: see sinfo -p gpu -o "%N %G"
 
 # 1. login node, eval venv: digests, data, every job's spec, and each arm's denoiser
 #    imported + built on the real shapes + one CPU forward pass (a missing package fails here)
@@ -215,33 +215,42 @@ ROUTE_A_RESUME_DEVICE=cuda:0 srun $GPU --time=00:30:00 $EV -m pytest -q -s tests
      -k "resume_on_gpu or resumable_run_loop or resume_is_bit_identical"
 ```
 
-## Submission
+## Jobs and submission
 
-`hpc_transfer/submit_tabdiff_gnn.sh`: every `sbatch` line is commented out. Uncomment one block at a time:
+The job scripts in `hpc_transfer/jobs_tabdiff_gnn/` follow `hpc_transfer/jobs/` exactly:
+- the same header: `--cpus-per-task=26`, `--mem=120G`, `--partition=gpu`;
+- the same **TODO(GPU)** block, with the GRES line commented out (`gpu:a100:1` is rejected on the cluster). Pass `--gres="${GRES}"` on the sbatch command line, or fill it in once;
+- the cluster template's OMP and module block;
+- paths overridable from the environment, `cd` to the repo root, and one sourced function (`run_route_a` from `common_tabdiff_gnn.sh`).
+
+There is **one script per dataset**, `<ds>_tabdiff_gnn.sh`. The training seed is `SEED` (default 0), as in `hpc_transfer/jobs`.
+
+News has two scripts: `news_tabdiff_gnn_train.sh`, which uses the resumable trainer with a 46.5 h budget and a 48 h walltime, and `news_tabdiff_gnn_sample_eval.sh`.
+
+`hpc_transfer/submit_tabdiff_gnn.sh` lists the sbatch lines, every one commented out, behind an `exit 0` guard, as `submit_all.sh` does. Uncomment one block at a time:
 
 1. AttnGNN d256 seed 0: magic, shoppers, adult, beijing.
-2. AttnGNN d256 seed 0: default, news, diabetes. **News is a chain of three jobs**, each submitted with `--dependency=afterok`:
-   - `gnn_news_s0_p1.sh`: training, 48 h walltime. It pauses and saves its run state at a 46.5 h training budget, then exits cleanly so the next part can start.
-   - `gnn_news_s0_p2.sh`: training resumes, 48 h walltime.
-   - `gnn_news_s0_p3.sh`: sample + evaluate, 5 h.
+2. AttnGNN d256 seed 0: default, news, diabetes. **News is a chain**, each step with `--dependency=afterok`:
+   - `news_tabdiff_gnn_train.sh` is submitted twice. The second submission gets its own job name and log (`_p2`), because SLURM truncates a reused log. Each part trains until its budget, saves the run state and exits 0; the next part resumes.
+   - Then `news_tabdiff_gnn_sample_eval.sh`.
 
-   If training needs more parts than planned, `p2` pauses as well and `p3` refuses to start ("stage 'train' is not done"). Resubmit `p2`, which resumes again, then `p3`, or regenerate with `--probe`.
-3. Seeds 1 and 2, double-commented (`##`), only after confirmation.
+   If training needs more parts than planned, the sample_eval job refuses to start ("stage 'train' is not done"). Submit the train script once more (it resumes), then sample_eval. Or regenerate with `--probe`.
+3. Seeds 1 and 2, double-commented (`##`), only after confirmation: `SEED=1 sbatch --job-name=<ds>_tabdiff_gnn_s1 --output=… --error=…`, so the seeds don't share one log.
 
 No TabDiff (transformer) jobs, and no DCR.
 
 Estimate per seed (hours on one A100, before the ×1.3 walltime margin; `jobs_tabdiff_gnn/walltime_estimates.csv`):
 
-| dataset | trainer | train | sample + 3 evals | total | jobs |
+| dataset | trainer | train | sample + 3 evals | total | job walltime |
 |---|---|---|---|---|---|
-| magic | TabDiff | 2.7 | 0.5 | 3.2 | 5 h |
-| shoppers | TabDiff | 2.3 | 0.3 | 2.6 | 4 h |
-| adult | TabDiff | 3.3 | 0.9 | 4.2 | 6 h |
-| beijing | TabDiff | 5.8 | 1.2 | 6.9 | 10 h |
-| default | TabDiff | 11.4 | 1.1 | 12.5 | 17 h |
-| news | **resumable** | 52.8 | 3.1 | 55.9 | 48 h + 48 h + 5 h (chain) |
-| diabetes | TabDiff | 11.3 | 4.0 | 15.3 | 20 h |
+| magic | TabDiff | 2.7 | 0.5 | 3.2 | 48 h |
+| shoppers | TabDiff | 2.3 | 0.3 | 2.6 | 48 h |
+| adult | TabDiff | 3.3 | 0.9 | 4.2 | 48 h |
+| beijing | TabDiff | 5.8 | 1.2 | 6.9 | 48 h |
+| default | TabDiff | 11.4 | 1.1 | 12.5 | 48 h |
+| news | **resumable** | 52.8 | 3.1 | 55.9 | 48 h + 48 h + 48 h (chain) |
+| diabetes | TabDiff | 11.3 | 4.0 | 15.3 | 48 h |
 | **seed 0** | | | | **≈ 101** | |
 | seeds 1 + 2 | | | | ≈ 201 more | |
 
-The train estimate is the A100-measured reference step time × the CPU-measured cost ratio (`step_ratio_cpu.csv`). Replace it with the probe's s/epoch via `--probe`.
+Every job script asks for `--time=48:00:00`; the per-job estimate is in its header comment. The train estimate is the A100-measured reference step time × the CPU-measured cost ratio (`step_ratio_cpu.csv`). Replace it with the probe's s/epoch via `--probe`.

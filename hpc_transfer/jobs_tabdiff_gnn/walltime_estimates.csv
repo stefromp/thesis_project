@@ -34,12 +34,11 @@ gnn,diabetes,tabdiff_diabetes,sample,0.483,61059,15,37,,ref adult 0.0414 s/step 
 gnn,diabetes,tabdiff_diabetes,eval_main,0.277,61059,15,37,,ref adult 0.0414 s/step (A100) x CPU ratio 5.24 = 0.217 s/step; 5.1 s/epoch
 gnn,diabetes,tabdiff_diabetes,eval_quality,1.732,61059,15,37,,ref adult 0.0414 s/step (A100) x CPU ratio 5.24 = 0.217 s/step; 5.1 s/epoch
 gnn,diabetes,tabdiff_diabetes,eval_tabpc,1.53,61059,15,37,,ref adult 0.0414 s/step (A100) x CPU ratio 5.24 = 0.217 s/step; 5.1 s/epoch
-gnn,magic,JOB gnn_magic_s0.sh,walltime,5,,,,,estimate 3.17 h x 1.3
-gnn,shoppers,JOB gnn_shoppers_s0.sh,walltime,4,,,,,estimate 2.59 h x 1.3
-gnn,adult,JOB gnn_adult_s0.sh,walltime,6,,,,,estimate 4.18 h x 1.3
-gnn,default,JOB gnn_default_s0.sh,walltime,17,,,,,estimate 12.47 h x 1.3
-gnn,beijing,JOB gnn_beijing_s0.sh,walltime,10,,,,,estimate 6.93 h x 1.3
-gnn,news,JOB gnn_news_s0_p1.sh,walltime,48,,,,,estimate 26.40 h x 1.3
-gnn,news,JOB gnn_news_s0_p2.sh,walltime,48,,,,,estimate 26.40 h x 1.3
-gnn,news,JOB gnn_news_s0_p3.sh,walltime,5,,,,,estimate 3.15 h x 1.3
-gnn,diabetes,JOB gnn_diabetes_s0.sh,walltime,20,,,,,estimate 15.30 h x 1.3
+gnn,magic,JOB magic_tabdiff_gnn.sh,walltime,48,,,,,estimate 3.17 h x 1.3
+gnn,shoppers,JOB shoppers_tabdiff_gnn.sh,walltime,48,,,,,estimate 2.59 h x 1.3
+gnn,adult,JOB adult_tabdiff_gnn.sh,walltime,48,,,,,estimate 4.18 h x 1.3
+gnn,default,JOB default_tabdiff_gnn.sh,walltime,48,,,,,estimate 12.47 h x 1.3
+gnn,beijing,JOB beijing_tabdiff_gnn.sh,walltime,48,,,,,estimate 6.93 h x 1.3
+gnn,news,JOB news_tabdiff_gnn_train.sh x2,walltime,48,,,,,estimate 52.79 h x 1.3
+gnn,news,JOB news_tabdiff_gnn_sample_eval.sh,walltime,48,,,,,estimate 3.15 h x 1.3
+gnn,diabetes,JOB diabetes_tabdiff_gnn.sh,walltime,48,,,,,estimate 15.30 h x 1.3

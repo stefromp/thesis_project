@@ -5,19 +5,24 @@ and hpc_transfer/submit_tabdiff_gnn.sh (every sbatch commented out).
 
     python3 tabdiff_gnn/make_jobs.py
 
-Jobs: ONE resumable job per (arm, dataset, training seed): train -> 20 tables
--> TabDiff evaluation (+ MLE-2) -> alpha/beta -> wNMIS / C2ST(XGB). No DCR in
-this study. gpu partition, --gres=gpu:a100:1, --mem=24G, cd to the repo root.
-Walltime = stage estimates x 1.3, rounded up, min 2 h, cap 48 h. A job whose
-walltime would exceed CHAIN_OVER_H (40 h) is cut into a chain at the
-train | sample+evaluation boundary (<job>_p1.sh train, <job>_p2.sh rest, with
---dependency=afterok), keeping headroom under the 48 h cap; training itself is
-never cut (TabDiff's Trainer cannot resume faithfully).
+Jobs follow hpc_transfer/jobs/ exactly (same header, the TODO(GPU) block with
+the GRES line commented out, --mem=120G, the cluster template's OMP block,
+paths overridable from the environment, cd to the repo root, one sourced
+function): ONE job script per dataset, <ds>_tabdiff_gnn.sh, running
+train -> 20 tables -> TabDiff evaluation (+ MLE-2) -> alpha/beta -> wNMIS /
+C2ST(XGB). No DCR in this study. The training seed is SEED (default 0,
+overridable: SEED=1 sbatch ...), as in hpc_transfer/jobs. Every job script asks
+for --time=48:00:00 (JOB_WALLTIME_H); the estimate (stage estimates x 1.3) is
+in its header comment and in walltime_estimates.csv. A dataset whose job would
+exceed CHAIN_OVER_H (40 h) gets two scripts instead, <ds>_tabdiff_gnn_train.sh
+and <ds>_tabdiff_gnn_sample_eval.sh (chained with --dependency=afterok);
+training itself is never cut, except for news (resumable, below), whose train
+script is submitted once per training part.
 
 Arm:    gnn  AttnGNN V2, d_model 256 on every dataset (7 datasets). No TabDiff
              (transformer) jobs: TabDiff's numbers are the reported ones; the
              transformer code path stays tested, not run.
-Seeds:  0 now; 1-2 generated, double-commented "after confirmation".
+Seeds:  0 now; 1-2 via SEED=1 / SEED=2, double-commented "after confirmation".
 
 Stage estimates (pessimistic; hours on one A100):
   train  epochs x (EPOCH_OVERHEAD_S + steps_per_epoch x s_step x (1 + eval/train))
@@ -84,6 +89,8 @@ OUT = os.path.join(REPO, "hpc_transfer", "jobs_tabdiff_gnn")
 SUBMIT = os.path.join(REPO, "hpc_transfer", "submit_tabdiff_gnn.sh")
 MARGIN, CAP_H, MIN_H = 1.3, 48, 2
 CHAIN_OVER_H = 40                     # split train | rest above this walltime
+JOB_WALLTIME_H = 48                   # every job script asks for 48:00:00 (user's choice); the
+                                      # estimate is kept in the header comment and the CSV
 TRAIN_RESERVE_H = 1.5                 # resumable parts: preflight, data, model build, final save, slack
 PROBE_S_PER_EPOCH = {}                # dataset -> measured A100 s/epoch (--probe), overrides the estimate
 EPOCHS = 8000
@@ -226,6 +233,7 @@ def pack(arm: str, ds: str) -> list:
 
 
 HEADER = """#!/bin/bash -l
+
 #SBATCH --job-name={job}
 #SBATCH --output=/work/pr019/atvoulo/Rompos/jobs_out/{job}.out
 #SBATCH --error=/work/pr019/atvoulo/Rompos/jobs_out/{job}.err
@@ -234,28 +242,36 @@ HEADER = """#!/bin/bash -l
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=26
 #SBATCH --time={time}
-#SBATCH --mem=24G
-#SBATCH --gres=gpu:a100:1
+#SBATCH --mem=120G
 #SBATCH --partition=gpu
+
+# ===========================================================================
+# TODO(GPU) -- FILL THIS IN BEFORE SUBMITTING. This is the ONLY line to edit.
+# "gpu:a100:1" is rejected on this cluster ("invalid GRES format or GPU type").
+# Find the accepted string with:      sinfo -p gpu -o "%N %G"
+# then uncomment the line below with that value, e.g. #SBATCH --gres=gpu:1
+#
+##SBATCH --gres=gpu:1
+#
+# Alternatively leave it commented and pass it on the sbatch command line
+# (GRES=... ) -- a command-line --gres overrides this directive, so you only
+# have to get it right in one place.
+# ===========================================================================
+
+# Enable if submission is rejected for a missing account association
+# (association: account=pr019022_gpu, partitions gpu and mig).
 ##SBATCH --account=pr019022_gpu
-"""
 
-BODY = """
-# ROUTE A (TabDiff framework, only the denoiser differs) -- {ds} ({task}), arm {arm}:
-#   denoiser {denoiser}{arch}
-#   training seed {seed}; {n_tables} tables per model (generation seeds 0..{last})
-# Stages of this job (each leaves <run>/stages/<stage>.done; resubmitting skips them):
-#   {unit_lines}{chain_note}
-# Protocol  : TabDiff tabdiff_configs.toml unchanged (8000 epochs, batch 4096, lr 1e-3 +
-#             ReduceLROnPlateau, EMA 0.997, best EMA loss after epoch 4000, 50 sampling steps);
-#             routine eval every 2000 epochs off (no-effect deviation)
-# Trainer   : {trainer}
-# Evaluation: TabDiff's evaluator (digests checked) + MLE-2 + alpha/beta + tabpc wNMIS / C2ST(XGB);
-#             no DCR in this study
-# Data      : data/tabdiff_gnn/{target}/ (TabDiff's process_dataset.py @ {commit_short})
-# Results   : $TRANSFER_ROOT/exp_tabdiff_gnn/{target}/{denoiser}/{arm_dir}/seed{seed}/
-# Walltime {time}: {why}{overcap}
+# NOTE: the #SBATCH --output/--error paths above are literal on purpose.
+# SLURM parses these directives before any shell expansion, so they cannot use
+# $HPC_ROOT. If you move HPC_ROOT, update those two lines too -- they are the
+# only place in this file where the root is spelled out twice. For SEED=1 / 2
+# pass --job-name/--output/--error on the sbatch command line (see
+# hpc_transfer/submit_tabdiff_gnn.sh) so the seeds do not share one log.
 
+# Verbatim from the cluster's job template -- kept byte-for-byte on purpose,
+# so the x-prefix comparison and unquoted expansion are intentional here.
+# shellcheck disable=SC2268,SC2086
 if [ x$SLURM_CPUS_PER_TASK == x ]; then
   export OMP_NUM_THREADS=1
 else
@@ -270,28 +286,76 @@ module load cmake
 
 export TORCH_CUDA_ARCH_LIST="8.0"
 
+# --- not -e: the failure must reach the log, not abort the shell ------------
 set -uo pipefail
+"""
 
+BODY = r"""
+# ---------------------------------------------------------------------------
+# Paths. Defined once, overridable from the environment.
+#
+# TRANSFER_ROOT is shared with hpc_transfer/, but Route A writes only to
+# $TRANSFER_ROOT/exp_tabdiff_gnn/ (tabdiff_gnn/config.py enforces it), so it can
+# never disturb the exp/ trees of the transfer study or the TabDiff study.
+#
+# PYTHON_BIN is the TabDiff environment (the eval venv: torch, sdmetrics,
+# category_encoders, icecream, tomli -- what TabDiff's main.py imports); it
+# trains, samples and runs TabDiff's evaluator. alpha/beta run in the synthcity
+# venv and wNMIS / C2ST(XGB) in the tabpc venv (tabdiff_gnn/README.md, Install).
+# ---------------------------------------------------------------------------
 HPC_ROOT="${{HPC_ROOT:-/work/pr019/atvoulo/Rompos}}"
 REPO_ROOT="${{REPO_ROOT:-${{HPC_ROOT}}/thesis_project}}"
-EVAL_PYTHON="${{EVAL_PYTHON:-${{HPC_ROOT}}/venvs/tabdiff_eval310/bin/python}}"
+PYTHON_BIN="${{PYTHON_BIN:-${{HPC_ROOT}}/venvs/tabdiff_eval310/bin/python}}"
+EVAL_PYTHON="${{EVAL_PYTHON:-${{PYTHON_BIN}}}}"
 SYNTHCITY_PYTHON="${{SYNTHCITY_PYTHON:-${{HPC_ROOT}}/venvs/tabdiff_synthcity310/bin/python}}"
 TABPC_PYTHON="${{TABPC_PYTHON:-${{HPC_ROOT}}/venvs/tabpc310/bin/python}}"
-TRAIN_PYTHON="${{TRAIN_PYTHON:-${{EVAL_PYTHON}}}}"
 TRANSFER_ROOT="${{TRANSFER_ROOT:-${{HPC_ROOT}}/transfer_runs}}"
-DEVICE="${{DEVICE:-cuda:0}}"
 
+# Run from the repo root whatever directory sbatch was called from: parts of
+# the pipeline used to read repo files relative to the working directory.
 cd "${{REPO_ROOT}}" || {{ echo "ERROR: cannot cd to ${{REPO_ROOT}}" >&2; exit 1; }}
 
-DS="{ds}"
-DENOISER="{denoiser}"
-SEED="{seed}"
-STAGE_GROUPS="{units}"
-TRAIN_BUDGET_H="{budget}"
+# ---------------------------------------------------------------------------
+# Denoiser: AttnGNN V2 inside TabDiff's framework -- only the denoiser differs
+# from TabDiff (EDM + masked diffusion, learnable per-column schedules, TabDiff's
+# Trainer, sampler and evaluator @ {commit_short}, file digests checked).
+#   {arch}
+#   GNN type / layers / top_k / heads from hpc_transfer/configs/{src}.sh{src_note}
+#   d_model {d_model} on every dataset, dim_t {dim_t}, one shared noise embedding,
+#   fixed top-k rule, dynamic graph, no global attention.
+# Trainer: {trainer}
+# Results: $TRANSFER_ROOT/exp_tabdiff_gnn/{target}/attngnn/{arm_dir}/seed<SEED>/
+# ---------------------------------------------------------------------------
+DENOISER="attngnn"
 
-export HPC_ROOT REPO_ROOT EVAL_PYTHON SYNTHCITY_PYTHON TABPC_PYTHON TRAIN_PYTHON TRANSFER_ROOT DEVICE
-export DS DENOISER SEED STAGE_GROUPS TRAIN_BUDGET_H
+# ---------------------------------------------------------------------------
+# Stages this job runs (each leaves <run>/stages/<stage>.done; a resubmitted
+# job skips what is done):
+#   {stage_line}
+# Protocol: TabDiff's tabdiff_configs.toml unchanged (8000 epochs, batch 4096,
+# lr 1e-3 + ReduceLROnPlateau, EMA 0.997, best EMA loss after epoch 4000,
+# 50 sampling steps), 20 tables of n_train rows (generation seeds 0..19).
+# No DCR in this study.
+# Walltime {time}: {why}{chain_note}
+# ---------------------------------------------------------------------------
+STAGES="${{STAGES:-{stages}}}"
 
+# ---------------------------------------------------------------------------
+# Resumable training budget (news only; empty = TabDiff's Trainer, unchanged):
+# after this many hours of training the run state is saved and the job exits
+# cleanly (exit 0), so the next job of the chain -- this same script -- resumes.
+# ---------------------------------------------------------------------------
+TRAIN_BUDGET_H="${{TRAIN_BUDGET_H:-{budget}}}"
+
+DEVICE="${{DEVICE:-cuda:0}}"
+SEED="${{SEED:-0}}"
+
+DATASET="{ds}"
+
+export HPC_ROOT REPO_ROOT PYTHON_BIN EVAL_PYTHON SYNTHCITY_PYTHON TABPC_PYTHON \
+       TRANSFER_ROOT DATASET DENOISER STAGES TRAIN_BUDGET_H DEVICE SEED
+
+# shellcheck source-path=SCRIPTDIR
 # shellcheck source=common_tabdiff_gnn.sh
 . "${{REPO_ROOT}}/hpc_transfer/jobs_tabdiff_gnn/common_tabdiff_gnn.sh"
 
@@ -299,8 +363,29 @@ run_route_a
 """
 
 
-def job_base(arm: str, ds: str, seed: int) -> str:
-    return f"{arm}_{ds}_s{seed}"
+def jobs_for(arm: str, ds: str) -> list:
+    """Job scripts of one dataset: [{name, stages, hours, est, budget, parts, blocked}].
+    parts = how many times the script is submitted in a row (news' resumable training)."""
+    e = stage_hours(arm, ds)
+    chain = pack(arm, ds)
+    blocked = over_cap(arm, ds)
+    base = f"{ds}_tabdiff_gnn"
+    if len(chain) == 1:
+        (stages, est), = chain
+        return [dict(name=base, stages=stages, hours=JOB_WALLTIME_H, est=est, budget="", parts=1,
+                     blocked=blocked, e=e)]
+    trains = [c for c in chain if c[0] == ["train"]]
+    post = chain[-1]
+    resumable = ds in C.RESUMABLE_DATASETS
+    tr_est = sum(c[1] for c in trains)
+    return [dict(name=f"{base}_train", stages=["train"], hours=JOB_WALLTIME_H,
+                 est=tr_est, budget=f"{CAP_H - TRAIN_BUDGET_RESERVE:g}" if resumable else "",
+                 parts=len(trains), blocked=blocked, e=e),
+            dict(name=f"{base}_sample_eval", stages=post[0], hours=JOB_WALLTIME_H, est=post[1], budget="",
+                 parts=1, blocked=blocked, e=e)]
+
+
+TRAIN_BUDGET_RESERVE = TRAIN_RESERVE_H
 
 
 def write_jobs() -> dict:
@@ -312,107 +397,147 @@ def write_jobs() -> dict:
     plan = {}
     for arm, (denoiser, dsets, seeds) in ARMS.items():
         for ds in dsets:
-            e = stage_hours(arm, ds)
-            chain = pack(arm, ds)
-            blocked = over_cap(arm, ds)
-            for seed in seeds:
-                base = job_base(arm, ds, seed)
-                names = [base] if len(chain) == 1 else [f"{base}_p{i + 1}" for i in range(len(chain))]
-                for i, (name, (stages, est)) in enumerate(zip(names, chain)):
-                    resumable_train = ds in C.RESUMABLE_DATASETS and stages == ["train"]
-                    hours = CAP_H if resumable_train else _hours(est)
-                    budget = f"{CAP_H - TRAIN_RESERVE_H:g}" if resumable_train else ""
-                    unit_lines = " -> ".join(f"{s} ({e['stages_h'][s]:.2f} h)" for s in stages)
-                    chain_note = ""
-                    if len(chain) > 1:
-                        what = ("resumable training: pauses + saves its run state before "
-                                f"{CAP_H - TRAIN_RESERVE_H:g} h, the next part resumes" if resumable_train
-                                else "train | sample+evaluation")
-                        chain_note = (f"\n# CHAIN part {i + 1}/{len(chain)} ({what}): submit as "
-                                      + (f"sbatch {name}.sh" if i == 0 else
-                                         f"sbatch --dependency=afterok:<{names[i - 1]} id> {name}.sh"))
-                    g, _ = C.gnn_config(ds)
-                    arch = (f" V2: {g['gnn_type']} L{g['n_layers']} d{g['d_model']} top-k {g['top_k']} "
-                            f"(fixed) heads {g['n_heads']}, dynamic graph, no global attention, "
-                            f"dim_t {C.DIM_T}, shared noise embedding; GNN source {C.SOURCES[ds]}"
-                            + (" (our choice: diabetes has no TabDDPM source)" if ds in C.SOURCE_NOTES else ""))
-                    overcap = ""
-                    if blocked and "train" in stages:
-                        overcap = (f"\n# OVER_CAP -- DO NOT SUBMIT YET: training is estimated at "
-                                   f"{e['stages_h']['train']:.1f} h (x{MARGIN} = "
-                                   f"{e['stages_h']['train'] * MARGIN:.0f} h > {CAP_H} h) and TabDiff's Trainer "
-                                   f"cannot resume; the walltime is only the cap. Run the timing probe "
-                                   f"(README) first.")
-                    body = BODY.format(
-                        ds=ds, task=C.TASK[ds], arm=arm, denoiser=denoiser, arch=arch, seed=seed,
-                        n_tables=C.N_TABLES, last=C.N_TABLES - 1, unit_lines=unit_lines,
-                        chain_note=chain_note, target=C.target_name(ds),
-                        commit_short=C.TABDIFF_COMMIT[:7],
-                        arm_dir=C.arm_name(denoiser, ds), time=f"{hours}:00:00", overcap=overcap,
-                        why=(f"stage estimates {est:.2f} h x {MARGIN}, rounded up (min {MIN_H}, cap {CAP_H}); "
-                             + e["basis"]),
-                        units=",".join(stages), budget=budget,
-                        trainer=("resumable copy of TabDiff's Trainer.run_loop (news only; "
-                                 "evidence tests/test_tabdiff_gnn.py)" if ds in C.RESUMABLE_DATASETS
-                                 else "TabDiff's Trainer, unchanged"))
-                    path = os.path.join(OUT, f"{name}.sh")
-                    with open(path, "w") as fh:
-                        fh.write(HEADER.format(job=f"tdg_{name}", time=f"{hours}:00:00") + body)
-                    os.chmod(path, 0o755)
-                    plan.setdefault((arm, ds, seed), []).append((name, hours, est, blocked))
+            js = jobs_for(arm, ds)
+            g, src = C.gnn_config(ds)
+            for i, j in enumerate(js):
+                e = j["e"]
+                stage_line = " -> ".join(f"{st} ({e['stages_h'][st]:.2f} h)" for st in j["stages"])
+                chain_note = ""
+                if len(js) > 1:
+                    if j["stages"] == ["train"] and j["budget"]:
+                        chain_note = (f"\n# CHAIN: submit this script {j['parts']} times in a row "
+                                      f"(--dependency=afterok), then {js[1]['name']}.sh; each part trains "
+                                      f"until the {j['budget']} h budget, saves and exits 0, the next resumes.")
+                    elif j["stages"] == ["train"]:
+                        chain_note = f"\n# CHAIN part 1/2: then {js[1]['name']}.sh with --dependency=afterok."
+                    else:
+                        chain_note = (f"\n# CHAIN last part: submit with --dependency=afterok on the last "
+                                      f"{js[0]['name']}.sh job.")
+                if j["blocked"] and j["stages"] == ["train"]:
+                    chain_note += (f"\n# OVER_CAP -- DO NOT SUBMIT YET: training is estimated at "
+                                   f"{e['stages_h']['train']:.1f} h (x{MARGIN} > {CAP_H} h) and TabDiff's Trainer "
+                                   f"cannot resume; run the timing probe (tabdiff_gnn/README.md) first.")
+                why = (f"fixed at {JOB_WALLTIME_H} h for every job; estimate {j['est']:.2f} h "
+                       f"(x{MARGIN} = {math.ceil(j['est'] * MARGIN)} h)"
+                       if not j["budget"] else
+                       f"fixed at {JOB_WALLTIME_H} h; resumable training budget {j['budget']} h + reserve")
+                body = BODY.format(
+                    commit_short=C.TABDIFF_COMMIT[:7],
+                    arch=(f"{g['gnn_type']} L{g['n_layers']} d{g['d_model']} top-k {g['top_k']} (fixed) "
+                          f"heads {g['n_heads']}"),
+                    src=C.SOURCES[ds],
+                    src_note=(" -- our choice: diabetes has no TabDDPM source" if ds in C.SOURCE_NOTES else ""),
+                    d_model=C.D_MODEL, dim_t=C.DIM_T,
+                    trainer=("resumable copy of TabDiff's Trainer.run_loop (news only; verbatim + "
+                             "save/restore hooks; evidence tests/test_tabdiff_gnn.py)"
+                             if ds in C.RESUMABLE_DATASETS else "TabDiff's Trainer, unchanged"),
+                    target=C.target_name(ds), arm_dir=C.arm_name(denoiser, ds),
+                    stage_line=stage_line, time=f"{JOB_WALLTIME_H}:00:00",
+                    why=f"{why}; {e['basis']}", chain_note=chain_note,
+                    stages=",".join(j["stages"]), budget=j["budget"], ds=ds)
+                path = os.path.join(OUT, f"{j['name']}.sh")
+                with open(path, "w") as fh:
+                    fh.write(HEADER.format(job=j["name"], time=f"{JOB_WALLTIME_H}:00:00") + body)
+                os.chmod(path, 0o755)
+            plan[(arm, ds)] = js
     return plan
 
 
-def _submit_lines(plan, arm, ds, seed, c):
-    jobs = plan[(arm, ds, seed)]
-    gpu_h = sum(j[2] for j in jobs)
-    if jobs[0][3]:
-        c = "### "                                      # OVER_CAP: blocked until the probe
-    if len(jobs) == 1:
-        (name, h, _, _), = jobs
-        return [f"# {arm} {ds}: {h} h walltime, ~{gpu_h:.1f} GPU-h", f"{c}sbatch {name}.sh"], gpu_h
-    out = [f"# {arm} {ds}: CHAIN of {len(jobs)} ({' + '.join(f'{j[1]} h' for j in jobs)}), ~{gpu_h:.1f} GPU-h"
-           + ("  [OVER_CAP: training estimate > 48 h, BLOCKED until the timing probe]" if jobs[0][3] else "")]
-    prev = None
-    for name, _, _, _ in jobs:
-        v = f"j_{arm}_{ds}_s{seed}_" + name.split("_p")[-1]
-        out.append(f"{c}{v}=$(sbatch --parsable " + (f"--dependency=afterok:${{{prev}}} " if prev else "")
-                   + f"{name}.sh)")
-        prev = v
+def _submit_lines(js, seed: int, c: str) -> tuple:
+    """Commented sbatch lines for one dataset and seed."""
+    gpu_h = sum(j["est"] for j in js)
+    if js[0]["blocked"]:
+        c = "### "
+    out, prev = [], None
+    for j in js:
+        for k in range(1, j["parts"] + 1):
+            # each submission gets its own job name / log: SLURM truncates a reused --output
+            name = (j["name"] + (f"_p{k}" if j["parts"] > 1 and k > 1 else "")
+                    + ("" if seed == 0 else f"_s{seed}"))
+            env = "" if seed == 0 else f"SEED={seed} "
+            over = ("" if name == j["name"] else
+                    f"--job-name={name} --output=${{OUT}}/{name}.out --error=${{OUT}}/{name}.err ")
+            dep = "--dependency=afterok:${jid} " if prev else ""
+            if len(js) > 1 or j["parts"] > 1:
+                out.append(f'{c}jid=$({env}sbatch --parsable --gres="${{GRES}}" {dep}{over}'
+                           f'hpc_transfer/jobs_tabdiff_gnn/{j["name"]}.sh)')
+            else:
+                out.append(f'{c}{env}sbatch --gres="${{GRES}}" {over}hpc_transfer/jobs_tabdiff_gnn/{j["name"]}.sh')
+            prev = True
     return out, gpu_h
 
 
 def write_submit(plan: dict) -> dict:
+    rows = []
+    for arm, ds in [x for _, items in SUBMIT_BLOCKS for x in items]:
+        js = plan[(arm, ds)]
+        e = js[0]["e"]
+        g, _ = C.gnn_config(ds)
+        cfg = f"{g['gnn_type']}_L{g['n_layers']}_d{g['d_model']}"
+        jobs_txt = " + ".join((f"{j['parts']}x " if j["parts"] > 1 else "") + f"{j['hours']} h" for j in js)
+        rows.append(f"#   {ds:9s} {cfg:16s} {e['nodes']:3d}  {e['n_train']:7,d}  "
+                    f"{sum(j['est'] for j in js):6.1f} h   {jobs_txt}"
+                    + ("   OVER_CAP (blocked)" if js[0]["blocked"] else ""))
     lines = ["#!/usr/bin/env bash", "#",
-             "# Submission loop for Route A (AttnGNN d_model 256 inside TabDiff). NOTHING HERE IS EXECUTED:",
-             "# every sbatch line is commented out on purpose; uncomment one block at a time.",
-             "# No TabDiff (transformer) runs: TabDiff's numbers are the reported ones. No DCR.",
-             "# '###' = OVER_CAP (training estimate > 48 h, TabDiff's Trainer cannot resume): blocked",
-             "# until the timing probe (README) shows it fits. Regenerate: python3 tabdiff_gnn/make_jobs.py.",
+             "# Submission lines for Route A (hpc_transfer/jobs_tabdiff_gnn/): AttnGNN as the",
+             "# denoiser inside TabDiff's framework.",
+             "#",
+             "# NOTHING HERE IS EXECUTED. Every sbatch line is commented out on purpose.",
+             "#",
+             "# One job script per dataset, <ds>_tabdiff_gnn.sh: train -> 20 tables -> TabDiff's",
+             "# evaluation (+ MLE-2) -> alpha/beta -> wNMIS / C2ST(XGB). One configuration: AttnGNN V2,",
+             "# d_model 256, GNN type / layers / top_k / heads from hpc_transfer/configs/<source>.sh.",
+             "# No TabDiff (transformer) runs -- TabDiff's numbers are the reported ones -- and no DCR.",
+             "#",
+             "# news trains with the resumable copy of TabDiff's Trainer.run_loop (its 8000 epochs do",
+             "# not fit one 48 h job): news_tabdiff_gnn_train.sh is submitted once per training part,",
+             "# each part saves its run state before its budget and exits 0, the next resumes; then",
+             "# news_tabdiff_gnn_sample_eval.sh. If training needs one more part than planned, the",
+             "# sample_eval job refuses to start (\"stage 'train' is not done\"): submit the train",
+             "# script once more, then sample_eval again.",
+             "#",
+             "# The training seed is SEED (default 0). Seeds 1-2 are double-commented (##): submit",
+             "# them only after confirmation; they get their own job name and logs.",
+             "#",
+             "# Estimates per seed (hours on one A100, before the x1.3 walltime margin):",
+             "#",
+             "#   dataset   config            N  n_train   estimate   walltime",
+             *rows,
+             "#",
+             "# Re-size from a measured A100 time (timing probe, tabdiff_gnn/README.md):",
+             "#     python3 tabdiff_gnn/make_jobs.py --probe news=<s/epoch>",
+             "#",
+             "# Before anything:",
+             "#     sinfo -p gpu -o \"%N %G\"",
+             "#     export GRES=gpu:1",
+             "#     OUT=/work/pr019/atvoulo/Rompos/jobs_out",
+             "# ---------------------------------------------------------------------------",
              "",
-             'cd "$(dirname "$0")/jobs_tabdiff_gnn" || exit 1', ""]
+             "set -euo pipefail",
+             'echo "This script does not submit anything. Open it and uncomment what you want." >&2',
+             "exit 0", ""]
     totals = {}
     for i, (title, items) in enumerate(SUBMIT_BLOCKS, 1):
-        lines.append(f"# ==== block {i}: {title}")
+        lines.append(f"# === block {i}: {title} " + "=" * max(3, 60 - len(title)))
         tot = 0.0
         for arm, ds in items:
-            ls, g = _submit_lines(plan, arm, ds, 0, "# ")
-            lines += ls
+            ls, g = _submit_lines(plan[(arm, ds)], 0, "# ")
+            lines += [f"# --- {ds} (~{g:.1f} GPU-h)"] + ls
             tot += g
         totals[f"block {i}: {title}"] = tot
-        lines += [f"# block {i}: ~{tot:.1f} GPU-h", ""]
-    for seed in [s for s in C.TRAIN_SEEDS if s != 0]:
-        lines.append(f"# ==== training seed {seed} (ONLY AFTER CONFIRMATION)")
+        lines.append("")
+    for seed in [x for x in C.TRAIN_SEEDS if x != 0]:
+        lines.append(f"# === training seed {seed} -- ONLY AFTER CONFIRMATION " + "=" * 30)
         tot = 0.0
         for arm, ds in [x for _, items in SUBMIT_BLOCKS for x in items]:
-            ls, g = _submit_lines(plan, arm, ds, seed, "## ")
-            lines += ls
+            ls, g = _submit_lines(plan[(arm, ds)], seed, "## ")
+            lines += [f"# --- {ds} seed {seed} (~{g:.1f} GPU-h)"] + ls
             tot += g
         totals[f"seed {seed}"] = tot
-        lines += [f"# seed {seed}: ~{tot:.1f} GPU-h", ""]
+        lines.append("")
     s0 = sum(v for k, v in totals.items() if not k.startswith("seed"))
     lines += [f"# GPU-h (estimate, before the x{MARGIN} margin): seed 0 {s0:.1f}; seeds 1-2 "
-              f"{totals.get('seed 1', 0) + totals.get('seed 2', 0):.1f} more", "",
+              f"{totals.get('seed 1', 0) + totals.get('seed 2', 0):.1f} more",
               "# Analysis afterwards: python3 analysis/tabdiff/compare.py --route_a", ""]
     with open(SUBMIT, "w") as fh:
         fh.write("\n".join(lines))
@@ -440,12 +565,12 @@ def main(argv=None) -> int:
                              "train_h_upper": round(e["train_h_upper"], 2) if stage == "train" else "",
                              "basis": e["basis"]})
     plan = write_jobs()
-    for (arm, ds, seed), jobs in plan.items():
-        if seed == 0:
-            for name, h, est, blocked in jobs:
-                rows.append({"arm": arm, "dataset": ds, "target": f"JOB {name}.sh", "stage": "walltime",
-                             "hours_per_seed": h, "basis": f"estimate {est:.2f} h x {MARGIN}"
-                             + (" -- OVER_CAP (capped)" if blocked else "")})
+    for (arm, ds), js in plan.items():
+        for j in js:
+            rows.append({"arm": arm, "dataset": ds, "target": f"JOB {j['name']}.sh"
+                         + (f" x{j['parts']}" if j["parts"] > 1 else ""), "stage": "walltime",
+                         "hours_per_seed": j["hours"], "basis": f"estimate {j['est']:.2f} h x {MARGIN}"
+                         + (" -- OVER_CAP (capped)" if j["blocked"] else "")})
     keys = list(dict.fromkeys(k for r in rows for k in r))
     with open(os.path.join(OUT, "walltime_estimates.csv"), "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=keys)
@@ -454,10 +579,11 @@ def main(argv=None) -> int:
     totals = write_submit(plan)
     for _, items in SUBMIT_BLOCKS:
         for arm, ds in items:
-            jobs = plan[(arm, ds, 0)]
-            print(f"  {arm:7s} {ds:9s} {sum(j[2] for j in jobs):6.1f} GPU-h  -> "
-                  + ", ".join(f"{n}.sh {h} h" for n, h, _, _ in jobs)
-                  + ("   OVER_CAP (blocked)" if jobs[0][3] else ""))
+            js = plan[(arm, ds)]
+            print(f"  {ds:9s} {sum(j['est'] for j in js):6.1f} GPU-h  -> "
+                  + ", ".join(f"{j['name']}.sh {j['hours']} h" + (f" x{j['parts']}" if j["parts"] > 1 else "")
+                              for j in js)
+                  + ("   OVER_CAP (blocked)" if js[0]["blocked"] else ""))
     for k, v in totals.items():
         print(f"  {k:80s} {v:6.1f} GPU-h")
     print(f"  wrote {OUT}, {SUBMIT}")
