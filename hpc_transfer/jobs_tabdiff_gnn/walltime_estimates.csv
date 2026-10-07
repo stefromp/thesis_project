@@ -1,0 +1,45 @@
+arm,dataset,target,stage,hours_per_seed,n_train,steps_per_epoch,nodes,train_h_upper,basis
+gnn,magic,tabdiff_magic,train,2.69,17117,5,11,6.45,ref default 0.2710 s/step (A100) x CPU ratio 0.34 = 0.093 s/step; 1.2 s/epoch
+gnn,magic,tabdiff_magic,sample,0.114,17117,5,11,,ref default 0.2710 s/step (A100) x CPU ratio 0.34 = 0.093 s/step; 1.2 s/epoch
+gnn,magic,tabdiff_magic,eval_main,0.069,17117,5,11,,ref default 0.2710 s/step (A100) x CPU ratio 0.34 = 0.093 s/step; 1.2 s/epoch
+gnn,magic,tabdiff_magic,eval_quality,0.182,17117,5,11,,ref default 0.2710 s/step (A100) x CPU ratio 0.34 = 0.093 s/step; 1.2 s/epoch
+gnn,magic,tabdiff_magic,eval_tabpc,0.111,17117,5,11,,ref default 0.2710 s/step (A100) x CPU ratio 0.34 = 0.093 s/step; 1.2 s/epoch
+gnn,shoppers,tabdiff_shoppers,train,2.268,11097,3,18,3.77,ref adult 0.0414 s/step (A100) x CPU ratio 2.31 = 0.096 s/step; 1.0 s/epoch
+gnn,shoppers,tabdiff_shoppers,sample,0.086,11097,3,18,,ref adult 0.0414 s/step (A100) x CPU ratio 2.31 = 0.096 s/step; 1.0 s/epoch
+gnn,shoppers,tabdiff_shoppers,eval_main,0.07,11097,3,18,,ref adult 0.0414 s/step (A100) x CPU ratio 2.31 = 0.096 s/step; 1.0 s/epoch
+gnn,shoppers,tabdiff_shoppers,eval_quality,0.106,11097,3,18,,ref adult 0.0414 s/step (A100) x CPU ratio 2.31 = 0.096 s/step; 1.0 s/epoch
+gnn,shoppers,tabdiff_shoppers,eval_tabpc,0.065,11097,3,18,,ref adult 0.0414 s/step (A100) x CPU ratio 2.31 = 0.096 s/step; 1.0 s/epoch
+gnn,adult,tabdiff_adult,train,3.325,32561,8,15,5.84,ref adult 0.0414 s/step (A100) x CPU ratio 1.91 = 0.079 s/step; 1.5 s/epoch
+gnn,adult,tabdiff_adult,sample,0.135,32561,8,15,,ref adult 0.0414 s/step (A100) x CPU ratio 1.91 = 0.079 s/step; 1.5 s/epoch
+gnn,adult,tabdiff_adult,eval_main,0.099,32561,8,15,,ref adult 0.0414 s/step (A100) x CPU ratio 1.91 = 0.079 s/step; 1.5 s/epoch
+gnn,adult,tabdiff_adult,eval_quality,0.528,32561,8,15,,ref adult 0.0414 s/step (A100) x CPU ratio 1.91 = 0.079 s/step; 1.5 s/epoch
+gnn,adult,tabdiff_adult,eval_tabpc,0.087,32561,8,15,,ref adult 0.0414 s/step (A100) x CPU ratio 1.91 = 0.079 s/step; 1.5 s/epoch
+gnn,default,tabdiff_default,train,11.353,27000,7,24,25.81,ref default 0.2710 s/step (A100) x CPU ratio 1.94 = 0.525 s/step; 5.1 s/epoch
+gnn,default,tabdiff_default,sample,0.526,27000,7,24,,ref default 0.2710 s/step (A100) x CPU ratio 1.94 = 0.525 s/step; 5.1 s/epoch
+gnn,default,tabdiff_default,eval_main,0.115,27000,7,24,,ref default 0.2710 s/step (A100) x CPU ratio 1.94 = 0.525 s/step; 5.1 s/epoch
+gnn,default,tabdiff_default,eval_quality,0.379,27000,7,24,,ref default 0.2710 s/step (A100) x CPU ratio 1.94 = 0.525 s/step; 5.1 s/epoch
+gnn,default,tabdiff_default,eval_tabpc,0.1,27000,7,24,,ref default 0.2710 s/step (A100) x CPU ratio 1.94 = 0.525 s/step; 5.1 s/epoch
+gnn,beijing,tabdiff_beijing,train,5.783,37581,10,12,18.09,ref default 0.2710 s/step (A100) x CPU ratio 0.58 = 0.157 s/step; 2.6 s/epoch
+gnn,beijing,tabdiff_beijing,sample,0.285,37581,10,12,,ref default 0.2710 s/step (A100) x CPU ratio 0.58 = 0.157 s/step; 2.6 s/epoch
+gnn,beijing,tabdiff_beijing,eval_main,0.095,37581,10,12,,ref default 0.2710 s/step (A100) x CPU ratio 0.58 = 0.157 s/step; 2.6 s/epoch
+gnn,beijing,tabdiff_beijing,eval_quality,0.687,37581,10,12,,ref default 0.2710 s/step (A100) x CPU ratio 0.58 = 0.157 s/step; 2.6 s/epoch
+gnn,beijing,tabdiff_beijing,eval_tabpc,0.085,37581,10,12,,ref default 0.2710 s/step (A100) x CPU ratio 0.58 = 0.157 s/step; 2.6 s/epoch
+gnn,news,tabdiff_news,train,52.791,35679,9,48,127.23,ref default 0.2710 s/step (A100) x CPU ratio 8.08 = 2.189 s/step; 23.7 s/epoch
+gnn,news,tabdiff_news,sample,2.124,35679,9,48,,ref default 0.2710 s/step (A100) x CPU ratio 8.08 = 2.189 s/step; 23.7 s/epoch
+gnn,news,tabdiff_news,eval_main,0.222,35679,9,48,,ref default 0.2710 s/step (A100) x CPU ratio 8.08 = 2.189 s/step; 23.7 s/epoch
+gnn,news,tabdiff_news,eval_quality,0.624,35679,9,48,,ref default 0.2710 s/step (A100) x CPU ratio 8.08 = 2.189 s/step; 23.7 s/epoch
+gnn,news,tabdiff_news,eval_tabpc,0.181,35679,9,48,,ref default 0.2710 s/step (A100) x CPU ratio 8.08 = 2.189 s/step; 23.7 s/epoch
+gnn,diabetes,tabdiff_diabetes,train,11.278,61059,15,37,52.74,ref adult 0.0414 s/step (A100) x CPU ratio 5.24 = 0.217 s/step; 5.1 s/epoch
+gnn,diabetes,tabdiff_diabetes,sample,0.483,61059,15,37,,ref adult 0.0414 s/step (A100) x CPU ratio 5.24 = 0.217 s/step; 5.1 s/epoch
+gnn,diabetes,tabdiff_diabetes,eval_main,0.277,61059,15,37,,ref adult 0.0414 s/step (A100) x CPU ratio 5.24 = 0.217 s/step; 5.1 s/epoch
+gnn,diabetes,tabdiff_diabetes,eval_quality,1.732,61059,15,37,,ref adult 0.0414 s/step (A100) x CPU ratio 5.24 = 0.217 s/step; 5.1 s/epoch
+gnn,diabetes,tabdiff_diabetes,eval_tabpc,1.53,61059,15,37,,ref adult 0.0414 s/step (A100) x CPU ratio 5.24 = 0.217 s/step; 5.1 s/epoch
+gnn,magic,JOB gnn_magic_s0.sh,walltime,5,,,,,estimate 3.17 h x 1.3
+gnn,shoppers,JOB gnn_shoppers_s0.sh,walltime,4,,,,,estimate 2.59 h x 1.3
+gnn,adult,JOB gnn_adult_s0.sh,walltime,6,,,,,estimate 4.18 h x 1.3
+gnn,default,JOB gnn_default_s0.sh,walltime,17,,,,,estimate 12.47 h x 1.3
+gnn,beijing,JOB gnn_beijing_s0.sh,walltime,10,,,,,estimate 6.93 h x 1.3
+gnn,news,JOB gnn_news_s0_p1.sh,walltime,48,,,,,estimate 26.40 h x 1.3
+gnn,news,JOB gnn_news_s0_p2.sh,walltime,48,,,,,estimate 26.40 h x 1.3
+gnn,news,JOB gnn_news_s0_p3.sh,walltime,5,,,,,estimate 3.15 h x 1.3
+gnn,diabetes,JOB gnn_diabetes_s0.sh,walltime,20,,,,,estimate 15.30 h x 1.3

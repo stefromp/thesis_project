@@ -1,3 +1,6 @@
 [submodule "third_party/TabDiff"]
 	path = third_party/TabDiff
 	url = https://github.com/MinkaiXu/TabDiff
+[submodule "third_party/tabpc"]
+	path = third_party/tabpc
+	url = https://github.com/april-tools/tabpc.git
