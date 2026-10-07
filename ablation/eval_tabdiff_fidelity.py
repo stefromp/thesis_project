@@ -1,5 +1,11 @@
 """TabDiff's paper metric suite beyond ML efficiency.
 
+NOT TabDiff's code or protocol. This module re-implements TabDiff's
+evaluator for the old `*_tabdiff_split` / notebooks_tabdiff pipeline; it is not
+used by the TabDiff-transfer study, which calls TabDiff's own code
+(third_party/TabDiff @ 5ecdb33) through hpc_transfer/tabdiff_study/tabdiff_eval.py
+on TabDiff's own splits (data/tabdiff_<ds>/).
+
 Faithful ports of the evaluators behind the TabDiff paper's fidelity /
 privacy tables (MinkaiXu/TabDiff):
 

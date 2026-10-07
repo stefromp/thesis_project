@@ -1,5 +1,11 @@
 """TabDiff's exact XGBoost ML-efficiency evaluator.
 
+NOT TabDiff's code or protocol. This module re-implements TabDiff's
+evaluator for the old `*_tabdiff_split` / notebooks_tabdiff pipeline; it is not
+used by the TabDiff-transfer study, which calls TabDiff's own code
+(third_party/TabDiff @ 5ecdb33) through hpc_transfer/tabdiff_study/tabdiff_eval.py
+on TabDiff's own splits (data/tabdiff_<ds>/).
+
 Faithful reimplementation of ``eval/mle/mle.py`` from MinkaiXu/TabDiff
 (the evaluator behind the paper's MLE numbers), exposed through the same
 interface as ``scripts/eval_catboost.train_catboost`` so ``ablation_runner``
