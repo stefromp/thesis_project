@@ -427,7 +427,15 @@ def get_python():
     python = Path('python3.9')
     return str(python) if python.exists() else 'python'
 
+# Repository root (lib/ lives directly under it). Paths into the repo are
+# resolved from here, not from the current working directory, so a job behaves
+# the same whatever directory it was submitted from.
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
 def get_catboost_config(real_data_path, is_cv=False):
     ds_name = Path(real_data_path).name
-    C = load_json(f'tuned_models/catboost/{ds_name}_cv.json')
+    # Same file as the old CWD-relative 'tuned_models/catboost/<ds>_cv.json'
+    # whenever the job ran from the repo root (as every working job did).
+    C = load_json(_REPO_ROOT / 'tuned_models' / 'catboost' / f'{ds_name}_cv.json')
     return C

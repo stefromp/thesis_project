@@ -1,0 +1,8 @@
+dataset,gnn_type,n_layers,d_model,top_k,n_heads,config_id,nearest,nearest_distance,neighbours,distances,n_rows,n_features,row_factor,feat_factor,struct_ood,confidence,conf_score
+cardio,gatv2,3,64,3,4,gatv2_L3_d64_k3_h4,churn2,2.2069752242205327,churn2;california;insurance,2.207;2.539;2.781,44800,11,3.4,1.0,n_cat;num_cat_ratio,medium,3
+default,gatv2,3,64,3,4,gatv2_L3_d64_k3_h4,california,2.9052593506038167,california;churn2;abalone,2.905;3.320;3.371,19200,23,1.5,2.1,n_cat;max_cardinality,low,4
+fb-comments,gatv2,3,64,3,4,gatv2_L3_d64_k3_h4,california,3.8239093307518597,california;churn2;insurance,3.824;3.943;4.233,157638,52,11.9,4.7,n_cat;max_cardinality,low,7
+higgs-small,gatv2,3,64,3,4,gatv2_L3_d64_k3_h4,california,2.471472597643426,california;churn2;insurance,2.471;3.091;3.501,62751,28,4.8,2.5,num_cat_ratio;assoc_density_0.3;assoc_eig_top3_share,low,4
+house,gatv2,3,64,3,4,gatv2_L3_d64_k3_h4,california,1.3103763873559953,california;insurance;churn2,1.310;3.332;3.358,14581,17,1.1,1.5,num_cat_ratio,medium,2
+king,gatv2,3,64,3,4,gatv2_L3_d64_k3_h4,california,1.949014726026872,california;churn2;insurance,1.949;2.650;2.663,13832,21,1.0,1.9,max_cardinality,medium,2
+miniboone,gatv2,3,64,3,4,gatv2_L3_d64_k3_h4,california,3.534457086892989,california;abalone;churn2,3.534;3.975;4.905,83240,50,6.3,4.5,num_cat_ratio;assoc_eig_top3_share,low,7
