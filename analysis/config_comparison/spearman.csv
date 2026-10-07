@@ -1,0 +1,31 @@
+rule,subset,ratio,n,rho,p,note
+fixed,held-out,steps_ratio,4,,,constant ratio
+fixed,held-out,lr_ratio,4,0.19999999999999998,0.8,
+fixed,held-out,batch_ratio,4,,,constant ratio
+fixed,held-out,samples_ratio,4,,,constant ratio
+fixed,held-out,param_ratio,4,-0.39999999999999997,0.6,
+fixed,pooled,steps_ratio,13,,,constant ratio
+fixed,pooled,lr_ratio,13,0.6428571428571429,0.017792450692375703,
+fixed,pooled,batch_ratio,13,0.1543033499620919,0.6147373473434845,
+fixed,pooled,samples_ratio,13,,,constant ratio
+fixed,pooled,param_ratio,13,-0.15384615384615383,0.6157988686488814,
+jenks,held-out,steps_ratio,4,,,constant ratio
+jenks,held-out,lr_ratio,4,0.19999999999999998,0.8,
+jenks,held-out,batch_ratio,4,,,constant ratio
+jenks,held-out,samples_ratio,4,,,constant ratio
+jenks,held-out,param_ratio,4,-0.39999999999999997,0.6,
+jenks,pooled,steps_ratio,13,,,constant ratio
+jenks,pooled,lr_ratio,13,0.39010989010989006,0.1875741161338378,
+jenks,pooled,batch_ratio,13,-0.1543033499620919,0.6147373473434845,
+jenks,pooled,samples_ratio,13,,,constant ratio
+jenks,pooled,param_ratio,13,-0.1043956043956044,0.7343037452877026,
+entmax15,held-out,steps_ratio,4,,,constant ratio
+entmax15,held-out,lr_ratio,4,0.19999999999999998,0.8,
+entmax15,held-out,batch_ratio,4,,,constant ratio
+entmax15,held-out,samples_ratio,4,,,constant ratio
+entmax15,held-out,param_ratio,4,-0.39999999999999997,0.6,
+entmax15,pooled,steps_ratio,13,,,constant ratio
+entmax15,pooled,lr_ratio,13,0.521978021978022,0.06729171199351015,
+entmax15,pooled,batch_ratio,13,-0.07715167498104596,0.8021872773938725,
+entmax15,pooled,samples_ratio,13,,,constant ratio
+entmax15,pooled,param_ratio,13,-0.13186813186813187,0.6676075762175147,

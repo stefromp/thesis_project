@@ -1,0 +1,8 @@
+dataset,current,budget,current_dir,budget_dir
+cardio,complete,pending (no run),cardio/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn,
+higgs-small,pending (4/5 gen seeds),not submitted (optional),,
+house,complete,pending (no run),house/ablation/gnn_gatv2_layers3_dim128_topk5_heads8_noattn,
+king,complete,pending (no run),king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn,
+miniboone,pending (1/5 gen seeds),not submitted (optional),,
+california,complete,pending (no run),california/ablation_fixed_seed0/gnn_gcn_layers2_dim256_topk5_heads4_noattn,
+gesture,complete,pending (no run),gesture/ablation_fixed_seed0/gnn_gat_layers3_dim128_topk5_heads4_noattn,

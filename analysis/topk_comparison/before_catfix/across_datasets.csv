@@ -1,0 +1,46 @@
+metric,subset,n_datasets,datasets,includes_development,n_fixed_summary_only,kind,a,value,statistic,p_value,b,note,wins,ties,losses,not_testable,p_holm
+score,held_out,4,cardio;default;house;king,False,0,avg_rank,fixed,2.0,,,,,,,,,
+score,held_out,4,cardio;default;house;king,False,0,avg_rank,jenks,1.5,,,,,,,,,
+score,held_out,4,cardio;default;house;king,False,0,avg_rank,entmax15,2.5,,,,,,,,,
+score,held_out,4,cardio;default;house;king,False,0,friedman,,,2.0,0.36787944117144245,,,,,,,
+score,held_out,4,cardio;default;house;king,False,0,wilcoxon,jenks,2.2621055681230096,2.0,0.375,fixed,value = median relative delta %,2.0,2.0,0.0,0.0,1.0
+score,held_out,4,cardio;default;house;king,False,0,wilcoxon,entmax15,-0.44354330744188586,3.0,0.625,fixed,value = median relative delta %,1.0,1.0,2.0,0.0,1.0
+score,held_out,4,cardio;default;house;king,False,0,wilcoxon,entmax15,-0.3815661576906583,3.0,0.625,jenks,value = median relative delta %,0.0,1.0,3.0,0.0,1.0
+score,development,9,abalone;adult;buddy;california;churn2;diabetes;gesture;insurance;wilt,True,5,avg_rank,fixed,1.5555555555555556,,,,,,,,,
+score,development,9,abalone;adult;buddy;california;churn2;diabetes;gesture;insurance;wilt,True,5,avg_rank,jenks,2.0,,,,,,,,,
+score,development,9,abalone;adult;buddy;california;churn2;diabetes;gesture;insurance;wilt,True,5,avg_rank,entmax15,2.4444444444444446,,,,,,,,,
+score,development,9,abalone;adult;buddy;california;churn2;diabetes;gesture;insurance;wilt,True,5,friedman,,,3.555555555555543,0.16901331540606715,,,,,,,
+score,development,9,abalone;adult;buddy;california;churn2;diabetes;gesture;insurance;wilt,True,5,wilcoxon,jenks,-0.2939332071506042,10.0,0.1640625,fixed,value = median relative delta %,1.0,2.0,1.0,5.0,0.328125
+score,development,9,abalone;adult;buddy;california;churn2;diabetes;gesture;insurance;wilt,True,5,wilcoxon,entmax15,-0.5303012062696989,8.0,0.09765625,fixed,value = median relative delta %,0.0,3.0,1.0,5.0,0.29296875
+score,development,9,abalone;adult;buddy;california;churn2;diabetes;gesture;insurance;wilt,True,5,wilcoxon,entmax15,-1.0230056480932221,15.0,0.42578125,jenks,value = median relative delta %,1.0,2.0,6.0,0.0,0.42578125
+score,pooled,13,abalone;adult;buddy;california;cardio;churn2;default;diabetes;gesture;house;insurance;king;wilt,True,5,avg_rank,fixed,1.6923076923076923,,,,,,,,,
+score,pooled,13,abalone;adult;buddy;california;cardio;churn2;default;diabetes;gesture;house;insurance;king;wilt,True,5,avg_rank,jenks,1.8461538461538463,,,,,,,,,
+score,pooled,13,abalone;adult;buddy;california;cardio;churn2;default;diabetes;gesture;house;insurance;king;wilt,True,5,avg_rank,entmax15,2.4615384615384617,,,,,,,,,
+score,pooled,13,abalone;adult;buddy;california;cardio;churn2;default;diabetes;gesture;house;insurance;king;wilt,True,5,friedman,,,4.307692307692321,0.1160370022477593,,,,,,,
+score,pooled,13,abalone;adult;buddy;california;cardio;churn2;default;diabetes;gesture;house;insurance;king;wilt,True,5,wilcoxon,jenks,-0.1294914148211788,39.0,0.684814453125,fixed,value = median relative delta %,3.0,4.0,1.0,5.0,0.684814453125
+score,pooled,13,abalone;adult;buddy;california;cardio;churn2;default;diabetes;gesture;house;insurance;king;wilt,True,5,wilcoxon,entmax15,-0.5303012062696989,22.0,0.10986328125,fixed,value = median relative delta %,1.0,4.0,3.0,5.0,0.32958984375
+score,pooled,13,abalone;adult;buddy;california;cardio;churn2;default;diabetes;gesture;house;insurance;king;wilt,True,5,wilcoxon,entmax15,-0.8352898098089417,26.0,0.19091796875,jenks,value = median relative delta %,1.0,3.0,9.0,0.0,0.3818359375
+tabddpm_util,held_out,4,cardio;default;house;king,False,0,avg_rank,fixed,2.25,,,,,,,,,
+tabddpm_util,held_out,4,cardio;default;house;king,False,0,avg_rank,jenks,1.75,,,,,,,,,
+tabddpm_util,held_out,4,cardio;default;house;king,False,0,avg_rank,entmax15,2.0,,,,,,,,,
+tabddpm_util,held_out,4,cardio;default;house;king,False,0,friedman,,,0.5,0.7788007830714049,,,,,,,
+tabddpm_util,held_out,4,cardio;default;house;king,False,0,wilcoxon,jenks,2.06536509509394,1.0,0.25,fixed,value = median relative delta %,3.0,1.0,0.0,0.0,0.75
+tabddpm_util,held_out,4,cardio;default;house;king,False,0,wilcoxon,entmax15,0.8200159230752696,4.0,0.875,fixed,value = median relative delta %,2.0,1.0,1.0,0.0,1.0
+tabddpm_util,held_out,4,cardio;default;house;king,False,0,wilcoxon,entmax15,0.42734175536518226,5.0,1.0,jenks,value = median relative delta %,1.0,1.0,2.0,0.0,1.0
+tabddpm_util,development,9,abalone;adult;buddy;california;churn2;diabetes;gesture;insurance;wilt,True,5,avg_rank,fixed,1.3333333333333333,,,,,,,,,
+tabddpm_util,development,9,abalone;adult;buddy;california;churn2;diabetes;gesture;insurance;wilt,True,5,avg_rank,jenks,2.2222222222222223,,,,,,,,,
+tabddpm_util,development,9,abalone;adult;buddy;california;churn2;diabetes;gesture;insurance;wilt,True,5,avg_rank,entmax15,2.4444444444444446,,,,,,,,,
+tabddpm_util,development,9,abalone;adult;buddy;california;churn2;diabetes;gesture;insurance;wilt,True,5,friedman,,,6.222222222222214,0.04455142624448987,,,,,,,
+tabddpm_util,development,9,abalone;adult;buddy;california;churn2;diabetes;gesture;insurance;wilt,True,5,nemenyi,fixed,0.8888888888888891,,0.14281344508052485,jenks,CD=1.105,,,,,
+tabddpm_util,development,9,abalone;adult;buddy;california;churn2;diabetes;gesture;insurance;wilt,True,5,nemenyi,fixed,1.1111111111111114,,0.04833795298030141,entmax15,CD=1.105,,,,,
+tabddpm_util,development,9,abalone;adult;buddy;california;churn2;diabetes;gesture;insurance;wilt,True,5,nemenyi,jenks,0.22222222222222232,,0.8847411585960431,entmax15,CD=1.105,,,,,
+tabddpm_util,development,9,abalone;adult;buddy;california;churn2;diabetes;gesture;insurance;wilt,True,5,wilcoxon,jenks,-0.4005493270124538,5.0,0.0390625,fixed,value = median relative delta %,1.0,2.0,1.0,5.0,0.1171875
+tabddpm_util,development,9,abalone;adult;buddy;california;churn2;diabetes;gesture;insurance;wilt,True,5,wilcoxon,entmax15,-0.7762920183659793,6.0,0.0546875,fixed,value = median relative delta %,0.0,3.0,1.0,5.0,0.1171875
+tabddpm_util,development,9,abalone;adult;buddy;california;churn2;diabetes;gesture;insurance;wilt,True,5,wilcoxon,entmax15,-0.5616492182167074,15.0,0.42578125,jenks,value = median relative delta %,1.0,3.0,5.0,0.0,0.42578125
+tabddpm_util,pooled,13,abalone;adult;buddy;california;cardio;churn2;default;diabetes;gesture;house;insurance;king;wilt,True,5,avg_rank,fixed,1.6153846153846154,,,,,,,,,
+tabddpm_util,pooled,13,abalone;adult;buddy;california;cardio;churn2;default;diabetes;gesture;house;insurance;king;wilt,True,5,avg_rank,jenks,2.076923076923077,,,,,,,,,
+tabddpm_util,pooled,13,abalone;adult;buddy;california;cardio;churn2;default;diabetes;gesture;house;insurance;king;wilt,True,5,avg_rank,entmax15,2.3076923076923075,,,,,,,,,
+tabddpm_util,pooled,13,abalone;adult;buddy;california;cardio;churn2;default;diabetes;gesture;house;insurance;king;wilt,True,5,friedman,,,3.2307692307692264,0.1988141887380746,,,,,,,
+tabddpm_util,pooled,13,abalone;adult;buddy;california;cardio;churn2;default;diabetes;gesture;house;insurance;king;wilt,True,5,wilcoxon,jenks,-0.11168104123341108,35.0,0.497314453125,fixed,value = median relative delta %,4.0,3.0,1.0,5.0,0.99462890625
+tabddpm_util,pooled,13,abalone;adult;buddy;california;cardio;churn2;default;diabetes;gesture;house;insurance;king;wilt,True,5,wilcoxon,entmax15,-0.47577359459420954,27.0,0.21630859375,fixed,value = median relative delta %,2.0,4.0,2.0,5.0,0.64892578125
+tabddpm_util,pooled,13,abalone;adult;buddy;california;cardio;churn2;default;diabetes;gesture;house;insurance;king;wilt,True,5,wilcoxon,entmax15,-0.3644996303432578,35.0,0.497314453125,jenks,value = median relative delta %,2.0,4.0,7.0,0.0,0.99462890625

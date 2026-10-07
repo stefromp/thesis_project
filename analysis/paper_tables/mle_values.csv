@@ -1,0 +1,155 @@
+dataset,method,mean,std,n_runs,source
+abalone,CTGAN,0.42,0.004,50,reported: arXiv:2209.15421v2 Table 5
+adult,CTGAN,0.789,0.001,50,reported: arXiv:2209.15421v2 Table 5
+buddy,CTGAN,0.867,0.003,50,reported: arXiv:2209.15421v2 Table 5
+california,CTGAN,0.686,0.003,50,reported: arXiv:2209.15421v2 Table 5
+cardio,CTGAN,0.73,0.001,50,reported: arXiv:2209.15421v2 Table 5
+churn2,CTGAN,0.723,0.006,50,reported: arXiv:2209.15421v2 Table 5
+default,CTGAN,0.699,0.002,50,reported: arXiv:2209.15421v2 Table 5
+diabetes,CTGAN,0.459,0.096,50,reported: arXiv:2209.15421v2 Table 5
+fb-comments,CTGAN,0.443,0.005,50,reported: arXiv:2209.15421v2 Table 5
+gesture,CTGAN,0.333,0.013,50,reported: arXiv:2209.15421v2 Table 5
+higgs-small,CTGAN,0.575,0.006,50,reported: arXiv:2209.15421v2 Table 5
+house,CTGAN,0.433,0.005,50,reported: arXiv:2209.15421v2 Table 5
+insurance,CTGAN,0.745,0.009,50,reported: arXiv:2209.15421v2 Table 5
+king,CTGAN,0.772,0.005,50,reported: arXiv:2209.15421v2 Table 5
+miniboone,CTGAN,0.783,0.005,50,reported: arXiv:2209.15421v2 Table 5
+wilt,CTGAN,0.749,0.015,50,reported: arXiv:2209.15421v2 Table 5
+abalone,TVAE,0.433,0.008,50,reported: arXiv:2209.15421v2 Table 5
+adult,TVAE,0.781,0.002,50,reported: arXiv:2209.15421v2 Table 5
+buddy,TVAE,0.864,0.005,50,reported: arXiv:2209.15421v2 Table 5
+california,TVAE,0.752,0.001,50,reported: arXiv:2209.15421v2 Table 5
+cardio,TVAE,0.717,0.001,50,reported: arXiv:2209.15421v2 Table 5
+churn2,TVAE,0.732,0.006,50,reported: arXiv:2209.15421v2 Table 5
+default,TVAE,0.656,0.007,50,reported: arXiv:2209.15421v2 Table 5
+diabetes,TVAE,0.714,0.039,50,reported: arXiv:2209.15421v2 Table 5
+fb-comments,TVAE,0.685,0.003,50,reported: arXiv:2209.15421v2 Table 5
+gesture,TVAE,0.434,0.006,50,reported: arXiv:2209.15421v2 Table 5
+higgs-small,TVAE,0.638,0.003,50,reported: arXiv:2209.15421v2 Table 5
+house,TVAE,0.493,0.006,50,reported: arXiv:2209.15421v2 Table 5
+insurance,TVAE,0.784,0.01,50,reported: arXiv:2209.15421v2 Table 5
+king,TVAE,0.824,0.003,50,reported: arXiv:2209.15421v2 Table 5
+miniboone,TVAE,0.912,0.001,50,reported: arXiv:2209.15421v2 Table 5
+wilt,TVAE,0.501,0.012,50,reported: arXiv:2209.15421v2 Table 5
+abalone,CTABGAN,,,0,reported: arXiv:2209.15421v2 Table 5
+adult,CTABGAN,0.783,0.002,50,reported: arXiv:2209.15421v2 Table 5
+buddy,CTABGAN,0.855,0.005,50,reported: arXiv:2209.15421v2 Table 5
+california,CTABGAN,,,0,reported: arXiv:2209.15421v2 Table 5
+cardio,CTABGAN,0.717,0.001,50,reported: arXiv:2209.15421v2 Table 5
+churn2,CTABGAN,0.688,0.006,50,reported: arXiv:2209.15421v2 Table 5
+default,CTABGAN,0.644,0.011,50,reported: arXiv:2209.15421v2 Table 5
+diabetes,CTABGAN,0.731,0.022,50,reported: arXiv:2209.15421v2 Table 5
+fb-comments,CTABGAN,,,0,reported: arXiv:2209.15421v2 Table 5
+gesture,CTABGAN,0.392,0.006,50,reported: arXiv:2209.15421v2 Table 5
+higgs-small,CTABGAN,0.575,0.004,50,reported: arXiv:2209.15421v2 Table 5
+house,CTABGAN,,,0,reported: arXiv:2209.15421v2 Table 5
+insurance,CTABGAN,,,0,reported: arXiv:2209.15421v2 Table 5
+king,CTABGAN,,,0,reported: arXiv:2209.15421v2 Table 5
+miniboone,CTABGAN,0.889,0.002,50,reported: arXiv:2209.15421v2 Table 5
+wilt,CTABGAN,0.906,0.019,50,reported: arXiv:2209.15421v2 Table 5
+abalone,CTABGAN+,0.467,0.004,50,reported: arXiv:2209.15421v2 Table 5
+adult,CTABGAN+,0.772,0.003,50,reported: arXiv:2209.15421v2 Table 5
+buddy,CTABGAN+,0.884,0.005,50,reported: arXiv:2209.15421v2 Table 5
+california,CTABGAN+,0.525,0.004,50,reported: arXiv:2209.15421v2 Table 5
+cardio,CTABGAN+,0.733,0.001,50,reported: arXiv:2209.15421v2 Table 5
+churn2,CTABGAN+,0.702,0.012,50,reported: arXiv:2209.15421v2 Table 5
+default,CTABGAN+,0.686,0.004,50,reported: arXiv:2209.15421v2 Table 5
+diabetes,CTABGAN+,0.734,0.02,50,reported: arXiv:2209.15421v2 Table 5
+fb-comments,CTABGAN+,0.509,0.011,50,reported: arXiv:2209.15421v2 Table 5
+gesture,CTABGAN+,0.406,0.009,50,reported: arXiv:2209.15421v2 Table 5
+higgs-small,CTABGAN+,0.664,0.002,50,reported: arXiv:2209.15421v2 Table 5
+house,CTABGAN+,0.504,0.005,50,reported: arXiv:2209.15421v2 Table 5
+insurance,CTABGAN+,0.797,0.005,50,reported: arXiv:2209.15421v2 Table 5
+king,CTABGAN+,0.444,0.014,50,reported: arXiv:2209.15421v2 Table 5
+miniboone,CTABGAN+,0.892,0.002,50,reported: arXiv:2209.15421v2 Table 5
+wilt,CTABGAN+,0.798,0.021,50,reported: arXiv:2209.15421v2 Table 5
+abalone,SMOTE,0.549,0.005,50,reported: arXiv:2209.15421v2 Table 5
+adult,SMOTE,0.791,0.002,50,reported: arXiv:2209.15421v2 Table 5
+buddy,SMOTE,0.891,0.003,50,reported: arXiv:2209.15421v2 Table 5
+california,SMOTE,0.84,0.001,50,reported: arXiv:2209.15421v2 Table 5
+cardio,SMOTE,0.732,0.001,50,reported: arXiv:2209.15421v2 Table 5
+churn2,SMOTE,0.743,0.005,50,reported: arXiv:2209.15421v2 Table 5
+default,SMOTE,0.693,0.003,50,reported: arXiv:2209.15421v2 Table 5
+diabetes,SMOTE,0.683,0.037,50,reported: arXiv:2209.15421v2 Table 5
+fb-comments,SMOTE,0.803,0.002,50,reported: arXiv:2209.15421v2 Table 5
+gesture,SMOTE,0.658,0.007,50,reported: arXiv:2209.15421v2 Table 5
+higgs-small,SMOTE,0.722,0.001,50,reported: arXiv:2209.15421v2 Table 5
+house,SMOTE,0.662,0.004,50,reported: arXiv:2209.15421v2 Table 5
+insurance,SMOTE,0.812,0.002,50,reported: arXiv:2209.15421v2 Table 5
+king,SMOTE,0.842,0.004,50,reported: arXiv:2209.15421v2 Table 5
+miniboone,SMOTE,0.932,0.001,50,reported: arXiv:2209.15421v2 Table 5
+wilt,SMOTE,0.913,0.007,50,reported: arXiv:2209.15421v2 Table 5
+abalone,TabDDPM,0.5499,0.0103,50,exp/abalone/ddpm_cb_best/eval_catboost.json
+abalone,Real,0.5562,0.0038,10,exp/abalone/ddpm_cb_best/eval_catboost.json
+adult,TabDDPM,0.7951,0.0014,50,exp/adult/ddpm_cb_best/eval_catboost.json
+adult,Real,0.8152,0.0017,10,exp/adult/ddpm_cb_best/eval_catboost.json
+buddy,TabDDPM,0.9057,0.0029,50,exp/buddy/ddpm_cb_best/eval_catboost.json
+buddy,Real,0.9063,0.0018,10,exp/buddy/ddpm_cb_best/eval_catboost.json
+california,TabDDPM,0.8362,0.0015,50,exp/california/ddpm_cb_best/eval_catboost.json
+california,Real,0.8568,0.0013,10,exp/california/ddpm_cb_best/eval_catboost.json
+cardio,TabDDPM,0.7374,0.0011,50,exp/cardio/ddpm_cb_best/eval_catboost.json
+cardio,Real,0.7379,0.0008,10,exp/cardio/ddpm_cb_best/eval_catboost.json
+churn2,TabDDPM,0.7548,0.0059,50,exp/churn2/ddpm_cb_best/eval_catboost.json
+churn2,Real,0.7403,0.0086,10,exp/churn2/ddpm_cb_best/eval_catboost.json
+default,TabDDPM,0.691,0.004,50,exp/default/ddpm_cb_best/eval_catboost.json
+default,Real,0.688,0.0028,10,exp/default/ddpm_cb_best/eval_catboost.json
+diabetes,TabDDPM,0.7398,0.0196,50,exp/diabetes/ddpm_cb_best/eval_catboost.json
+diabetes,Real,0.7849,0.0129,10,exp/diabetes/ddpm_cb_best/eval_catboost.json
+fb-comments,TabDDPM,0.7128,0.0021,50,exp/fb-comments/ddpm_cb_best/eval_catboost.json
+fb-comments,Real,0.8371,0.0012,10,exp/fb-comments/ddpm_cb_best/eval_catboost.json
+gesture,TabDDPM,0.5967,0.0062,50,exp/gesture/ddpm_cb_best/eval_catboost.json
+gesture,Real,0.6365,0.0073,10,exp/gesture/ddpm_cb_best/eval_catboost.json
+higgs-small,TabDDPM,0.7218,0.0013,50,exp/higgs-small/ddpm_cb_best/eval_catboost.json
+higgs-small,Real,0.7238,0.0012,10,exp/higgs-small/ddpm_cb_best/eval_catboost.json
+house,TabDDPM,0.6766,0.0096,50,exp/house/ddpm_cb_best/eval_catboost.json
+house,Real,0.6616,0.0027,10,exp/house/ddpm_cb_best/eval_catboost.json
+insurance,TabDDPM,0.8092,0.0024,50,exp/insurance/ddpm_cb_best/eval_catboost.json
+insurance,Real,0.8137,0.0012,10,exp/insurance/ddpm_cb_best/eval_catboost.json
+king,TabDDPM,0.8331,0.0143,50,exp/king/ddpm_cb_best/eval_catboost.json
+king,Real,0.907,0.0022,10,exp/king/ddpm_cb_best/eval_catboost.json
+miniboone,TabDDPM,0.9362,0.0006,50,exp/miniboone/ddpm_cb_best/eval_catboost.json
+miniboone,Real,0.9342,0.0004,10,exp/miniboone/ddpm_cb_best/eval_catboost.json
+wilt,TabDDPM,0.9045,0.009,50,exp/wilt/ddpm_cb_best/eval_catboost.json
+wilt,Real,0.8982,0.0063,10,exp/wilt/ddpm_cb_best/eval_catboost.json
+abalone,fixed,0.5501417145369377,0.006378573499058602,50,transfer_runs/exp/abalone/ablation_catfix/gnn_gatv2_layers3_dim64_topk3_heads4_noattn
+abalone,jenks,0.5539310822794774,0.010208162216915425,50,transfer_runs/exp/abalone/ablation_adaptive_jenks_catfix/gnn_gatv2_layers3_dim64_topk3_heads4_noattn
+abalone,entmax15,0.5485334507269387,0.01187778158272233,50,transfer_runs/exp/abalone/ablation_adaptive_entmax15_catfix/gnn_gatv2_layers3_dim64_topk3_heads4_noattn
+adult,fixed,0.7933161732260079,0.001140872129317463,50,transfer_runs/exp/adult/ablation_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+adult,jenks,0.7930134077486405,0.0012404857282131134,50,transfer_runs/exp/adult/ablation_adaptive_jenks_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+adult,entmax15,0.7937493599115405,0.0008011054945729554,50,transfer_runs/exp/adult/ablation_adaptive_entmax15_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+buddy,fixed,0.9094672620086824,0.002233855245995567,50,transfer_runs/exp/buddy/ablation_catfix/gnn_gcn_layers2_dim256_topk5_heads4_noattn
+buddy,jenks,0.9080970795469699,0.0029274326722150733,50,transfer_runs/exp/buddy/ablation_adaptive_jenks_catfix/gnn_gcn_layers2_dim256_topk5_heads4_noattn
+buddy,entmax15,0.9088281390834417,0.0019152352189167052,50,transfer_runs/exp/buddy/ablation_adaptive_entmax15_catfix/gnn_gcn_layers2_dim256_topk5_heads4_noattn
+california,fixed,0.8256498786353752,0.0014250055377859204,50,transfer_runs/exp/california/ablation_fixed_seed0/gnn_gcn_layers2_dim256_topk5_heads4_noattn
+california,jenks,0.8223427436030218,0.0016054262734867006,50,transfer_runs/exp/california/ablation_adaptive_jenks/gnn_gcn_layers2_dim256_topk5_heads4_noattn
+california,entmax15,0.8131249197684879,0.0013830071028843691,50,transfer_runs/exp/california/ablation_adaptive_entmax15/gnn_gcn_layers2_dim256_topk5_heads4_noattn
+cardio,fixed,0.7365538032734267,0.0006405165120877134,50,transfer_runs/exp/cardio/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+cardio,jenks,0.7364602004937355,0.0006838624702045691,50,transfer_runs/exp/cardio/ablation_adaptive_jenks_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+cardio,entmax15,0.7370648360281522,0.0005913142926779792,50,transfer_runs/exp/cardio/ablation_adaptive_entmax15_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+churn2,fixed,0.7478820366218188,0.005646037209950971,50,transfer_runs/exp/churn2/ablation_catfix/gnn_gatv2_layers2_dim128_topk5_heads4_noattn
+churn2,jenks,0.7452417205786874,0.004752273223951847,50,transfer_runs/exp/churn2/ablation_adaptive_jenks_catfix/gnn_gatv2_layers2_dim128_topk5_heads4_noattn
+churn2,entmax15,0.7422780942127905,0.0069641610852479606,50,transfer_runs/exp/churn2/ablation_adaptive_entmax15_catfix/gnn_gatv2_layers2_dim128_topk5_heads4_noattn
+default,fixed,0.6831320684201058,0.0029810356332542675,50,transfer_runs/exp/default/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+default,jenks,0.6883493404876391,0.003734758653907088,50,transfer_runs/exp/default/ablation_adaptive_jenks_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+default,entmax15,0.6854116431711336,0.0041731632742407,50,transfer_runs/exp/default/ablation_adaptive_entmax15_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+diabetes,fixed,0.7584837763865316,0.022913932947983422,50,transfer_runs/exp/diabetes/ablation_fixed_seed0/gnn_gin_layers2_dim32_topk5_heads4_noattn
+diabetes,jenks,0.737370294872201,0.024215482345988713,50,transfer_runs/exp/diabetes/ablation_adaptive_jenks/gnn_gin_layers2_dim32_topk5_heads4_noattn
+diabetes,entmax15,0.7561174936149468,0.023089144318212577,50,transfer_runs/exp/diabetes/ablation_adaptive_entmax15/gnn_gin_layers2_dim32_topk5_heads4_noattn
+fb-comments,fixed,,,0,
+fb-comments,jenks,,,0,
+fb-comments,entmax15,,,0,
+gesture,fixed,0.5488913386062113,0.006962392288624761,50,transfer_runs/exp/gesture/ablation_fixed_seed0/gnn_gat_layers3_dim128_topk5_heads4_noattn
+gesture,jenks,0.5524994576834694,0.005759717870093556,50,transfer_runs/exp/gesture/ablation_adaptive_jenks/gnn_gat_layers3_dim128_topk5_heads4_noattn
+gesture,entmax15,0.5493963487987386,0.006566618608480964,50,transfer_runs/exp/gesture/ablation_adaptive_entmax15/gnn_gat_layers3_dim128_topk5_heads4_noattn
+house,fixed,0.5970500572377255,0.006714263597941061,50,transfer_runs/exp/house/ablation/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+house,jenks,0.632642725327876,0.006778739025407109,50,transfer_runs/exp/house/ablation_adaptive_jenks/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+house,entmax15,0.6392734313610023,0.007133221855435686,50,transfer_runs/exp/house/ablation_adaptive_entmax15/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+insurance,fixed,0.8121476932115697,0.002052574076697802,50,transfer_runs/exp/insurance/ablation_catfix/gnn_gatv2_layers2_dim64_topk5_heads4_noattn
+insurance,jenks,0.8143546294033415,0.001399549871088004,50,transfer_runs/exp/insurance/ablation_adaptive_jenks_catfix/gnn_gatv2_layers2_dim64_topk5_heads4_noattn
+insurance,entmax15,0.8113749191636194,0.002227988818271208,50,transfer_runs/exp/insurance/ablation_adaptive_entmax15_catfix/gnn_gatv2_layers2_dim64_topk5_heads4_noattn
+king,fixed,0.8545121062652862,0.021292588198083485,50,transfer_runs/exp/king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+king,jenks,0.8497368931088333,0.012392758129213118,50,transfer_runs/exp/king/ablation_adaptive_jenks_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+king,entmax15,0.8729545159209294,0.014278123716090354,50,transfer_runs/exp/king/ablation_adaptive_entmax15_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+wilt,fixed,0.9064185110221872,0.012761403550036835,50,transfer_runs/exp/wilt/ablation_fixed_seed0/gnn_gatv2_layers2_dim64_topk3_heads8_noattn
+wilt,jenks,0.8966188454582804,0.009972482750472673,50,transfer_runs/exp/wilt/ablation_adaptive_jenks/gnn_gatv2_layers2_dim64_topk3_heads8_noattn
+wilt,entmax15,0.8993820564681299,0.01059312703732191,50,transfer_runs/exp/wilt/ablation_adaptive_entmax15/gnn_gatv2_layers2_dim64_topk3_heads8_noattn

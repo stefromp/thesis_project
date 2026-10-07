@@ -1,0 +1,27 @@
+\begin{table}[t]
+\centering\small
+\begin{tabular}{llrlcccc}
+\toprule
+Dataset & Task & Imbal. & Metric & fixed & Jenks & entmax-1.5 & fixed grid summary (ref.) \\
+\midrule
+\multicolumn{8}{l}{\textit{Held-out evaluation (transferred): configuration chosen without seeing any of its results}} \\
+cardio & binclass & 1.01 & macro-F1 $\uparrow$ & 0.7366 $\pm$ 0.0002 & 0.7365 $\pm$ 0.0004 & \textbf{0.7371 $\pm$ 0.0004} & --- \\
+default & binclass & 3.52 & macro-F1 $\uparrow$ & 0.6831 $\pm$ 0.0009 & \textbf{0.6883 $\pm$ 0.0020} & 0.6854 $\pm$ 0.0013 & --- \\
+fb-comments$^\S$ & regression & — & R$^2$ $\uparrow$ & partial$^\dagger$ & partial$^\dagger$ & --- & --- \\
+house & regression & — & R$^2$ $\uparrow$ & 0.5971 $\pm$ 0.0068 & 0.6326 $\pm$ 0.0071 & \textbf{0.6393 $\pm$ 0.0076} & --- \\
+king & regression & — & R$^2$ $\uparrow$ & 0.8545 $\pm$ 0.0231 & 0.8497 $\pm$ 0.0126 & \textbf{0.8730 $\pm$ 0.0153} & --- \\
+\midrule
+\multicolumn{8}{l}{\textit{Development set (ablated): configuration selected on the test split by fixed-mode score; in-sample and optimistic}} \\
+abalone & regression & — & R$^2$ $\uparrow$ & 0.5501 $\pm$ 0.0058 & \textbf{0.5539 $\pm$ 0.0095} & 0.5485 $\pm$ 0.0127 & --- \\
+adult & binclass & 3.15 & macro-F1 $\uparrow$ & 0.7933 $\pm$ 0.0010 & 0.7930 $\pm$ 0.0011 & \textbf{0.7937 $\pm$ 0.0005} & --- \\
+buddy & multiclass & 6.10 & macro-F1 $\uparrow$ & \textbf{0.9095 $\pm$ 0.0014} & 0.9081 $\pm$ 0.0022 & 0.9088 $\pm$ 0.0011 & --- \\
+california & regression & — & R$^2$ $\uparrow$ & \textbf{0.8256 $\pm$ 0.0012} & 0.8223 $\pm$ 0.0014 & 0.8131 $\pm$ 0.0011 & 0.8251 $\pm$ 0.0013 \\
+churn2 & binclass & 3.91 & macro-F1 $\uparrow$ & \textbf{0.7479 $\pm$ 0.0022} & 0.7452 $\pm$ 0.0026 & 0.7423 $\pm$ 0.0033 & --- \\
+diabetes & binclass & 1.87 & macro-F1 $\uparrow$ & \textbf{0.7585 $\pm$ 0.0208} & 0.7374 $\pm$ 0.0222 & 0.7561 $\pm$ 0.0197 & 0.7625 $\pm$ 0.0235 \\
+gesture & multiclass & 2.96 & macro-F1 $\uparrow$ & 0.5489 $\pm$ 0.0044 & \textbf{0.5525 $\pm$ 0.0012} & 0.5494 $\pm$ 0.0052 & 0.5495 $\pm$ 0.0084 \\
+insurance & regression & — & R$^2$ $\uparrow$ & 0.8121 $\pm$ 0.0016 & \textbf{0.8144 $\pm$ 0.0006} & 0.8114 $\pm$ 0.0016 & --- \\
+wilt & binclass & 17.54 & macro-F1 $\uparrow$ & \textbf{0.9064 $\pm$ 0.0116} & 0.8966 $\pm$ 0.0080 & 0.8994 $\pm$ 0.0080 & 0.9069 $\pm$ 0.0094 \\
+\bottomrule
+\end{tabular}
+\caption{TabDDPM-convention utility (macro-F1 / $R^2$). Primary claims rest on the held-out (transferred) rows; development-set (ablated) rows are in-sample with respect to configuration selection, which was made on the test split by fixed-mode score, so they are optimistic, most of all for fixed. mean $\pm$ sd over generation seeds (n=5, each averaged over 10 CatBoost seeds). Bold = best mean in the row. $^\dagger$ partial (<5 gen seeds). § trained with the categorical-input bug (cat_input=log; see caveats). $^\ddagger$ fixed grid summary: sd spans all 5$\times$10 gen$\times$clf runs, not generation seeds. Imbal. = majority/minority class ratio (— for regression).}
+\end{table}

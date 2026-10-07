@@ -1,0 +1,136 @@
+what,path
+data info,data/abalone/info.json
+data info,data/adult/info.json
+data info,data/buddy/info.json
+data info,data/california/info.json
+data info,data/cardio/info.json
+data info,data/churn2/info.json
+data info,data/default/info.json
+data info,data/diabetes/info.json
+data info,data/fb-comments/info.json
+data info,data/gesture/info.json
+data info,data/higgs-small/info.json
+data info,data/house/info.json
+data info,data/insurance/info.json
+data info,data/king/info.json
+data info,data/miniboone/info.json
+data info,data/wilt/info.json
+authors TabDDPM/Real,exp/abalone/ddpm_cb_best/eval_catboost.json
+authors TabDDPM/Real,exp/adult/ddpm_cb_best/eval_catboost.json
+authors TabDDPM/Real,exp/buddy/ddpm_cb_best/eval_catboost.json
+authors TabDDPM/Real,exp/california/ddpm_cb_best/eval_catboost.json
+authors TabDDPM/Real,exp/cardio/ddpm_cb_best/eval_catboost.json
+authors TabDDPM/Real,exp/churn2/ddpm_cb_best/eval_catboost.json
+authors TabDDPM/Real,exp/default/ddpm_cb_best/eval_catboost.json
+authors TabDDPM/Real,exp/diabetes/ddpm_cb_best/eval_catboost.json
+authors TabDDPM/Real,exp/fb-comments/ddpm_cb_best/eval_catboost.json
+authors TabDDPM/Real,exp/gesture/ddpm_cb_best/eval_catboost.json
+authors TabDDPM/Real,exp/higgs-small/ddpm_cb_best/eval_catboost.json
+authors TabDDPM/Real,exp/house/ddpm_cb_best/eval_catboost.json
+authors TabDDPM/Real,exp/insurance/ddpm_cb_best/eval_catboost.json
+authors TabDDPM/Real,exp/king/ddpm_cb_best/eval_catboost.json
+authors TabDDPM/Real,exp/miniboone/ddpm_cb_best/eval_catboost.json
+authors TabDDPM/Real,exp/wilt/ddpm_cb_best/eval_catboost.json
+GNN run (fixed),transfer_runs/exp/abalone/ablation_catfix/gnn_gatv2_layers3_dim64_topk3_heads4_noattn
+GNN run (jenks),transfer_runs/exp/abalone/ablation_adaptive_jenks_catfix/gnn_gatv2_layers3_dim64_topk3_heads4_noattn
+GNN run (entmax15),transfer_runs/exp/abalone/ablation_adaptive_entmax15_catfix/gnn_gatv2_layers3_dim64_topk3_heads4_noattn
+GNN run (fixed),transfer_runs/exp/adult/ablation_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+GNN run (jenks),transfer_runs/exp/adult/ablation_adaptive_jenks_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+GNN run (entmax15),transfer_runs/exp/adult/ablation_adaptive_entmax15_catfix/gnn_gcn_layers2_dim128_topk5_heads4_noattn
+GNN run (fixed),transfer_runs/exp/buddy/ablation_catfix/gnn_gcn_layers2_dim256_topk5_heads4_noattn
+GNN run (jenks),transfer_runs/exp/buddy/ablation_adaptive_jenks_catfix/gnn_gcn_layers2_dim256_topk5_heads4_noattn
+GNN run (entmax15),transfer_runs/exp/buddy/ablation_adaptive_entmax15_catfix/gnn_gcn_layers2_dim256_topk5_heads4_noattn
+GNN run (fixed),transfer_runs/exp/california/ablation_fixed_seed0/gnn_gcn_layers2_dim256_topk5_heads4_noattn
+GNN run (jenks),transfer_runs/exp/california/ablation_adaptive_jenks/gnn_gcn_layers2_dim256_topk5_heads4_noattn
+GNN run (entmax15),transfer_runs/exp/california/ablation_adaptive_entmax15/gnn_gcn_layers2_dim256_topk5_heads4_noattn
+GNN run (fixed),transfer_runs/exp/cardio/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+GNN run (jenks),transfer_runs/exp/cardio/ablation_adaptive_jenks_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+GNN run (entmax15),transfer_runs/exp/cardio/ablation_adaptive_entmax15_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+GNN run (fixed),transfer_runs/exp/churn2/ablation_catfix/gnn_gatv2_layers2_dim128_topk5_heads4_noattn
+GNN run (jenks),transfer_runs/exp/churn2/ablation_adaptive_jenks_catfix/gnn_gatv2_layers2_dim128_topk5_heads4_noattn
+GNN run (entmax15),transfer_runs/exp/churn2/ablation_adaptive_entmax15_catfix/gnn_gatv2_layers2_dim128_topk5_heads4_noattn
+GNN run (fixed),transfer_runs/exp/default/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+GNN run (jenks),transfer_runs/exp/default/ablation_adaptive_jenks_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+GNN run (entmax15),transfer_runs/exp/default/ablation_adaptive_entmax15_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+GNN run (fixed),transfer_runs/exp/diabetes/ablation_fixed_seed0/gnn_gin_layers2_dim32_topk5_heads4_noattn
+GNN run (jenks),transfer_runs/exp/diabetes/ablation_adaptive_jenks/gnn_gin_layers2_dim32_topk5_heads4_noattn
+GNN run (entmax15),transfer_runs/exp/diabetes/ablation_adaptive_entmax15/gnn_gin_layers2_dim32_topk5_heads4_noattn
+GNN run (fixed),transfer_runs/exp/fb-comments/ablation/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+GNN run (jenks),transfer_runs/exp/fb-comments/ablation_adaptive_jenks/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+GNN run (fixed),transfer_runs/exp/gesture/ablation_fixed_seed0/gnn_gat_layers3_dim128_topk5_heads4_noattn
+GNN run (jenks),transfer_runs/exp/gesture/ablation_adaptive_jenks/gnn_gat_layers3_dim128_topk5_heads4_noattn
+GNN run (entmax15),transfer_runs/exp/gesture/ablation_adaptive_entmax15/gnn_gat_layers3_dim128_topk5_heads4_noattn
+GNN run (fixed),transfer_runs/exp/house/ablation/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+GNN run (jenks),transfer_runs/exp/house/ablation_adaptive_jenks/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+GNN run (entmax15),transfer_runs/exp/house/ablation_adaptive_entmax15/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+GNN run (fixed),transfer_runs/exp/insurance/ablation_catfix/gnn_gatv2_layers2_dim64_topk5_heads4_noattn
+GNN run (jenks),transfer_runs/exp/insurance/ablation_adaptive_jenks_catfix/gnn_gatv2_layers2_dim64_topk5_heads4_noattn
+GNN run (entmax15),transfer_runs/exp/insurance/ablation_adaptive_entmax15_catfix/gnn_gatv2_layers2_dim64_topk5_heads4_noattn
+GNN run (fixed),transfer_runs/exp/king/ablation_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+GNN run (jenks),transfer_runs/exp/king/ablation_adaptive_jenks_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+GNN run (entmax15),transfer_runs/exp/king/ablation_adaptive_entmax15_catfix/gnn_gatv2_layers3_dim128_topk5_heads8_noattn
+GNN run (fixed),transfer_runs/exp/wilt/ablation_fixed_seed0/gnn_gatv2_layers2_dim64_topk3_heads8_noattn
+GNN run (jenks),transfer_runs/exp/wilt/ablation_adaptive_jenks/gnn_gatv2_layers2_dim64_topk3_heads8_noattn
+GNN run (entmax15),transfer_runs/exp/wilt/ablation_adaptive_entmax15/gnn_gatv2_layers2_dim64_topk3_heads8_noattn
+Shape/Trend per dataset,analysis/dependency_fidelity/per_dataset.csv
+Shape/Trend real-test reference,analysis/dependency_fidelity/floor.csv
+Shape/Trend run trees,analysis/dependency_fidelity/coverage.csv
+real data,data/abalone
+DCR query rows,data/abalone
+real data,data/adult
+DCR query rows,data/adult
+real data,data/buddy
+DCR query rows,data/buddy
+real data,data/california
+DCR query rows,data/california
+real data,data/cardio
+DCR query rows,data/cardio
+real data,data/churn2
+DCR query rows,data/churn2
+real data,data/default
+DCR query rows,data/default
+real data,data/diabetes
+DCR query rows,data/diabetes
+real data,data/gesture
+DCR query rows,data/gesture
+real data,data/house
+DCR query rows,data/house
+real data,data/insurance
+DCR query rows,data/insurance
+real data,data/king
+DCR query rows,data/king
+real data,data/wilt
+DCR query rows,data/wilt
+DCR query rows,transfer_runs/exp/abalone/ablation_catfix/gnn_gatv2_layers3_dim64_topk3_heads4_noattn/gen_seed_0
+authors TabDDPM DCR,exp/abalone/ddpm_cb_best/privacy.json
+authors TabDDPM DCR,exp/adult/ddpm_cb_best/privacy.json
+authors TabDDPM DCR,exp/buddy/ddpm_cb_best/privacy.json
+authors TabDDPM DCR,exp/california/ddpm_cb_best/privacy.json
+authors TabDDPM DCR,exp/cardio/ddpm_cb_best/privacy.json
+authors TabDDPM DCR,exp/churn2/ddpm_cb_best/privacy.json
+authors TabDDPM DCR,exp/default/ddpm_cb_best/privacy.json
+authors TabDDPM DCR,exp/diabetes/ddpm_cb_best/privacy.json
+authors TabDDPM DCR,exp/fb-comments/ddpm_cb_best/privacy.json
+authors TabDDPM DCR,exp/gesture/ddpm_cb_best/privacy.json
+authors TabDDPM DCR,exp/higgs-small/ddpm_cb_best/privacy.json
+authors TabDDPM DCR,exp/house/ddpm_cb_best/privacy.json
+authors TabDDPM DCR,exp/insurance/ddpm_cb_best/privacy.json
+authors TabDDPM DCR,exp/king/ddpm_cb_best/privacy.json
+authors TabDDPM DCR,exp/miniboone/ddpm_cb_best/privacy.json
+authors TabDDPM DCR,exp/wilt/ddpm_cb_best/privacy.json
+real train size,data/abalone/y_train.npy
+real train size,data/adult/y_train.npy
+real train size,data/buddy/y_train.npy
+real train size,data/california/y_train.npy
+real train size,data/cardio/y_train.npy
+real train size,data/churn2/y_train.npy
+real train size,data/default/y_train.npy
+real train size,data/diabetes/y_train.npy
+real train size,data/fb-comments/y_train.npy
+real train size,data/gesture/y_train.npy
+real train size,data/higgs-small/y_train.npy
+real train size,data/house/y_train.npy
+real train size,data/insurance/y_train.npy
+real train size,data/king/y_train.npy
+real train size,data/miniboone/y_train.npy
+real train size,data/wilt/y_train.npy

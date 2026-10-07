@@ -1,0 +1,30 @@
+% requires \usepackage{booktabs,graphicx}
+\begin{table}[t]
+\centering
+\caption{Privacy. DCR: median L2 distance from each synthetic row to its closest real training row (min-max numerical, one-hot$/\sqrt2$ categorical, target included); GNN rows: mean$\pm$sd over 5 generation seeds. $^\S$TabDDPM: the authors' released DCR, computed with the same code on one generated sample (no sd); it subsamples synthetic rows to 50k (${\le}0.4\%$ effect) and real training rows to 50k where larger ($^\diamond$, FB, HI, MI; not comparable). $^\ddagger$Authors' version of the \textit{default} dataset, not like-for-like. \textit{Holdout}: the same statistic for the real test split; DCR/holdout $\approx1$: synthetic rows are as far from the training data as unseen real rows. MIA AUC: distance-based membership inference (0.5 = no leakage), not available for TabDDPM.}
+\label{tab:privacy}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccccccccccccc}
+\toprule
+Method & AB & AD & BU & CA & CAR & CH & DE & DI & FB & GE & HI & HO & IN & KI & MI & WI \\
+\midrule
+\multicolumn{17}{l}{\textit{DCR $\uparrow$}} \\
+\textit{Holdout} & 0.0490 & 0.1059 & 0.1642 & 0.0408 & 0.0114 & 0.2146 & 0.0743 & 0.1744 & --- & 0.0840 & --- & 0.0948 & 0.1015 & 0.1752 & --- & 0.0166 \\
+TabDDPM$^\S$ & 0.0499 & 0.1044 & 0.1430 & 0.0406 & 0.0122 & 0.1574 & 0.1123$^\ddagger$ & 0.2036 & 0.1115$^\diamond$ & 0.0589 & 0.4487$^\diamond$ & 0.0859 & 0.0405 & 0.1887 & 0.0219$^\diamond$ & 0.0164 \\
+GNN-fixed & 0.0499{\scriptsize$\pm$.0001} & 0.1163{\scriptsize$\pm$.0003} & 0.1635{\scriptsize$\pm$.0004} & 0.0436{\scriptsize$\pm$.0002} & 0.0116{\scriptsize$\pm$.0000} & 0.2150{\scriptsize$\pm$.0007} & 0.0849{\scriptsize$\pm$.0002} & 0.1758{\scriptsize$\pm$.0032} & --- & 0.0862{\scriptsize$\pm$.0005} & --- & 0.0953{\scriptsize$\pm$.0000} & 0.0872{\scriptsize$\pm$.0007} & 0.1992{\scriptsize$\pm$.0005} & --- & 0.0165{\scriptsize$\pm$.0001} \\
+GNN-Jenks & 0.0496{\scriptsize$\pm$.0002} & 0.1223{\scriptsize$\pm$.0005} & 0.1644{\scriptsize$\pm$.0006} & 0.0441{\scriptsize$\pm$.0001} & 0.0116{\scriptsize$\pm$.0000} & 0.2151{\scriptsize$\pm$.0006} & 0.0815{\scriptsize$\pm$.0003} & 0.1808{\scriptsize$\pm$.0034} & --- & 0.0851{\scriptsize$\pm$.0004} & --- & 0.0951{\scriptsize$\pm$.0001} & 0.0886{\scriptsize$\pm$.0014} & 0.1959{\scriptsize$\pm$.0005} & --- & 0.0165{\scriptsize$\pm$.0001} \\
+GNN-entmax & 0.0491{\scriptsize$\pm$.0002} & 0.1317{\scriptsize$\pm$.0004} & 0.1652{\scriptsize$\pm$.0005} & 0.0445{\scriptsize$\pm$.0001} & 0.0116{\scriptsize$\pm$.0000} & 0.2148{\scriptsize$\pm$.0006} & 0.0802{\scriptsize$\pm$.0001} & 0.1799{\scriptsize$\pm$.0045} & --- & 0.0884{\scriptsize$\pm$.0007} & --- & 0.0945{\scriptsize$\pm$.0001} & 0.0856{\scriptsize$\pm$.0008} & 0.1944{\scriptsize$\pm$.0006} & --- & 0.0164{\scriptsize$\pm$.0001} \\
+\midrule
+\multicolumn{17}{l}{\textit{DCR / holdout DCR}} \\
+TabDDPM$^\S$ & 1.019 & 0.985 & 0.871 & 0.994 & 1.072 & 0.733 & --- & 1.167 & --- & 0.701 & --- & 0.906 & 0.399 & 1.077 & --- & 0.987 \\
+GNN-fixed & 1.018{\scriptsize$\pm$.003} & 1.098{\scriptsize$\pm$.003} & 0.996{\scriptsize$\pm$.002} & 1.067{\scriptsize$\pm$.004} & 1.018{\scriptsize$\pm$.002} & 1.001{\scriptsize$\pm$.003} & 1.143{\scriptsize$\pm$.003} & 1.008{\scriptsize$\pm$.019} & --- & 1.026{\scriptsize$\pm$.005} & --- & 1.005{\scriptsize$\pm$.000} & 0.858{\scriptsize$\pm$.007} & 1.136{\scriptsize$\pm$.003} & --- & 0.989{\scriptsize$\pm$.004} \\
+GNN-Jenks & 1.012{\scriptsize$\pm$.004} & 1.155{\scriptsize$\pm$.005} & 1.001{\scriptsize$\pm$.004} & 1.079{\scriptsize$\pm$.001} & 1.020{\scriptsize$\pm$.002} & 1.002{\scriptsize$\pm$.003} & 1.097{\scriptsize$\pm$.004} & 1.037{\scriptsize$\pm$.020} & --- & 1.013{\scriptsize$\pm$.005} & --- & 1.004{\scriptsize$\pm$.001} & 0.873{\scriptsize$\pm$.013} & 1.118{\scriptsize$\pm$.003} & --- & 0.989{\scriptsize$\pm$.005} \\
+GNN-entmax & 1.002{\scriptsize$\pm$.004} & 1.243{\scriptsize$\pm$.003} & 1.006{\scriptsize$\pm$.003} & 1.091{\scriptsize$\pm$.003} & 1.018{\scriptsize$\pm$.002} & 1.001{\scriptsize$\pm$.003} & 1.079{\scriptsize$\pm$.002} & 1.032{\scriptsize$\pm$.026} & --- & 1.052{\scriptsize$\pm$.008} & --- & 0.997{\scriptsize$\pm$.001} & 0.843{\scriptsize$\pm$.008} & 1.110{\scriptsize$\pm$.003} & --- & 0.987{\scriptsize$\pm$.003} \\
+\midrule
+\multicolumn{17}{l}{\textit{MIA AUC ($\to 0.5$)}} \\
+GNN-fixed & 0.495{\scriptsize$\pm$.005} & 0.504{\scriptsize$\pm$.001} & 0.508{\scriptsize$\pm$.003} & 0.504{\scriptsize$\pm$.003} & 0.500{\scriptsize$\pm$.002} & 0.506{\scriptsize$\pm$.004} & 0.495{\scriptsize$\pm$.001} & 0.540{\scriptsize$\pm$.016} & --- & 0.501{\scriptsize$\pm$.001} & --- & 0.508{\scriptsize$\pm$.001} & 0.567{\scriptsize$\pm$.022} & 0.503{\scriptsize$\pm$.001} & --- & 0.528{\scriptsize$\pm$.007} \\
+GNN-Jenks & 0.497{\scriptsize$\pm$.004} & 0.503{\scriptsize$\pm$.001} & 0.507{\scriptsize$\pm$.003} & 0.505{\scriptsize$\pm$.001} & 0.499{\scriptsize$\pm$.003} & 0.505{\scriptsize$\pm$.004} & 0.496{\scriptsize$\pm$.001} & 0.540{\scriptsize$\pm$.023} & --- & 0.501{\scriptsize$\pm$.001} & --- & 0.508{\scriptsize$\pm$.002} & 0.550{\scriptsize$\pm$.020} & 0.504{\scriptsize$\pm$.001} & --- & 0.531{\scriptsize$\pm$.010} \\
+GNN-entmax & 0.496{\scriptsize$\pm$.003} & 0.503{\scriptsize$\pm$.001} & 0.504{\scriptsize$\pm$.003} & 0.503{\scriptsize$\pm$.004} & 0.500{\scriptsize$\pm$.001} & 0.505{\scriptsize$\pm$.005} & 0.497{\scriptsize$\pm$.002} & 0.532{\scriptsize$\pm$.020} & --- & 0.501{\scriptsize$\pm$.001} & --- & 0.508{\scriptsize$\pm$.001} & 0.564{\scriptsize$\pm$.013} & 0.504{\scriptsize$\pm$.001} & --- & 0.530{\scriptsize$\pm$.008} \\
+\bottomrule
+\end{tabular}}
+\end{table}

@@ -1,0 +1,24 @@
+% requires \usepackage{booktabs,graphicx}
+\begin{table}[t]
+\centering
+\caption{Summary. Each cell: average rank (number of datasets ranked first / n). MLE ranks are over all synthetic methods of Table~\ref{tab:mle} (DE excluded); Shape and Trend exist for our variants only (ranks among three), DCR for TabDDPM and our variants (ranks among four, larger DCR ranked better; TabDDPM from one generated sample); none of these is on the MLE scale. Last columns: median per-dataset difference in ML efficiency vs.\ TabDDPM and two-sided Wilcoxon signed-rank $p$ (raw / Holm-corrected over the three variants), $n=12$ datasets (DE excluded). $^\dagger$Reported values.}
+\label{tab:summary}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccccc}
+\toprule
+Method & MLE (n=7) & MLE w/o CTABGAN (n=12) & Shape (n=13) & Trend (n=13) & DCR (n=12) & median $\Delta$ MLE vs TabDDPM & Wilcoxon p / Holm (n=12) \\
+\midrule
+CTGAN$^\dagger$ & 7.57 (0/7) & 7.33 (0/12) & --- & --- & --- & --- & --- \\
+TVAE$^\dagger$ & 7.50 (0/7) & 6.83 (0/12) & --- & --- & --- & --- & --- \\
+CTABGAN$^\dagger$ & 7.14 (0/7) & --- & --- & --- & --- & --- & --- \\
+CTABGAN+$^\dagger$ & 6.71 (0/7) & 6.58 (0/12) & --- & --- & --- & --- & --- \\
+SMOTE$^\dagger$ & 4.29 (2/7) & 3.58 (3/12) & --- & --- & --- & --- & --- \\
+\midrule
+TabDDPM & 2.43 (3/7) & 2.62 (4/12) & --- & --- & 3.25 (3/12) & --- & --- \\
+\midrule
+GNN-fixed & 2.43 (3/7) & 2.62 (3/12) & 2.46 (3/13) & 2.27 (4/13) & 2.25 (4/12) & $-$0.0003 & 0.791 / 0.848 \\
+GNN-Jenks & 3.79 (0/7) & 3.21 (2/12) & 1.73 (4/13) & 2.00 (4/13) & 2.04 (3/12) & $-$0.0023 & 0.266 / 0.798 \\
+GNN-entmax & 3.14 (2/7) & 3.21 (3/12) & 1.81 (6/13) & 1.73 (5/13) & 2.46 (4/12) & $-$0.0014 & 0.424 / 0.848 \\
+\bottomrule
+\end{tabular}}
+\end{table}

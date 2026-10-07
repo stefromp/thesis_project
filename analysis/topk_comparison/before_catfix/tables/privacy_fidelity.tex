@@ -1,0 +1,69 @@
+\begin{table}[t]
+\centering\small
+\begin{tabular}{llcccc}
+\toprule
+Dataset & Rule & Wasserstein $\downarrow$ & DCR mean-L2 $\uparrow$ & DCR median+label $\uparrow$ & MIA AUC ($\to 0.5$) \\
+\midrule
+\multicolumn{6}{l}{\textit{Held-out evaluation (transferred): configuration chosen without seeing any of its results}} \\
+cardio § & fixed & \textbf{0.0158 $\pm$ 0.0007} & 0.0614 $\pm$ 0.0002 & 0.0395 $\pm$ 0.0001 & 0.5010 $\pm$ 0.0027 \\
+ & Jenks & 0.0197 $\pm$ 0.0008 & 0.0644 $\pm$ 0.0003 & 0.0400 $\pm$ 0.0001 & 0.5007 $\pm$ 0.0029 \\
+ & entmax-1.5 & 0.0244 $\pm$ 0.0011 & \textbf{0.0662 $\pm$ 0.0003} & \textbf{0.0428 $\pm$ 0.0000} & \textbf{0.5001 $\pm$ 0.0023} \\
+\addlinespace
+default § & fixed & \textbf{0.0982 $\pm$ 0.0123} & 0.2685 $\pm$ 0.0072 & 0.1004 $\pm$ 0.0004 & \textbf{0.4956 $\pm$ 0.0021} \\
+ & Jenks & 0.1078 $\pm$ 0.0159 & 0.2277 $\pm$ 0.0085 & 0.0889 $\pm$ 0.0003 & 0.4919 $\pm$ 0.0018 \\
+ & entmax-1.5 & 0.5690 $\pm$ 0.1766 & \textbf{0.7982 $\pm$ 0.0621} & \textbf{0.2897 $\pm$ 0.0044} & 0.4928 $\pm$ 0.0029 \\
+\addlinespace
+fb-comments § & fixed & --- & --- & --- & --- \\
+ & Jenks & --- & --- & --- & --- \\
+ & entmax-1.5 & --- & --- & --- & --- \\
+\addlinespace
+house & fixed & 0.0256 $\pm$ 0.0006 & \textbf{0.1035 $\pm$ 0.0001} & \textbf{0.0953 $\pm$ 0.0000} & \textbf{0.5076 $\pm$ 0.0005} \\
+ & Jenks & 0.0278 $\pm$ 0.0005 & 0.1030 $\pm$ 0.0002 & 0.0951 $\pm$ 0.0001 & 0.5083 $\pm$ 0.0015 \\
+ & entmax-1.5 & \textbf{0.0233 $\pm$ 0.0007} & 0.1023 $\pm$ 0.0001 & 0.0945 $\pm$ 0.0001 & 0.5078 $\pm$ 0.0010 \\
+\addlinespace
+king § & fixed & 0.0251 $\pm$ 0.0012 & 0.2223 $\pm$ 0.0008 & 0.2011 $\pm$ 0.0006 & \textbf{0.5012 $\pm$ 0.0024} \\
+ & Jenks & \textbf{0.0217 $\pm$ 0.0011} & 0.2203 $\pm$ 0.0005 & 0.1950 $\pm$ 0.0003 & 0.5026 $\pm$ 0.0019 \\
+ & entmax-1.5 & 0.0249 $\pm$ 0.0020 & \textbf{0.2337 $\pm$ 0.0007} & \textbf{0.2040 $\pm$ 0.0003} & 0.5021 $\pm$ 0.0041 \\
+\addlinespace
+\midrule
+\multicolumn{6}{l}{\textit{Development set (ablated): configuration selected on the test split by fixed-mode score; in-sample and optimistic}} \\
+abalone § & fixed & \textbf{0.0406 $\pm$ 0.0043} & 0.0515 $\pm$ 0.0007 & --- & \textbf{0.4952 $\pm$ 0.0049} \\
+ & Jenks & 0.0576 $\pm$ 0.0037 & \textbf{0.0703 $\pm$ 0.0002} & \textbf{0.0677 $\pm$ 0.0004} & 0.4944 $\pm$ 0.0039 \\
+ & entmax-1.5 & 0.0526 $\pm$ 0.0069 & 0.0486 $\pm$ 0.0004 & 0.0488 $\pm$ 0.0002 & 0.4947 $\pm$ 0.0048 \\
+\addlinespace
+adult § & fixed & 0.0243 $\pm$ 0.0007 & 0.4235 $\pm$ 0.0014 & 0.2073 $\pm$ 0.0004 & \textbf{0.5017 $\pm$ 0.0013} \\
+ & Jenks & 0.0188 $\pm$ 0.0008 & 0.4348 $\pm$ 0.0006 & 0.1806 $\pm$ 0.0009 & 0.5020 $\pm$ 0.0019 \\
+ & entmax-1.5 & \textbf{0.0172 $\pm$ 0.0006} & \textbf{0.7160 $\pm$ 0.0007} & \textbf{1.0025 $\pm$ 0.0000} & 0.5028 $\pm$ 0.0006 \\
+\addlinespace
+buddy § & fixed & \textbf{0.0097 $\pm$ 0.0010} & 0.2595 $\pm$ 0.0008 & 0.2045 $\pm$ 0.0009 & 0.5026 $\pm$ 0.0025 \\
+ & Jenks & 0.0138 $\pm$ 0.0013 & 0.2475 $\pm$ 0.0010 & 0.1763 $\pm$ 0.0007 & \textbf{0.5004 $\pm$ 0.0044} \\
+ & entmax-1.5 & 0.0100 $\pm$ 0.0008 & \textbf{0.5094 $\pm$ 0.0024} & \textbf{0.2814 $\pm$ 0.0033} & 0.4967 $\pm$ 0.0023 \\
+\addlinespace
+california & fixed & \textbf{0.0137 $\pm$ 0.0014} & 0.0343 $\pm$ 0.0001 & 0.0436 $\pm$ 0.0002 & 0.5045 $\pm$ 0.0025 \\
+ & Jenks & 0.0140 $\pm$ 0.0013 & 0.0348 $\pm$ 0.0001 & 0.0441 $\pm$ 0.0001 & 0.5049 $\pm$ 0.0010 \\
+ & entmax-1.5 & 0.0148 $\pm$ 0.0013 & \textbf{0.0353 $\pm$ 0.0002} & \textbf{0.0445 $\pm$ 0.0001} & \textbf{0.5033 $\pm$ 0.0035} \\
+\addlinespace
+churn2 § & fixed & 0.0115 $\pm$ 0.0011 & 0.2070 $\pm$ 0.0003 & 0.2108 $\pm$ 0.0005 & \textbf{0.5010 $\pm$ 0.0049} \\
+ & Jenks & \textbf{0.0105 $\pm$ 0.0007} & 0.2120 $\pm$ 0.0004 & 0.2134 $\pm$ 0.0007 & 0.5055 $\pm$ 0.0044 \\
+ & entmax-1.5 & 0.0134 $\pm$ 0.0007 & \textbf{0.2286 $\pm$ 0.0005} & \textbf{0.2286 $\pm$ 0.0003} & 0.5037 $\pm$ 0.0068 \\
+\addlinespace
+diabetes & fixed & \textbf{0.0728 $\pm$ 0.0029} & 0.1843 $\pm$ 0.0017 & 0.1758 $\pm$ 0.0032 & 0.5403 $\pm$ 0.0156 \\
+ & Jenks & 0.0944 $\pm$ 0.0147 & \textbf{0.2036 $\pm$ 0.0058} & \textbf{0.1808 $\pm$ 0.0034} & 0.5399 $\pm$ 0.0230 \\
+ & entmax-1.5 & 0.0789 $\pm$ 0.0059 & 0.1935 $\pm$ 0.0047 & 0.1799 $\pm$ 0.0045 & \textbf{0.5321 $\pm$ 0.0197} \\
+\addlinespace
+gesture & fixed & 0.0771 $\pm$ 0.0007 & 0.1104 $\pm$ 0.0003 & 0.0862 $\pm$ 0.0005 & 0.5008 $\pm$ 0.0015 \\
+ & Jenks & \textbf{0.0606 $\pm$ 0.0006} & 0.1100 $\pm$ 0.0001 & 0.0851 $\pm$ 0.0004 & \textbf{0.5008 $\pm$ 0.0005} \\
+ & entmax-1.5 & 0.0642 $\pm$ 0.0005 & \textbf{0.1144 $\pm$ 0.0001} & \textbf{0.0884 $\pm$ 0.0007} & 0.5010 $\pm$ 0.0006 \\
+\addlinespace
+insurance § & fixed & 0.0334 $\pm$ 0.0030 & 0.0933 $\pm$ 0.0010 & 0.0869 $\pm$ 0.0010 & 0.5820 $\pm$ 0.0179 \\
+ & Jenks & 0.0285 $\pm$ 0.0039 & 0.0976 $\pm$ 0.0009 & 0.0922 $\pm$ 0.0009 & \textbf{0.5418 $\pm$ 0.0180} \\
+ & entmax-1.5 & \textbf{0.0258 $\pm$ 0.0021} & \textbf{0.0989 $\pm$ 0.0008} & \textbf{0.1047 $\pm$ 0.0022} & 0.5423 $\pm$ 0.0136 \\
+\addlinespace
+wilt & fixed & 0.0244 $\pm$ 0.0019 & \textbf{0.0217 $\pm$ 0.0002} & 0.0165 $\pm$ 0.0001 & \textbf{0.5278 $\pm$ 0.0070} \\
+ & Jenks & 0.0237 $\pm$ 0.0020 & 0.0214 $\pm$ 0.0002 & \textbf{0.0165 $\pm$ 0.0001} & 0.5311 $\pm$ 0.0105 \\
+ & entmax-1.5 & \textbf{0.0207 $\pm$ 0.0021} & 0.0213 $\pm$ 0.0002 & 0.0164 $\pm$ 0.0001 & 0.5304 $\pm$ 0.0082 \\
+\addlinespace
+\bottomrule
+\end{tabular}
+\caption{Fidelity and privacy (TabDDPM protocol). Held-out (transferred) rows carry the primary claims; development-set (ablated) rows are in-sample with respect to configuration selection. mean $\pm$ sd over 5 generation seeds (ddof=1; the seed-0 fixed summaries were converted from the stored ddof=0 std). Bold = best per dataset and metric (MIA: closest to 0.5). $^\dagger$ partial. Higher DCR = synthetic rows further from training rows (more private). § trained with the categorical-input bug (cat_input=log). — = metric not recorded for that run.}
+\end{table}

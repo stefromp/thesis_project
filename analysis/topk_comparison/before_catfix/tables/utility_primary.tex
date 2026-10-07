@@ -1,0 +1,27 @@
+\begin{table}[t]
+\centering\small
+\begin{tabular}{llrlcccc}
+\toprule
+Dataset & Task & Imbal. & Metric & fixed & Jenks & entmax-1.5 & fixed grid summary (ref.) \\
+\midrule
+\multicolumn{8}{l}{\textit{Held-out evaluation (transferred): configuration chosen without seeing any of its results}} \\
+cardio$^\S$ & binclass & 1.01 & Acc $\uparrow$ & 0.7361 $\pm$ 0.0008 & \textbf{0.7361 $\pm$ 0.0005} & 0.7344 $\pm$ 0.0002 & --- \\
+default$^\S$ & binclass & 3.52 & Acc $\uparrow$ & \textbf{0.8173 $\pm$ 0.0005} & 0.8162 $\pm$ 0.0014 & 0.8119 $\pm$ 0.0006 & --- \\
+fb-comments$^\S$ & regression & — & RMSE $\downarrow$ & partial$^\dagger$ & partial$^\dagger$ & --- & --- \\
+house & regression & — & RMSE $\downarrow$ & 34105.7 $\pm$ 289.9 & 32564.3 $\pm$ 316.7 & \textbf{32268.9 $\pm$ 338.9} & --- \\
+king$^\S$ & regression & — & RMSE $\downarrow$ & 144539.0 $\pm$ 13357.0 & \textbf{130930.5 $\pm$ 8899.7} & 157941.8 $\pm$ 12420.2 & --- \\
+\midrule
+\multicolumn{8}{l}{\textit{Development set (ablated): configuration selected on the test split by fixed-mode score; in-sample and optimistic}} \\
+abalone$^\S$ & regression & — & RMSE $\downarrow$ & 2.0098 $\pm$ 0.0185$^\ddagger$ & 2.4811 $\pm$ 0.0116 & \textbf{1.9946 $\pm$ 0.0180} & --- \\
+adult$^\S$ & binclass & 3.15 & Acc $\uparrow$ & \textbf{0.8580 $\pm$ 0.0009}$^\ddagger$ & 0.8555 $\pm$ 0.0005 & 0.8483 $\pm$ 0.0005 & --- \\
+buddy$^\S$ & multiclass & 6.10 & Acc $\uparrow$ & 0.8820 $\pm$ 0.0022$^\ddagger$ & \textbf{0.8864 $\pm$ 0.0019} & 0.8774 $\pm$ 0.0015 & --- \\
+california & regression & — & RMSE $\downarrow$ & \textbf{0.4768 $\pm$ 0.0016} & 0.4813 $\pm$ 0.0019 & 0.4936 $\pm$ 0.0015 & 0.4776 $\pm$ 0.0017 \\
+churn2$^\S$ & binclass & 3.91 & Acc $\uparrow$ & 0.8583 $\pm$ 0.0028$^\ddagger$ & \textbf{0.8588 $\pm$ 0.0027} & 0.8476 $\pm$ 0.0018 & --- \\
+diabetes & binclass & 1.87 & Acc $\uparrow$ & 0.7881 $\pm$ 0.0176 & 0.7751 $\pm$ 0.0148 & \textbf{0.7909 $\pm$ 0.0150} & 0.7921 $\pm$ 0.0195 \\
+gesture & multiclass & 2.96 & Acc $\uparrow$ & 0.6032 $\pm$ 0.0036 & \textbf{0.6076 $\pm$ 0.0016} & 0.6013 $\pm$ 0.0039 & 0.6019 $\pm$ 0.0062 \\
+insurance$^\S$ & regression & — & RMSE $\downarrow$ & \textbf{4718.2 $\pm$ 17.0}$^\ddagger$ & 4800.2 $\pm$ 36.0 & 7008.1 $\pm$ 205.8 & --- \\
+wilt & binclass & 17.54 & Acc $\uparrow$ & \textbf{0.9809 $\pm$ 0.0020} & 0.9792 $\pm$ 0.0014 & 0.9796 $\pm$ 0.0016 & 0.9809 $\pm$ 0.0019 \\
+\bottomrule
+\end{tabular}
+\caption{Primary utility (accuracy / RMSE). Primary claims rest on the held-out (transferred) rows; development-set (ablated) rows are in-sample with respect to configuration selection, which was made on the test split by fixed-mode score, so they are optimistic, most of all for fixed. mean $\pm$ sd over generation seeds (n=5, each averaged over 10 CatBoost seeds). Bold = best mean in the row. $^\dagger$ partial (<5 gen seeds). § trained with the categorical-input bug (cat_input=log; see caveats). $^\ddagger$ fixed grid summary: sd spans all 5$\times$10 gen$\times$clf runs, not generation seeds. Imbal. = majority/minority class ratio (— for regression).}
+\end{table}

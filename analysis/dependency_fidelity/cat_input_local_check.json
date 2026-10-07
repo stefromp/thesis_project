@@ -1,0 +1,84 @@
+{
+  "settings": {
+    "steps": 2000,
+    "batch": 1024,
+    "n_samples": 10000,
+    "seed": 0,
+    "gnn_type": "gatv2",
+    "d_model": 64,
+    "n_layers": 2,
+    "n_heads": 4,
+    "sparsity_top_k": 5,
+    "topk_mode": "fixed",
+    "use_attention": false,
+    "work_dir": "/private/tmp/claude-501/-Users-stefanosrompos-Desktop-thesis-project/ff8bd115-5ae6-4da2-8644-d08872c1b31e/scratchpad/catcheck"
+  },
+  "baselines": {
+    "cardio": {
+      "uniform": 0.8309621334075927,
+      "marginal": 0.48824096024036406
+    },
+    "churn2": {
+      "uniform": 0.7954808533191681,
+      "marginal": 0.7572351336479187
+    }
+  },
+  "runs": [
+    {
+      "dataset": "cardio",
+      "cat_input": "log",
+      "final_mloss": 0.6477600000000001,
+      "final_gloss": 0.44588,
+      "tvd_per_column": [
+        0.1411,
+        0.1867,
+        0.4146,
+        0.0846,
+        0.0041,
+        0.1084
+      ],
+      "tvd_max": 0.4146
+    },
+    {
+      "dataset": "cardio",
+      "cat_input": "prob",
+      "final_mloss": 0.43248,
+      "final_gloss": 0.43688000000000005,
+      "tvd_per_column": [
+        0.0135,
+        0.1231,
+        0.0795,
+        0.0119,
+        0.0853,
+        0.0399
+      ],
+      "tvd_max": 0.1231
+    },
+    {
+      "dataset": "churn2",
+      "cat_input": "log",
+      "final_mloss": 1.19522,
+      "final_gloss": 0.37645999999999996,
+      "tvd_per_column": [
+        0.1656,
+        0.1665,
+        0.2102,
+        0.1704
+      ],
+      "tvd_max": 0.2102
+    },
+    {
+      "dataset": "churn2",
+      "cat_input": "prob",
+      "final_mloss": 0.7173799999999999,
+      "final_gloss": 0.37262,
+      "tvd_per_column": [
+        0.0725,
+        0.0186,
+        0.0507,
+        0.057
+      ],
+      "tvd_max": 0.0725
+    }
+  ]
+}

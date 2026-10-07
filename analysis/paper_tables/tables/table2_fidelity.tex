@@ -1,0 +1,24 @@
+% requires \usepackage{booktabs,graphicx}
+\begin{table}[t]
+\centering
+\caption{Fidelity of our three GNN variants: Column Shapes and Column Pair Trends error rates (\%, $100\times(1-\mathrm{score})$, lower is better), mean$\pm$sd over 5 generation seeds. Column Pair Trends is averaged over all column pairs with bins shared between real and synthetic data. \textit{Real test}: real test split vs.\ real train split (sampling-noise reference). \textbf{Bold}: best, \underline{underline}: second best; Rank: average over the 13 datasets with all three variants. Computed with our own implementation and splits; \emph{not comparable} to the Shape/Trend values reported by TabDiff.}
+\label{tab:fidelity}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccccccccccccccc}
+\toprule
+Method & AB & AD & BU & CA & CAR & CH & DE & DI & FB & GE & HI & HO & IN & KI & MI & WI & Rank$\downarrow$ \\
+\midrule
+\multicolumn{18}{l}{\textit{Column Shapes error (\%)} $\downarrow$}  \\
+\textit{Real test} & 2.70 & 0.64 & 1.64 & 1.42 & 0.54 & 1.49 & 0.98 & 7.74 & --- & 1.98 & --- & 1.51 & 3.26 & 1.31 & --- & 2.94 &  \\
+GNN-fixed & 3.07{\scriptsize$\pm$.33} & \textbf{0.81}{\scriptsize$\pm$.04} & 1.54{\scriptsize$\pm$.27} & \textbf{1.57}{\scriptsize$\pm$.17} & 0.59{\scriptsize$\pm$.11} & \underline{1.42}{\scriptsize$\pm$.10} & 7.19{\scriptsize$\pm$.15} & 7.80{\scriptsize$\pm$.58} & --- & 2.91{\scriptsize$\pm$.34} & --- & 1.68{\scriptsize$\pm$.10} & 4.54{\scriptsize$\pm$1.31} & 1.86{\scriptsize$\pm$.12} & --- & \textbf{2.53}{\scriptsize$\pm$.39} & 2.46 \\
+GNN-Jenks & \underline{3.00}{\scriptsize$\pm$.33} & \underline{0.82}{\scriptsize$\pm$.07} & \underline{1.52}{\scriptsize$\pm$.22} & \underline{1.62}{\scriptsize$\pm$.13} & \textbf{0.56}{\scriptsize$\pm$.08} & \textbf{1.41}{\scriptsize$\pm$.13} & \underline{6.76}{\scriptsize$\pm$.15} & \textbf{7.34}{\scriptsize$\pm$.74} & --- & \textbf{2.55}{\scriptsize$\pm$.28} & --- & \underline{1.67}{\scriptsize$\pm$.06} & \underline{4.20}{\scriptsize$\pm$.85} & \underline{1.73}{\scriptsize$\pm$.12} & --- & \underline{2.55}{\scriptsize$\pm$.40} & 1.73 \\
+GNN-entmax & \textbf{2.85}{\scriptsize$\pm$.43} & 0.95{\scriptsize$\pm$.04} & \textbf{1.47}{\scriptsize$\pm$.33} & \underline{1.62}{\scriptsize$\pm$.16} & \underline{0.57}{\scriptsize$\pm$.09} & 1.46{\scriptsize$\pm$.07} & \textbf{6.68}{\scriptsize$\pm$.18} & \underline{7.42}{\scriptsize$\pm$.56} & --- & \underline{2.59}{\scriptsize$\pm$.21} & --- & \textbf{1.51}{\scriptsize$\pm$.05} & \textbf{4.14}{\scriptsize$\pm$1.07} & \textbf{1.71}{\scriptsize$\pm$.13} & --- & 2.56{\scriptsize$\pm$.44} & 1.81 \\
+\midrule
+\multicolumn{18}{l}{\textit{Column Pair Trends error (\%)} $\downarrow$}  \\
+\textit{Real test} & 1.96 & 1.60 & 4.06 & 0.82 & 1.03 & 2.87 & 1.52 & 4.92 & --- & 2.68 & --- & 1.10 & 8.12 & 0.98 & --- & 2.41 &  \\
+GNN-fixed & \textbf{3.21}{\scriptsize$\pm$.43} & \textbf{2.01}{\scriptsize$\pm$.02} & 3.90{\scriptsize$\pm$.10} & \textbf{0.75}{\scriptsize$\pm$.14} & 0.87{\scriptsize$\pm$.34} & \underline{2.55}{\scriptsize$\pm$.11} & 2.41{\scriptsize$\pm$.24} & \textbf{5.34}{\scriptsize$\pm$.32} & --- & 2.08{\scriptsize$\pm$.10} & --- & 0.97{\scriptsize$\pm$.13} & 8.12{\scriptsize$\pm$1.03} & \underline{1.81}{\scriptsize$\pm$.08} & --- & 2.59{\scriptsize$\pm$1.34} & 2.27 \\
+GNN-Jenks & 3.31{\scriptsize$\pm$.61} & \underline{2.16}{\scriptsize$\pm$.10} & \underline{3.82}{\scriptsize$\pm$.09} & 0.82{\scriptsize$\pm$.19} & \textbf{0.77}{\scriptsize$\pm$.13} & \textbf{2.50}{\scriptsize$\pm$.16} & \underline{2.13}{\scriptsize$\pm$.16} & 7.25{\scriptsize$\pm$1.06} & --- & \textbf{1.94}{\scriptsize$\pm$.11} & --- & \underline{0.85}{\scriptsize$\pm$.12} & \textbf{7.50}{\scriptsize$\pm$.65} & 2.05{\scriptsize$\pm$.08} & --- & \underline{2.21}{\scriptsize$\pm$.86} & 2.00 \\
+GNN-entmax & \underline{3.30}{\scriptsize$\pm$.54} & 2.48{\scriptsize$\pm$.02} & \textbf{3.81}{\scriptsize$\pm$.21} & \underline{0.77}{\scriptsize$\pm$.11} & \underline{0.84}{\scriptsize$\pm$.20} & \underline{2.55}{\scriptsize$\pm$.08} & \textbf{1.96}{\scriptsize$\pm$.25} & \underline{5.88}{\scriptsize$\pm$.52} & --- & \underline{2.07}{\scriptsize$\pm$.10} & --- & \textbf{0.79}{\scriptsize$\pm$.11} & \underline{7.72}{\scriptsize$\pm$.39} & \textbf{1.68}{\scriptsize$\pm$.08} & --- & \textbf{2.03}{\scriptsize$\pm$.62} & 1.73 \\
+\bottomrule
+\end{tabular}}
+\end{table}

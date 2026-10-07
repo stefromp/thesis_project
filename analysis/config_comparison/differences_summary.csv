@@ -1,0 +1,45 @@
+group,key,kind,datasets_differing,tabddpm_values,my_values
+a. architecture,denoiser,"differs systematically (mine constant, theirs tuned per dataset)",abalone;adult;buddy;california;cardio;churn2;default;diabetes;fb-comments;gesture;higgs-small;house;insurance;king;miniboone;wilt,MLPDiffusion (rtdl MLP),GraphAwareDenoiser
+a. architecture,d_layers,"differs systematically (mine constant, theirs tuned per dataset)",abalone;adult;buddy;california;cardio;churn2;default;diabetes;fb-comments;gesture;higgs-small;house;insurance;king;miniboone;wilt,"[1024, 512, 512, 512, 512, 512, 512, 128];[1024, 512, 512, 512];[128, 512, 512, 1024];[128, 512, 512, 512, 512, 256];[128, 512];[256, 1024, 1024, 1024, 1024, 256];[256, 1024, 1024, 1024, 1024, 512];[256, 512, 512, 512, 512, 256];[512, 1024, 1024, 1024, 1024, 1024];[512, 1024, 1024, 1024, 1024, 512];[512, 1024, 1024, 1024];[512, 1024];[512, 128];[512, 256, 256, 256, 256, 128]",— (rtdl_params stripped)
+a. architecture,dropout,identical for all datasets,,0,0
+a. architecture,dim_t,identical for all datasets,,128,128
+a. architecture,d_in (one-hot width),identical for all datasets,,108;11;12;146;16;17;19;28;30;32;5;50;8;9;91;96,108;11;12;146;16;17;19;28;30;32;5;50;8;9;91;96
+b. parameters,trainable parameters,differs in every dataset (both sides vary),abalone;adult;buddy;california;cardio;churn2;default;diabetes;fb-comments;gesture;higgs-small;house;insurance;king;miniboone;wilt,1041553;1121676;121096;1277280;167691;2070533;2781618;3752094;3782380;4021148;4061531;4308624;463113;4845075;792850;941216,1136544;1325969;1325971;1329822;1330460;1338930;1346011;1363602;241669;242572;2688137;2733536;350475;723308;76268;896400
+c. training,steps,"differs systematically (mine constant, theirs tuned per dataset)",abalone;adult;buddy;california;cardio;churn2;default;diabetes;fb-comments;gesture;higgs-small;house;insurance;king;miniboone;wilt,30000,20000
+c. training,lr,"differs systematically (mine constant, theirs tuned per dataset)",abalone;adult;buddy;california;cardio;churn2;default;diabetes;fb-comments;gesture;higgs-small;house;insurance;king;miniboone;wilt,0.000107;0.000344;0.000417;0.000468;0.000564;0.000634;0.000744;0.000806;0.00105;0.00111;0.00133;0.00139;0.00201;0.00235;0.00281;1.15e-05,0.0001
+c. training,weight_decay,identical for all datasets,,0,0
+c. training,batch_size,varies: differs in 1 of 16 datasets,wilt,256;4096,4096
+c. training,optimizer,identical for all datasets,,AdamW,AdamW
+c. training,lr schedule,identical for all datasets,,linear decay to 0,linear decay to 0
+c. training,EMA,identical for all datasets,,"rate 0.999, every step","rate 0.999, every step"
+c. training,training seed,varies: differs in 1 of 16 datasets,churn2,0;1,0
+d. diffusion,num_timesteps,varies: differs in 6 of 16 datasets,abalone;adult;churn2;insurance;king;wilt,100;1000,1000
+d. diffusion,scheduler,identical for all datasets,,cosine,cosine
+d. diffusion,gaussian_loss_type,identical for all datasets,,mse,mse
+d. diffusion,gaussian_parametrization,identical for all datasets,,eps,eps
+d. diffusion,multinomial_loss_type,identical for all datasets,,vb_stochastic,vb_stochastic
+d. diffusion,parametrization,identical for all datasets,,x0,x0
+e. sampling,num_samples,identical for all datasets,,116000;1264000;20800;216000;24800;26000;27600;360000;48000;500;502000;52000;52800;664000;7200;76800,116000;1264000;20800;216000;24800;26000;27600;360000;48000;500;502000;52000;52800;664000;7200;76800
+e. sampling,num_samples / train_size,identical for all datasets,,1.018;1.995;3.982;3.997;4;4.062;7.784;7.956;7.977;8;8.01;8.018;8.036;8.23;8.292;8.411,1.018;1.995;3.982;3.997;4;4.062;7.784;7.956;7.977;8;8.01;8.018;8.036;8.23;8.292;8.411
+e. sampling,sample batch_size,varies: differs in 1 of 16 datasets,fb-comments,10000;150000;20000;30000;60000;8192,10000;20000;30000;50000;60000;8192
+e. sampling,y distribution,identical for all datasets,,empirical class distribution (disbalance=None);y generated as a numerical column,empirical class distribution (disbalance=None);y generated as a numerical column
+e. sampling,DDIM,identical for all datasets,,False,False
+e. sampling,checkpoint sampled,"differs systematically (mine constant, theirs tuned per dataset)",abalone;adult;buddy;california;cardio;churn2;default;diabetes;fb-comments;gesture;higgs-small;house;insurance;king;miniboone;wilt,model.pt (raw weights),model_ema.pt (EMA weights)
+e. sampling,gen seeds x clf seeds,identical for all datasets,,5 x 10,5 x 10
+f. data / preprocessing,normalization (train),identical for all datasets,,minmax;quantile,minmax;quantile
+f. data / preprocessing,cat_encoding,identical for all datasets,,None,None
+f. data / preprocessing,cat_min_frequency,identical for all datasets,,None,None
+f. data / preprocessing,num_nan_policy,identical for all datasets,,None,None
+f. data / preprocessing,cat_nan_policy,identical for all datasets,,None,None
+f. data / preprocessing,y_policy,identical for all datasets,,default,default
+f. data / preprocessing,is_y_cond,identical for all datasets,,False;True,False;True
+f. data / preprocessing,num_classes,identical for all datasets,,0;2;3;5,0;2;3;5
+f. data / preprocessing,num_numerical_features,varies: differs in 1 of 16 datasets,default,16;17;20;28;3;32;36;4;5;50;6;7;8,14;16;17;28;3;32;36;4;5;50;6;7;8
+f. data / preprocessing,n_num_features,varies: differs in 1 of 16 datasets,default,16;17;20;28;3;32;36;4;5;50;6;7;8,14;16;17;28;3;32;36;4;5;50;6;7;8
+f. data / preprocessing,n_cat_features,varies: differs in 1 of 16 datasets,default,0;1;15;3;4;5;6;8,0;1;15;3;4;5;6;8;9
+f. data / preprocessing,train_size,identical for all datasets,,12053;13209;13832;14581;157638;19200;26048;2672;3096;44800;491;62751;6318;6400;83240;856,12053;13209;13832;14581;157638;19200;26048;2672;3096;44800;491;62751;6318;6400;83240;856
+f. data / preprocessing,val_size,varies: differs in 1 of 16 datasets,default,123;14000;15688;1580;1600;19722;20811;214;3014;3303;3458;3646;4800;6513;669;775,123;14000;15688;1580;1600;19722;20811;214;3014;3303;3458;3646;6000;6513;669;775
+f. data / preprocessing,test_size,varies: differs in 1 of 16 datasets,default,11200;154;16281;19610;19720;1975;2000;26013;268;3767;4128;4323;4557;6000;836;968,11200;154;16281;19610;19720;1975;2000;26013;268;3767;4128;4323;4557;4800;836;968
+g. evaluation,CatBoost config,identical for all datasets,,tuned_models/catboost/abalone_cv.json (exists);tuned_models/catboost/adult_cv.json (exists);tuned_models/catboost/buddy_cv.json (exists);tuned_models/catboost/california_cv.json (exists);tuned_models/catboost/cardio_cv.json (exists);tuned_models/catboost/churn2_cv.json (exists);tuned_models/catboost/default_cv.json (exists);tuned_models/catboost/diabetes_cv.json (exists);tuned_models/catboost/fb-comments_cv.json (exists);tuned_models/catboost/gesture_cv.json (exists);tuned_models/catboost/higgs-small_cv.json (exists);tuned_models/catboost/house_cv.json (exists);tuned_models/catboost/insurance_cv.json (exists);tuned_models/catboost/king_cv.json (exists);tuned_models/catboost/miniboone_cv.json (exists);tuned_models/catboost/wilt_cv.json (exists),tuned_models/catboost/abalone_cv.json (exists);tuned_models/catboost/adult_cv.json (exists);tuned_models/catboost/buddy_cv.json (exists);tuned_models/catboost/california_cv.json (exists);tuned_models/catboost/cardio_cv.json (exists);tuned_models/catboost/churn2_cv.json (exists);tuned_models/catboost/default_cv.json (exists);tuned_models/catboost/diabetes_cv.json (exists);tuned_models/catboost/fb-comments_cv.json (exists);tuned_models/catboost/gesture_cv.json (exists);tuned_models/catboost/higgs-small_cv.json (exists);tuned_models/catboost/house_cv.json (exists);tuned_models/catboost/insurance_cv.json (exists);tuned_models/catboost/king_cv.json (exists);tuned_models/catboost/miniboone_cv.json (exists);tuned_models/catboost/wilt_cv.json (exists)
+g. evaluation,normalization (eval),varies: differs in 1 of 16 datasets,default,None,None;minmax
+g. evaluation,utility metric,identical for all datasets,,R2;macro-F1,R2;macro-F1
