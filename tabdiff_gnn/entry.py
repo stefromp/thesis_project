@@ -50,7 +50,7 @@ CONFIG_TOML = os.path.join(TABDIFF_ROOT, "tabdiff", "configs", "tabdiff_configs.
 SPEC = "route_a_spec.json"
 PAUSED_EXIT = 75          # resumable training paused on its time budget: the next chain part resumes
 SPEC_KEYS = ("study", "target", "denoiser", "seed", "variant", "gnn", "dim_t", "node_noise",
-             "geo_loss", "geo_edge_bias", "smoke_epochs", "trainer")
+             "geo_loss", "geo_edge_bias", "smoke_epochs", "trainer", "ablation")
 
 
 def _now() -> str:
@@ -121,14 +121,16 @@ def load_raw_config():
 
 
 def spec_for(target: str, denoiser: str, seed: int, node_noise=C.NODE_NOISE,
-             geo_loss=False, geo_edge_bias=False) -> dict:
+             geo_loss=False, geo_edge_bias=False, ablation=None) -> dict:
     """Everything that defines the model besides TabDiff's toml (route_a_spec.json)."""
     ds = C.parse_target(target)
     spec = {"study": C.STUDY, "target": target, "tabdiff_dataname": C.tabdiff_dataname(target),
             "denoiser": denoiser, "seed": seed, "geo_loss": geo_loss, "geo_edge_bias": geo_edge_bias,
-            "trainer": C.TRAINER[ds]}
+            "trainer": C.TRAINER[ds], "ablation": ablation}
+    if ablation is not None and denoiser != "attngnn":
+        raise ValueError("ablations are defined for the attngnn denoiser only")
     if denoiser == "attngnn":
-        g, src = C.gnn_config(ds)
+        g, src = C.gnn_config(ds, ablation=ablation)
         spec.update({"variant": C.VARIANT, "gnn": {**g, **C.GNN_FIXED}, "gnn_sources": src,
                      "gnn_source_dataset": C.SOURCES[ds], "dim_t": C.DIM_T, "node_noise": node_noise,
                      "d_model_rule": f"{C.D_MODEL} on every dataset"})
@@ -235,7 +237,8 @@ def cmd_train(a) -> int:
     import torch
     job_start = time.time()
     C.verify_tabdiff()
-    spec = spec_for(a.target, a.denoiser, a.seed, a.node_noise, a.geo_loss, a.geo_edge_bias)
+    spec = spec_for(a.target, a.denoiser, a.seed, node_noise=a.node_noise, geo_loss=a.geo_loss,
+                    geo_edge_bias=a.geo_edge_bias, ablation=a.ablation)
     spec["smoke_epochs"] = a.smoke_epochs
     os.makedirs(a.run_dir, exist_ok=True)
     resumable = spec["trainer"] == "resumable"
@@ -371,6 +374,8 @@ def make_parser():
     t.add_argument("--run_dir", required=True)
     t.add_argument("--device", default="cuda:0")
     t.add_argument("--node_noise", choices=C.NODE_NOISE_CHOICES, default=C.NODE_NOISE)
+    t.add_argument("--ablation", choices=sorted(C.ABLATIONS), default=None,
+                   help="NOT the main protocol: one-change ablation (config.ABLATIONS)")
     t.add_argument("--geo_loss", action="store_true", help="reserved hook (not implemented)")
     t.add_argument("--geo_edge_bias", action="store_true", help="reserved hook (not implemented)")
     t.add_argument("--smoke_epochs", type=int, default=None, help=argparse.SUPPRESS)

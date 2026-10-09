@@ -216,34 +216,63 @@ def results_root(exp_root: str) -> str:
     return os.path.join(exp_root, RESULTS_DIRNAME)
 
 
-def gnn_config(ds: str, repo_root: str = REPO):
+def n_nodes(ds: str, repo_root: str = REPO) -> int:
+    """Graph nodes = columns of TabDiff's processed table (numerical + categorical + target)."""
+    import json
+    i = json.load(open(data_files(target_name(ds), repo_root)["info"]))
+    return len(i["num_col_idx"]) + len(i["cat_col_idx"]) + len(i["target_col_idx"])
+
+
+# Ablations: NOT part of the main Route-A protocol. Each changes exactly one thing
+# against the main run of the same dataset; the run path encodes the change
+# (e.g. ..._topk11_...) and run_meta.json records {"ablation": ...}.
+ABLATIONS = {
+    "topk_dense": {"datasets": ("beijing",), "change": "top_k = N - 1 (dense graph: every node "
+                   "keeps all N-1 others; DynamicAdjacency masks nothing, edge weights are the "
+                   "sigmoid scores)", "question": "is the sparse top-k graph the cause of the "
+                   "beijing failure?"},
+}
+
+
+def gnn_config(ds: str, repo_root: str = REPO, ablation: str | None = None):
     """(values, sources) of the AttnGNN for ds: the source's GNN configuration
-    (study.gnn_config: gnn type, layers, top_k, heads) with d_model = D_MODEL."""
+    (study.gnn_config: gnn type, layers, top_k, heads) with d_model = D_MODEL;
+    an ablation (ABLATIONS) changes exactly one value."""
     v, s = S.gnn_config(SOURCES[ds], repo_root)
     v, s = dict(v), dict(s)
     s["d_model"] = f"Route A: d_model {D_MODEL} on every dataset (source value {v['d_model']} at {s['d_model']})"
     v["d_model"] = D_MODEL
+    if ablation is not None:
+        if ablation not in ABLATIONS:
+            raise ValueError(f"unknown ablation {ablation!r}; known: {sorted(ABLATIONS)}")
+        if ds not in ABLATIONS[ablation]["datasets"]:
+            raise ValueError(f"ablation {ablation} is defined for {ABLATIONS[ablation]['datasets']} only")
+        if ablation == "topk_dense":
+            n = n_nodes(ds, repo_root)
+            s["top_k"] = f"ABLATION topk_dense: N - 1 = {n - 1} (main run: {v['top_k']} from {s['top_k']})"
+            v["top_k"] = n - 1
     if v["d_model"] % v["n_heads"]:
         raise ValueError(f"{ds}: d_model {v['d_model']} not divisible by n_heads {v['n_heads']}")
     return v, s
 
 
 def arm_name(denoiser: str, ds: str | None = None, node_noise: str = NODE_NOISE,
-             repo_root: str = REPO) -> str:
+             repo_root: str = REPO, ablation: str | None = None) -> str:
     if denoiser == "transformer":
         return "unimodmlp_tabdiff_config"
     if denoiser != "attngnn":
         raise ValueError(f"denoiser must be one of {DENOISERS}")
-    g, _ = gnn_config(ds, repo_root)
+    g, _ = gnn_config(ds, repo_root, ablation=ablation)
     return (f"v2_{g['gnn_type']}_layers{g['n_layers']}_dim{g['d_model']}_topk{g['top_k']}"
             f"_heads{g['n_heads']}_dimt{DIM_T}_noise-{node_noise}")
 
 
 def run_dir(exp_root: str, target: str, denoiser: str, seed: int,
-            node_noise: str = NODE_NOISE, repo_root: str = REPO) -> str:
+            node_noise: str = NODE_NOISE, repo_root: str = REPO, ablation: str | None = None) -> str:
     ds = parse_target(target)
     path = os.path.join(results_root(exp_root), target, denoiser,
-                        arm_name(denoiser, ds, node_noise, repo_root), f"seed{seed}")
+                        arm_name(denoiser, ds, node_noise=node_noise, repo_root=repo_root,
+                                 ablation=ablation), f"seed{seed}")
     assert_in_tree(path, exp_root)
     return path
 

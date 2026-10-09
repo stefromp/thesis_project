@@ -64,6 +64,10 @@ exit 0
 # --- diabetes (~15.3 GPU-h)
 # sbatch --gres="${GRES}" hpc_transfer/jobs_tabdiff_gnn/diabetes_tabdiff_gnn.sh
 
+# === ABLATION (NOT the main protocol; seed 0; compare with the main run) ========
+# --- beijing topk_dense: top_k = N - 1 (~6.9 GPU-h)
+# sbatch --gres="${GRES}" hpc_transfer/jobs_tabdiff_gnn/beijing_tabdiff_gnn_ablation_topk_dense.sh
+
 # === training seed 1 -- ONLY AFTER CONFIRMATION ==============================
 # --- magic seed 1 (~3.2 GPU-h)
 ## SEED=1 sbatch --gres="${GRES}" --job-name=magic_tabdiff_gnn_s1 --output=${OUT}/magic_tabdiff_gnn_s1.out --error=${OUT}/magic_tabdiff_gnn_s1.err hpc_transfer/jobs_tabdiff_gnn/magic_tabdiff_gnn.sh
@@ -100,5 +104,5 @@ exit 0
 # --- diabetes seed 2 (~15.3 GPU-h)
 ## SEED=2 sbatch --gres="${GRES}" --job-name=diabetes_tabdiff_gnn_s2 --output=${OUT}/diabetes_tabdiff_gnn_s2.out --error=${OUT}/diabetes_tabdiff_gnn_s2.err hpc_transfer/jobs_tabdiff_gnn/diabetes_tabdiff_gnn.sh
 
-# GPU-h (estimate, before the x1.3 margin): seed 0 100.6; seeds 1-2 201.2 more
+# GPU-h (estimate, before the x1.3 margin): seed 0 100.6; ablation 6.9; seeds 1-2 201.2 more
 # Analysis afterwards: python3 analysis/tabdiff/compare.py --route_a

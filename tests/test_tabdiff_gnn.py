@@ -456,7 +456,8 @@ class FakeExec:
         import entry
         tgt = cmd[cmd.index("--target") + 1]
         spec = entry.spec_for(tgt, cmd[cmd.index("--denoiser") + 1], int(cmd[cmd.index("--seed") + 1]),
-                              cmd[cmd.index("--node_noise") + 1])
+                              node_noise=cmd[cmd.index("--node_noise") + 1],
+                              ablation=cmd[cmd.index("--ablation") + 1] if "--ablation" in cmd else None)
         spec["smoke_epochs"] = None
         os.makedirs(os.path.join(run, "ckpt"), exist_ok=True)
         open(os.path.join(run, "ckpt", "best_ema_model_1.0_5000.pt"), "w").close()
@@ -624,7 +625,8 @@ def test_job_scripts_follow_hpc_transfer_jobs():
     files = sorted(f for f in glob.glob(os.path.join(JOBS, "*.sh")) if not f.endswith("common_tabdiff_gnn.sh"))
     names = {os.path.basename(f)[:-3] for f in files}
     want = {f"{ds}_tabdiff_gnn" for ds in C.ORDER if ds != "news"} | {"news_tabdiff_gnn_train",
-                                                                      "news_tabdiff_gnn_sample_eval"}
+                                                                      "news_tabdiff_gnn_sample_eval",
+                                                                      "beijing_tabdiff_gnn_ablation_topk_dense"}
     assert names == want                                     # one script per dataset, no per-seed copies
     ref = open(REF_JOB).read()
     norm = lambda t: re.sub(r"(--job-name=|jobs_out/)\S+|--time=\S+", "X", t)
@@ -945,3 +947,70 @@ def test_resume_on_gpu_within_run_to_run_tolerance(tmp_path):
           f"resumed vs uninterrupted max|d| = {resumed:.3e}")
     assert resumed <= max(GPU_RESUME_FACTOR * run_to_run, GPU_RESUME_FLOOR)
     assert sorted(a1["best_files"]) == sorted(c["best_files"]) or steps <= 4000
+
+
+# ---------------------------------------------------------------------------
+# Ablation (beijing, top_k = N-1) and the diagnosis helpers
+# ---------------------------------------------------------------------------
+def test_topk_dense_ablation_changes_only_top_k(tmp_path):
+    main, _ = C.gnn_config("beijing")
+    abl, src = C.gnn_config("beijing", ablation="topk_dense")
+    assert C.n_nodes("beijing") == 12 and abl["top_k"] == 11 and main["top_k"] == 5
+    assert {k: v for k, v in abl.items() if k != "top_k"} == {k: v for k, v in main.items() if k != "top_k"}
+    assert "ABLATION" in src["top_k"]
+    p_main = C.run_dir(str(tmp_path), "tabdiff_beijing", "attngnn", 0)
+    p_abl = C.run_dir(str(tmp_path), "tabdiff_beijing", "attngnn", 0, ablation="topk_dense")
+    assert "_topk11_" in p_abl and "_topk5_" in p_main and p_abl != p_main
+    with pytest.raises(ValueError):
+        C.gnn_config("magic", ablation="topk_dense")              # defined for beijing only
+    with pytest.raises(ValueError):
+        C.gnn_config("beijing", ablation="nope")
+
+
+def test_ablation_run_meta_and_spec(tmp_path):
+    runner = _load_route_a("runner")
+    ex = FakeExec()
+    runner.run_job(_args(tmp_path, "--dataset", "beijing", "--denoiser", "attngnn", "--ablation", "topk_dense"), ex)
+    run = C.run_dir(str(tmp_path), "tabdiff_beijing", "attngnn", 0, ablation="topk_dense")
+    meta = json.load(open(os.path.join(run, "run_meta.json")))
+    assert meta["ablation"]["name"] == "topk_dense" and "not part of the main" in meta["ablation"]["note"]
+    assert meta["ablation"]["main_run_dir"].endswith(os.path.join("v2_gatv2_layers3_dim256_topk5_heads8_dimt128_"
+                                                                  "noise-shared", "seed0"))
+    assert meta["gnn"]["top_k"] == 11
+    assert "--ablation" in [c for call in [runner.stage_cmd(runner.Target("beijing", _args(
+        tmp_path, "--dataset", "beijing", "--denoiser", "attngnn", "--ablation", "topk_dense"),
+        REPO), "train")] for c in call]
+    # the main run is untouched and unaffected
+    assert not os.path.exists(C.run_dir(str(tmp_path), "tabdiff_beijing", "attngnn", 0))
+    sys.path.insert(0, os.path.join(REPO, "analysis", "tabdiff"))
+    import compare
+    comp, prov, _ = compare.ra_computed(str(tmp_path))
+    assert not prov                                               # ablations never enter ROUTE_A.md
+
+
+def test_ablation_job_script():
+    t = open(os.path.join(JOBS, "beijing_tabdiff_gnn_ablation_topk_dense.sh")).read()
+    assert 'ABLATION="${ABLATION:-topk_dense}"' in t and "_topk11_" in t and "top-k 11" in t
+    assert "#SBATCH --job-name=beijing_tabdiff_gnn_ablation_topk_dense" in t and "#SBATCH --time=48:00:00" in t
+    for ds in C.ORDER:
+        for f in glob.glob(os.path.join(JOBS, f"{ds}_tabdiff_gnn*.sh")):
+            if "ablation" not in f:
+                assert 'ABLATION="${ABLATION:-}"' in open(f).read()
+    sub = open(os.path.join(REPO, "hpc_transfer", "submit_tabdiff_gnn.sh")).read()
+    abl = [ln for ln in sub.splitlines() if "ablation_topk_dense" in ln and "sbatch" in ln]
+    assert len(abl) == 1 and abl[0].startswith("# ")
+    assert sub.index("=== ABLATION") > sub.index("block 2")       # after the main runs
+
+
+def test_diagnosis_column_typing_and_eta():
+    sys.path.insert(0, os.path.join(REPO, "analysis", "tabdiff"))
+    import route_a_diagnosis as D
+    info, real = D.info_and_real("beijing")
+    num, cat = D.column_types(info)
+    assert num == ["DEWP", "TEMP", "PRES", "Iws", "Is", "Ir", "pm2.5"]
+    assert cat == ["year", "month", "day", "hour", "cbwd"]
+    info, _ = D.info_and_real("magic")
+    num, cat = D.column_types(info)
+    assert len(num) == 10 and cat == ["class"]
+    assert D.eta(["a", "a", "b", "b"], [1, 1, 3, 3]) == pytest.approx(1.0)
+    assert D.eta(["a", "b", "a", "b"], [1, 1, 3, 3]) == pytest.approx(0.0)

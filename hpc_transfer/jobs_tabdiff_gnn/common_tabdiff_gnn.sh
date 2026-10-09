@@ -9,11 +9,13 @@
 #
 # Sourced by hpc_transfer/jobs_tabdiff_gnn/*.sh after that script has set:
 #   HPC_ROOT  REPO_ROOT  PYTHON_BIN  EVAL_PYTHON  SYNTHCITY_PYTHON  TABPC_PYTHON
-#   TRANSFER_ROOT  DATASET  DENOISER  STAGES  TRAIN_BUDGET_H  DEVICE  SEED
+#   TRANSFER_ROOT  DATASET  DENOISER  ABLATION  STAGES  TRAIN_BUDGET_H  DEVICE  SEED
 #
 #   STAGES          comma list of the stages this job runs, in order:
 #                   train, sample, eval_main, eval_quality, eval_tabpc
 #                   (all five, or one part of a chain)
+#   ABLATION        empty for the main runs; a tabdiff_gnn/config.py ABLATIONS name for an
+#                   ablation job (own run path, recorded in run_meta.json)
 #   TRAIN_BUDGET_H  news' resumable training only: hours after which the run state
 #                   is saved and the job exits 0; the next job of the chain resumes
 #
@@ -30,6 +32,7 @@ _route_a_args() {
     RA_ARGS=(--dataset "${DATASET}" --denoiser "${DENOISER}" --seed "${SEED}"
              --exp_root "${TRANSFER_ROOT}" --repo_root "${REPO_ROOT}")
     if [ -n "${TRAIN_BUDGET_H:-}" ]; then RA_ARGS+=(--train_budget_h "${TRAIN_BUDGET_H}"); fi
+    if [ -n "${ABLATION:-}" ]; then RA_ARGS+=(--ablation "${ABLATION}"); fi
     # LOCAL MOCK ONLY (never set on the cluster): shortened training / fewer tables
     if [ -n "${ROUTE_A_MOCK_EPOCHS:-}" ]; then
         RA_ARGS+=(--smoke_epochs "${ROUTE_A_MOCK_EPOCHS}" --n_runs "${ROUTE_A_MOCK_RUNS:-2}")
@@ -104,7 +107,7 @@ run_route_a() {
     cd "${REPO_ROOT}" || { echo "ERROR: cannot cd to ${REPO_ROOT}" >&2; return 1; }
     echo "===================================================================="
     echo "  study        : tabdiff_gnn_route_a"
-    echo "  dataset      : ${DATASET}   denoiser: ${DENOISER}   seed: ${SEED}"
+    echo "  dataset      : ${DATASET}   denoiser: ${DENOISER}   seed: ${SEED}${ABLATION:+   ABLATION: ${ABLATION}}"
     echo "  stages       : ${STAGES}${TRAIN_BUDGET_H:+   (resumable training, budget ${TRAIN_BUDGET_H} h)}"
     echo "  results tree : ${TRANSFER_ROOT}/exp_tabdiff_gnn/"
     echo "  pythons      : train ${PYTHON_BIN} | eval ${EVAL_PYTHON}"

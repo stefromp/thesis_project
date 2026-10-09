@@ -111,6 +111,11 @@ ARMS = {  # name -> (denoiser, datasets, training seeds)
     "gnn": ("attngnn", list(C.ORDER), list(C.TRAIN_SEEDS)),
 }
 POST = ["sample", "eval_main", "eval_quality", "eval_tabpc"]
+# Ablation jobs (NOT the main protocol): (arm, dataset, config.ABLATIONS key), seed 0 only.
+ABLATION_JOBS = [("gnn", "beijing", "topk_dense")]
+# Measured cost of the ablation relative to the main run (CPU, beijing, 3 alternating rounds,
+# median): GATv2 scores every node pair and then masks, so top_k = N-1 costs the same.
+ABLATION_COST = {"topk_dense": 1.00}
 RATIO_CSV = os.path.join(OUT, "step_ratio_cpu.csv")
 # Submission blocks (seed 0), in order; seeds 1-2 follow, double-commented.
 SUBMIT_BLOCKS = [
@@ -329,6 +334,13 @@ cd "${{REPO_ROOT}}" || {{ echo "ERROR: cannot cd to ${{REPO_ROOT}}" >&2; exit 1;
 DENOISER="attngnn"
 
 # ---------------------------------------------------------------------------
+# Ablation: empty = the main Route-A run. A name from tabdiff_gnn/config.py
+# ABLATIONS changes exactly one setting; the run gets its own path (e.g. ..._topk11_...)
+# and run_meta.json records {{"ablation": ...}}. NOT part of the main protocol.
+# ---------------------------------------------------------------------------
+ABLATION="${{ABLATION:-{ablation}}}"
+
+# ---------------------------------------------------------------------------
 # Stages this job runs (each leaves <run>/stages/<stage>.done; a resubmitted
 # job skips what is done):
 #   {stage_line}
@@ -353,7 +365,7 @@ SEED="${{SEED:-0}}"
 DATASET="{ds}"
 
 export HPC_ROOT REPO_ROOT PYTHON_BIN EVAL_PYTHON SYNTHCITY_PYTHON TABPC_PYTHON \
-       TRANSFER_ROOT DATASET DENOISER STAGES TRAIN_BUDGET_H DEVICE SEED
+       TRANSFER_ROOT DATASET DENOISER ABLATION STAGES TRAIN_BUDGET_H DEVICE SEED
 
 # shellcheck source-path=SCRIPTDIR
 # shellcheck source=common_tabdiff_gnn.sh
@@ -363,13 +375,20 @@ run_route_a
 """
 
 
-def jobs_for(arm: str, ds: str) -> list:
+def jobs_for(arm: str, ds: str, ablation: str | None = None) -> list:
     """Job scripts of one dataset: [{name, stages, hours, est, budget, parts, blocked}].
     parts = how many times the script is submitted in a row (news' resumable training)."""
-    e = stage_hours(arm, ds)
+    e = dict(stage_hours(arm, ds))
     chain = pack(arm, ds)
     blocked = over_cap(arm, ds)
-    base = f"{ds}_tabdiff_gnn"
+    base = f"{ds}_tabdiff_gnn" + (f"_ablation_{ablation}" if ablation else "")
+    if ablation:
+        f = ABLATION_COST[ablation]
+        e["stages_h"] = {k: (v * f if k in ("train", "sample") else v) for k, v in e["stages_h"].items()}
+        e["basis"] += f"; ablation {ablation}: x{f:.2f} measured"
+        chain = [(st, sum(e["stages_h"][x] for x in st)) for st, _ in chain]
+        if len(chain) > 1 or ds in C.RESUMABLE_DATASETS:
+            raise SystemExit(f"ablation jobs are single-job datasets only ({ds})")
     if len(chain) == 1:
         (stages, est), = chain
         return [dict(name=base, stages=stages, hours=JOB_WALLTIME_H, est=est, budget="", parts=1,
@@ -395,10 +414,11 @@ def write_jobs() -> dict:
         if os.path.basename(old) != "common_tabdiff_gnn.sh":
             os.remove(old)
     plan = {}
-    for arm, (denoiser, dsets, seeds) in ARMS.items():
-        for ds in dsets:
-            js = jobs_for(arm, ds)
-            g, src = C.gnn_config(ds)
+    todo = [(arm, ds, None) for arm, (_, dsets, _) in ARMS.items() for ds in dsets] + ABLATION_JOBS
+    for arm, ds, ablation in todo:
+            denoiser = ARMS[arm][0]
+            js = jobs_for(arm, ds, ablation)
+            g, src = C.gnn_config(ds, ablation=ablation)
             for i, j in enumerate(js):
                 e = j["e"]
                 stage_line = " -> ".join(f"{st} ({e['stages_h'][st]:.2f} h)" for st in j["stages"])
@@ -424,14 +444,17 @@ def write_jobs() -> dict:
                 body = BODY.format(
                     commit_short=C.TABDIFF_COMMIT[:7],
                     arch=(f"{g['gnn_type']} L{g['n_layers']} d{g['d_model']} top-k {g['top_k']} (fixed) "
-                          f"heads {g['n_heads']}"),
+                          f"heads {g['n_heads']}"
+                          + (f"\n#   ABLATION {ablation} (NOT the main protocol): {C.ABLATIONS[ablation]['change']}"
+                             f"\n#   question: {C.ABLATIONS[ablation]['question']}" if ablation else "")),
                     src=C.SOURCES[ds],
                     src_note=(" -- our choice: diabetes has no TabDDPM source" if ds in C.SOURCE_NOTES else ""),
                     d_model=C.D_MODEL, dim_t=C.DIM_T,
                     trainer=("resumable copy of TabDiff's Trainer.run_loop (news only; verbatim + "
                              "save/restore hooks; evidence tests/test_tabdiff_gnn.py)"
                              if ds in C.RESUMABLE_DATASETS else "TabDiff's Trainer, unchanged"),
-                    target=C.target_name(ds), arm_dir=C.arm_name(denoiser, ds),
+                    target=C.target_name(ds), arm_dir=C.arm_name(denoiser, ds, ablation=ablation),
+                    ablation=ablation or "",
                     stage_line=stage_line, time=f"{JOB_WALLTIME_H}:00:00",
                     why=f"{why}; {e['basis']}", chain_note=chain_note,
                     stages=",".join(j["stages"]), budget=j["budget"], ds=ds)
@@ -439,7 +462,7 @@ def write_jobs() -> dict:
                 with open(path, "w") as fh:
                     fh.write(HEADER.format(job=j["name"], time=f"{JOB_WALLTIME_H}:00:00") + body)
                 os.chmod(path, 0o755)
-            plan[(arm, ds)] = js
+            plan[(arm, ds) if ablation is None else (arm, ds, ablation)] = js
     return plan
 
 
@@ -526,6 +549,12 @@ def write_submit(plan: dict) -> dict:
             tot += g
         totals[f"block {i}: {title}"] = tot
         lines.append("")
+    lines.append("# === ABLATION (NOT the main protocol; seed 0; compare with the main run) " + "=" * 8)
+    for arm, ds, abl in ABLATION_JOBS:
+        ls, g = _submit_lines(plan[(arm, ds, abl)], 0, "# ")
+        lines += [f"# --- {ds} {abl}: {C.ABLATIONS[abl]['change'].split('(')[0].strip()} (~{g:.1f} GPU-h)"] + ls
+        totals[f"ablation {ds} {abl}"] = g
+    lines.append("")
     for seed in [x for x in C.TRAIN_SEEDS if x != 0]:
         lines.append(f"# === training seed {seed} -- ONLY AFTER CONFIRMATION " + "=" * 30)
         tot = 0.0
@@ -535,9 +564,10 @@ def write_submit(plan: dict) -> dict:
             tot += g
         totals[f"seed {seed}"] = tot
         lines.append("")
-    s0 = sum(v for k, v in totals.items() if not k.startswith("seed"))
-    lines += [f"# GPU-h (estimate, before the x{MARGIN} margin): seed 0 {s0:.1f}; seeds 1-2 "
-              f"{totals.get('seed 1', 0) + totals.get('seed 2', 0):.1f} more",
+    s0 = sum(v for k, v in totals.items() if k.startswith("block"))
+    ab = sum(v for k, v in totals.items() if k.startswith("ablation"))
+    lines += [f"# GPU-h (estimate, before the x{MARGIN} margin): seed 0 {s0:.1f}; ablation {ab:.1f}; "
+              f"seeds 1-2 {totals.get('seed 1', 0) + totals.get('seed 2', 0):.1f} more",
               "# Analysis afterwards: python3 analysis/tabdiff/compare.py --route_a", ""]
     with open(SUBMIT, "w") as fh:
         fh.write("\n".join(lines))
@@ -565,7 +595,8 @@ def main(argv=None) -> int:
                              "train_h_upper": round(e["train_h_upper"], 2) if stage == "train" else "",
                              "basis": e["basis"]})
     plan = write_jobs()
-    for (arm, ds), js in plan.items():
+    for key, js in plan.items():
+        arm, ds = key[0], key[1]
         for j in js:
             rows.append({"arm": arm, "dataset": ds, "target": f"JOB {j['name']}.sh"
                          + (f" x{j['parts']}" if j["parts"] > 1 else ""), "stage": "walltime",

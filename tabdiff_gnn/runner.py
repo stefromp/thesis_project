@@ -51,7 +51,7 @@ import config as C  # noqa: E402
 
 STAGES = ["train", "sample", "eval_main", "eval_quality", "eval_tabpc"]
 SPEC_KEYS = ("study", "target", "denoiser", "seed", "variant", "gnn", "dim_t", "node_noise",
-             "geo_loss", "geo_edge_bias", "smoke_epochs", "trainer")
+             "geo_loss", "geo_edge_bias", "smoke_epochs", "trainer", "ablation")
 PAUSED_EXIT = 75          # entry.py: resumable training paused on its time budget
 
 
@@ -184,9 +184,10 @@ class Target:
         self.files = C.data_files(self.name, repo)
         self.info = _json(self.files["info"])
         self.run = C.run_dir(args.exp_root, self.name, args.denoiser, args.seed,
-                             args.node_noise, repo)
-        self.want = entry.spec_for(self.name, args.denoiser, args.seed, args.node_noise,
-                                   args.geo_loss, args.geo_edge_bias)
+                             node_noise=args.node_noise, repo_root=repo, ablation=args.ablation)
+        self.want = entry.spec_for(self.name, args.denoiser, args.seed, node_noise=args.node_noise,
+                                   geo_loss=args.geo_loss, geo_edge_bias=args.geo_edge_bias,
+                                   ablation=args.ablation)
         self.want["smoke_epochs"] = args.smoke_epochs
         self.stages = list(STAGES)
 
@@ -206,6 +207,12 @@ class Target:
             "variant": C.VARIANT if a.denoiser == "attngnn" else None,
             "arm": os.path.basename(os.path.dirname(self.run)),
             "d_model_rule": self.want.get("d_model_rule"),
+            "ablation": (None if a.ablation is None else {
+                "name": a.ablation, **C.ABLATIONS[a.ablation],
+                "main_run_dir": C.run_dir(a.exp_root, self.name, a.denoiser, a.seed,
+                                          node_noise=a.node_noise, repo_root=self.repo),
+                "note": "ABLATION -- not part of the main Route-A protocol; compare only with the "
+                        "main run of the same dataset and seed"}),
             "train_seed": a.seed,
             "gnn": self.want.get("gnn"), "gnn_sources": self.want.get("gnn_sources"),
             "gnn_source_dataset": self.want.get("gnn_source_dataset"),
@@ -283,7 +290,7 @@ def stage_cmd(t: Target, stage: str) -> list:
     if stage == "train":
         cmd = [a.train_python, os.path.join(HERE, "entry.py"), "train", "--target", t.name,
                "--denoiser", a.denoiser, "--seed", str(a.seed), "--run_dir", t.run, "--device", a.device,
-               "--node_noise", a.node_noise]
+               "--node_noise", a.node_noise] + (["--ablation", a.ablation] if a.ablation else [])
         if a.geo_loss:
             cmd += ["--geo_loss"]
         if a.geo_edge_bias:
@@ -414,6 +421,8 @@ def make_parser():
     ap.add_argument("--denoiser", required=True, choices=C.DENOISERS)
     ap.add_argument("--seed", type=int, default=0, choices=C.TRAIN_SEEDS)
     ap.add_argument("--node_noise", choices=C.NODE_NOISE_CHOICES, default=C.NODE_NOISE)
+    ap.add_argument("--ablation", choices=sorted(C.ABLATIONS), default=None,
+                    help="NOT the main protocol: a one-change ablation (config.ABLATIONS), own run path")
     ap.add_argument("--geo_loss", action="store_true", help="reserved hook, default off (not implemented)")
     ap.add_argument("--geo_edge_bias", action="store_true", help="reserved hook, default off (not implemented)")
     ap.add_argument("--stages", default=None,

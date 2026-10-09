@@ -254,3 +254,32 @@ Estimate per seed (hours on one A100, before the ×1.3 walltime margin; `jobs_ta
 | seeds 1 + 2 | | | | ≈ 201 more | |
 
 Every job script asks for `--time=48:00:00`; the per-job estimate is in its header comment. The train estimate is the A100-measured reference step time × the CPU-measured cost ratio (`step_ratio_cpu.csv`). Replace it with the probe's s/epoch via `--probe`.
+
+## Diagnosis of the seed-0 results (beijing, magic) — CPU, no new runs
+
+`analysis/tabdiff/route_a_diagnosis.py` runs in two steps, using the same two venvs as the evaluation:
+- `nmi` (tabpc venv): per-pair NMI, using tabpc's own binning and MI. Each table's sum is cross-checked against tabpc's `MI_l1` wNMIS.
+- `report` (eval venv):
+  - per-column Shape and per-pair Trend, from TabDiff's own `QualityReport` on TabDiff's reordered frame;
+  - for beijing: pm2.5's marginal and its dependencies on every other column; the time × weather η²; the Spearman correlations among the numerical columns; category coverage;
+  - the training diagnostics: loss curves, the selected best-EMA epoch, the late-training slope and the learned ρ/k schedules;
+  - the figures, and `analysis/tabdiff/route_a_diagnosis.md`.
+
+```bash
+# on the cluster login node (CPU), after the seed-0 runs:
+$TP analysis/tabdiff/route_a_diagnosis.py nmi    --exp_root $HPC_ROOT/transfer_runs
+$EV analysis/tabdiff/route_a_diagnosis.py report --exp_root $HPC_ROOT/transfer_runs
+# or locally, after an rsync of each run's samples/ (or tabdiff_eval/all_samples/), train_log.csv,
+# train_record.json and ckpt/best_ema_model_*.pt:  --run_dir beijing=PATH magic=PATH shoppers=PATH adult=PATH
+```
+
+TabDiff's Trainer computes the EMA loss but never logs it, so the report has no EMA-loss curve. It does have the selected checkpoint's EMA loss and epoch.
+
+## Ablation: beijing with a dense graph (not part of the main protocol)
+
+`--ablation topk_dense` keeps every setting of the main beijing run except `top_k = N − 1 = 11`. With N = 12 nodes, `DynamicAdjacency` then masks nothing and every node attends to all the others.
+- **Path:** `…/tabdiff_beijing/attngnn/v2_gatv2_layers3_dim256_topk11_heads8_dimt128_noise-shared/seed0/`.
+- **`run_meta.json`** records `"ablation": {"name": "topk_dense", …, "main_run_dir": …}`.
+- **`ROUTE_A.md`** never reads ablation runs.
+- **Job:** `hpc_transfer/jobs_tabdiff_gnn/beijing_tabdiff_gnn_ablation_topk_dense.sh`, in the "ABLATION" block of the submission loop, commented out.
+- **Cost:** the same as the main beijing run. GATv2 scores all node pairs and then masks, and the CPU timing ratio is 1.00. That is about 6.9 GPU-h; the job asks for 48:00:00 like every job.

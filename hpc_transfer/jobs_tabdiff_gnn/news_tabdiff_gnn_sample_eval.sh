@@ -93,6 +93,13 @@ cd "${REPO_ROOT}" || { echo "ERROR: cannot cd to ${REPO_ROOT}" >&2; exit 1; }
 DENOISER="attngnn"
 
 # ---------------------------------------------------------------------------
+# Ablation: empty = the main Route-A run. A name from tabdiff_gnn/config.py
+# ABLATIONS changes exactly one setting; the run gets its own path (e.g. ..._topk11_...)
+# and run_meta.json records {"ablation": ...}. NOT part of the main protocol.
+# ---------------------------------------------------------------------------
+ABLATION="${ABLATION:-}"
+
+# ---------------------------------------------------------------------------
 # Stages this job runs (each leaves <run>/stages/<stage>.done; a resubmitted
 # job skips what is done):
 #   sample (2.12 h) -> eval_main (0.22 h) -> eval_quality (0.62 h) -> eval_tabpc (0.18 h)
@@ -118,7 +125,7 @@ SEED="${SEED:-0}"
 DATASET="news"
 
 export HPC_ROOT REPO_ROOT PYTHON_BIN EVAL_PYTHON SYNTHCITY_PYTHON TABPC_PYTHON \
-       TRANSFER_ROOT DATASET DENOISER STAGES TRAIN_BUDGET_H DEVICE SEED
+       TRANSFER_ROOT DATASET DENOISER ABLATION STAGES TRAIN_BUDGET_H DEVICE SEED
 
 # shellcheck source-path=SCRIPTDIR
 # shellcheck source=common_tabdiff_gnn.sh
