@@ -92,6 +92,30 @@ TRAINER = {ds: ("resumable" if ds in RESUMABLE_DATASETS else "tabdiff") for ds i
 TRAINER_EVIDENCE = ("tests/test_tabdiff_gnn.py::test_resumable_run_loop_is_tabdiffs_verbatim, "
                     "::test_resume_is_bit_identical (CPU; 40 epochs), "
                     "::test_resume_is_bit_identical_through_best_checkpoints (CPU; past epoch 4000, RUN_SLOW=1)")
+# Neighbour-selection rule (--topk_mode). "fixed" is the main arm (path and spec
+# unchanged); the two adaptive rules reuse adaptive_adjacency.py / graph_builder.py
+# unchanged, with the settings of the thesis catfix runs
+# (transfer_runs/exp/<ds>/ablation_adaptive_{jenks,entmax15}_catfix/*/run_meta.json):
+#   adaptive_jenks     plain (ungated) 2-class Jenks split of each node's F-1 off-diagonal
+#                      scores (DynamicAdjacency calls build_adjacency with
+#                      use_gate_rule=False, sym="none", share_across_batch=False):
+#                      k_i in [1, F-2]; ties at the threshold kept
+#   adaptive_entmax15  support of entmax-1.5 (alpha 1.5) over each row's off-diagonal
+#                      scores, floor k_min: k_i in [1, F-1]
+#   both: mask only, edge weights = the same sigmoid gates as fixed; k_min 1,
+#   topk_warmup_steps 0, topk_log_every 100 (hpc_transfer/jobs defaults). The source
+#   config's top_k is NOT used by either rule (only during warm-up, which is 0).
+TOPK_MODES = ("fixed", "adaptive_jenks", "adaptive_entmax15")
+TOPK_MODE = "fixed"
+RULE_TAG = {"adaptive_jenks": "jenks", "adaptive_entmax15": "entmax15"}
+RULE_SETTINGS = {"k_min": 1, "topk_warmup_steps": 0, "topk_log_every": 100}
+RULE_DETAILS = {
+    "adaptive_jenks": {"rule": "plain 2-class Jenks natural-breaks split of the sorted off-diagonal scores",
+                       "use_gate_rule": False, "delta": None, "sym": "none", "share_across_batch": False,
+                       "k_range": "[1, F-2]", "entmax_alpha": None},
+    "adaptive_entmax15": {"rule": "support of entmax-1.5 over the off-diagonal scores (mask only)",
+                          "entmax_alpha": 1.5, "k_range": "[k_min, F-1]"},
+}
 GNN_FIXED = {"graph_mode": "dynamic", "topk_mode": "fixed", "use_attention": False,
              "dropout": 0.0}
 
@@ -234,6 +258,30 @@ ABLATIONS = {
 }
 
 
+def model_node_columns(ds: str, repo_root: str = REPO) -> list:
+    """Column name of each graph node, in the model's order: TabDiff's numerical block
+    (the regression target first: make_dataset's concat_y_to_X), then the categorical
+    block (the classification target first)."""
+    import json
+    i = json.load(open(data_files(target_name(ds), repo_root)["info"]))
+    cols = i["column_names"]
+    num = [cols[k] for k in i["num_col_idx"]]
+    cat = [cols[k] for k in i["cat_col_idx"]]
+    tgt = [cols[k] for k in i["target_col_idx"]]
+    return (tgt + num + cat) if i["task_type"] == "regression" else (num + tgt + cat)
+
+
+def gnn_rule_fields(topk_mode: str = TOPK_MODE) -> dict:
+    """What spec["gnn"] adds for a rule. Empty for "fixed", so the fixed arm's spec is
+    byte-identical to the runs already made."""
+    if topk_mode not in TOPK_MODES:
+        raise ValueError(f"topk_mode must be one of {TOPK_MODES}, got {topk_mode!r}")
+    if topk_mode == "fixed":
+        return {}
+    return {"topk_mode": topk_mode, "k_min": RULE_SETTINGS["k_min"],
+            "topk_warmup_steps": RULE_SETTINGS["topk_warmup_steps"]}
+
+
 def gnn_config(ds: str, repo_root: str = REPO, ablation: str | None = None):
     """(values, sources) of the AttnGNN for ds: the source's GNN configuration
     (study.gnn_config: gnn type, layers, top_k, heads) with d_model = D_MODEL;
@@ -257,22 +305,29 @@ def gnn_config(ds: str, repo_root: str = REPO, ablation: str | None = None):
 
 
 def arm_name(denoiser: str, ds: str | None = None, node_noise: str = NODE_NOISE,
-             repo_root: str = REPO, ablation: str | None = None) -> str:
+             repo_root: str = REPO, ablation: str | None = None, topk_mode: str = TOPK_MODE) -> str:
+    """fixed: ..._topk<k>_... (unchanged); adaptive: the rule replaces topk<k>
+    (..._jenks_... / ..._entmax15_...), so arms never collide."""
     if denoiser == "transformer":
         return "unimodmlp_tabdiff_config"
     if denoiser != "attngnn":
         raise ValueError(f"denoiser must be one of {DENOISERS}")
+    gnn_rule_fields(topk_mode)
+    if topk_mode != "fixed" and ablation is not None:
+        raise ValueError("ablations are defined for the fixed arm only")
     g, _ = gnn_config(ds, repo_root, ablation=ablation)
-    return (f"v2_{g['gnn_type']}_layers{g['n_layers']}_dim{g['d_model']}_topk{g['top_k']}"
+    sel = f"topk{g['top_k']}" if topk_mode == "fixed" else RULE_TAG[topk_mode]
+    return (f"v2_{g['gnn_type']}_layers{g['n_layers']}_dim{g['d_model']}_{sel}"
             f"_heads{g['n_heads']}_dimt{DIM_T}_noise-{node_noise}")
 
 
 def run_dir(exp_root: str, target: str, denoiser: str, seed: int,
-            node_noise: str = NODE_NOISE, repo_root: str = REPO, ablation: str | None = None) -> str:
+            node_noise: str = NODE_NOISE, repo_root: str = REPO, ablation: str | None = None,
+            topk_mode: str = TOPK_MODE) -> str:
     ds = parse_target(target)
     path = os.path.join(results_root(exp_root), target, denoiser,
                         arm_name(denoiser, ds, node_noise=node_noise, repo_root=repo_root,
-                                 ablation=ablation), f"seed{seed}")
+                                 ablation=ablation, topk_mode=topk_mode), f"seed{seed}")
     assert_in_tree(path, exp_root)
     return path
 

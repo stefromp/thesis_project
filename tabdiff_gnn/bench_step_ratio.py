@@ -10,7 +10,9 @@ ROUNDS times alternating, and the median ratio is kept (laptop timings drift). T
 quadratic-in-nodes x quadratic-in-d_model extrapolation; the A100 itself is
 measured by the cluster timing probe (README).
 
-    python tabdiff_gnn/bench_step_ratio.py     # -> hpc_transfer/jobs_tabdiff_gnn/step_ratio_cpu.csv
+    python tabdiff_gnn/bench_step_ratio.py          # -> hpc_transfer/jobs_tabdiff_gnn/step_ratio_cpu.csv
+    python tabdiff_gnn/bench_step_ratio.py --rules  # -> .../step_ratio_rules_cpu.csv: each adaptive
+                                                    #    rule vs fixed, same dataset, same protocol
 """
 from __future__ import annotations
 
@@ -25,17 +27,20 @@ sys.path.insert(0, HERE)
 import config as C  # noqa: E402
 
 OUT = os.path.join(C.REPO, "hpc_transfer", "jobs_tabdiff_gnn", "step_ratio_cpu.csv")
+OUT_RULES = os.path.join(C.REPO, "hpc_transfer", "jobs_tabdiff_gnn", "step_ratio_rules_cpu.csv")
 B, REPS, THREADS, ROUNDS = 1024, 3, 6, 3   # 6 = performance cores of the local M-series CPU
 # reference runs' graphs: same node counts and layer/width/heads as the measured runs
 REFS = {"gatv2": dict(d_num=14, cats=[2] + [10] * 8, gnn="gatv2", L=3, d=128, k=5, h=8),   # default, 23 nodes
         "gcn":   dict(d_num=6, cats=[2] + [10] * 7, gnn="gcn", L=2, d=128, k=5, h=4)}      # adult, 14 nodes
 
 
-def bench(d_num, cats, gnn, L, d, k, h):
+def bench(d_num, cats, gnn, L, d, k, h, topk_mode="fixed"):
     import torch
     from denoiser import AttnGNNDenoiser
     torch.manual_seed(0)
-    m = AttnGNNDenoiser(d_num, [c + 1 for c in cats], d, L, gnn, h, k, dim_t=C.DIM_T)
+    extra = {} if topk_mode == "fixed" else {"topk_mode": topk_mode, "k_min": C.RULE_SETTINGS["k_min"],
+                                             "topk_warmup_steps": C.RULE_SETTINGS["topk_warmup_steps"]}
+    m = AttnGNNDenoiser(d_num, [c + 1 for c in cats], d, L, gnn, h, k, dim_t=C.DIM_T, **extra)
     opt = torch.optim.AdamW(m.parameters(), 1e-3)
     x_num = torch.randn(B, d_num)
     x_cat = torch.cat([torch.nn.functional.one_hot(torch.randint(0, c + 1, (B,)), c + 1).float() for c in cats], 1)
@@ -61,7 +66,46 @@ def bench(d_num, cats, gnn, L, d, k, h):
     return tr, (time.time() - t) / REPS
 
 
+def main_rules() -> int:
+    """Each adaptive rule against fixed on the same dataset (d_model 256, real shapes),
+    alternating ROUNDS times, median ratio."""
+    import statistics
+    import torch
+    import params
+    torch.set_num_threads(THREADS)
+    rows = []
+    for ds in C.ORDER:
+        g, _ = C.gnn_config(ds)
+        d_num, cats, _ = params.shapes(C.target_name(ds))
+        cfg = (d_num, cats, g["gnn_type"], g["n_layers"], g["d_model"], g["top_k"], g["n_heads"])
+        for mode in [m for m in C.TOPK_MODES if m != "fixed"]:
+            tr, ev = [], []
+            for _ in range(ROUNDS):
+                tf, ef = bench(*cfg)
+                ta, ea = bench(*cfg, topk_mode=mode)
+                tr.append(ta / tf)
+                ev.append(ea / ef)
+            med = statistics.median
+            rows.append({"dataset": ds, "topk_mode": mode, "gnn_type": g["gnn_type"],
+                         "nodes": d_num + len(cats), "train_ratio_vs_fixed": round(med(tr), 3),
+                         "eval_ratio_vs_fixed": round(med(ev), 3),
+                         "train_ratio_spread": f"{min(tr):.2f}-{max(tr):.2f}"})
+            print(f"  {ds:9s} {mode:17s} train x{rows[-1]['train_ratio_vs_fixed']:.2f} "
+                  f"({rows[-1]['train_ratio_spread']})  forward x{rows[-1]['eval_ratio_vs_fixed']:.2f}", flush=True)
+    with open(OUT_RULES, "w", newline="") as fh:
+        fh.write(f"# CPU {platform.processor() or platform.machine()}, torch {torch.__version__}, "
+                 f"{THREADS} threads, batch {B}, {REPS} reps x {ROUNDS} alternating rounds (median), "
+                 f"rule vs fixed on the same dataset\n")
+        w = csv.DictWriter(fh, fieldnames=list(rows[0]))
+        w.writeheader()
+        w.writerows(rows)
+    print(f"wrote {OUT_RULES}")
+    return 0
+
+
 def main() -> int:
+    if "--rules" in sys.argv[1:]:
+        return main_rules()
     import torch
     import params
     torch.set_num_threads(THREADS)

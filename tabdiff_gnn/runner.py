@@ -184,10 +184,11 @@ class Target:
         self.files = C.data_files(self.name, repo)
         self.info = _json(self.files["info"])
         self.run = C.run_dir(args.exp_root, self.name, args.denoiser, args.seed,
-                             node_noise=args.node_noise, repo_root=repo, ablation=args.ablation)
+                             node_noise=args.node_noise, repo_root=repo, ablation=args.ablation,
+                             topk_mode=args.topk_mode)
         self.want = entry.spec_for(self.name, args.denoiser, args.seed, node_noise=args.node_noise,
                                    geo_loss=args.geo_loss, geo_edge_bias=args.geo_edge_bias,
-                                   ablation=args.ablation)
+                                   ablation=args.ablation, topk_mode=args.topk_mode)
         self.want["smoke_epochs"] = args.smoke_epochs
         self.stages = list(STAGES)
 
@@ -207,6 +208,13 @@ class Target:
             "variant": C.VARIANT if a.denoiser == "attngnn" else None,
             "arm": os.path.basename(os.path.dirname(self.run)),
             "d_model_rule": self.want.get("d_model_rule"),
+            "topk_mode": a.topk_mode,
+            "rule_settings": self.want.get("rule_settings") or {
+                "topk_mode": "fixed", "top_k": (self.want.get("gnn") or {}).get("top_k"),
+                "rule": "fixed top-k: each node keeps its top_k highest-scoring neighbours"},
+            "k_logging": (None if a.topk_mode == "fixed" else
+                          "topk_k_stats.csv / topk_k_hist.csv in the run dir (tabdiff_gnn/topk_log.py): "
+                          "selected k per (phase, block, t bin, node), t in [0,1] from c_noise"),
             "ablation": (None if a.ablation is None else {
                 "name": a.ablation, **C.ABLATIONS[a.ablation],
                 "main_run_dir": C.run_dir(a.exp_root, self.name, a.denoiser, a.seed,
@@ -268,7 +276,7 @@ class Target:
 )
         if self.want.get("gnn"):
             for k, v in self.want["gnn"].items():
-                print(f"    {k:14s} = {v!r:10}  <- {self.want['gnn_sources'].get(k, 'route-A fixed')}")
+                print(f"    {k:14s} = {v!r:10}  <- {self.want['gnn_sources'].get(k, '--topk_mode (thesis catfix settings)' if k in ('topk_mode', 'k_min', 'topk_warmup_steps') and self.args.topk_mode != 'fixed' else 'route-A fixed')}")
             print(f"    dim_t={self.want['dim_t']}  node_noise={self.want['node_noise']}")
             if self.ds in C.SOURCE_NOTES:
                 print(f"    GNN source {C.SOURCES[self.ds]}: {C.SOURCE_NOTES[self.ds]}")
@@ -290,7 +298,8 @@ def stage_cmd(t: Target, stage: str) -> list:
     if stage == "train":
         cmd = [a.train_python, os.path.join(HERE, "entry.py"), "train", "--target", t.name,
                "--denoiser", a.denoiser, "--seed", str(a.seed), "--run_dir", t.run, "--device", a.device,
-               "--node_noise", a.node_noise] + (["--ablation", a.ablation] if a.ablation else [])
+               "--node_noise", a.node_noise] + (["--ablation", a.ablation] if a.ablation else []) \
+              + (["--topk_mode", a.topk_mode] if a.topk_mode != "fixed" else [])
         if a.geo_loss:
             cmd += ["--geo_loss"]
         if a.geo_edge_bias:
@@ -347,7 +356,7 @@ def run_stage(t: Target, stage: str, ex: Exec) -> None:
     mark_done(t.run, stage, {"n_runs": t.args.n_runs})
 
 
-def instantiate_check(t: "Target") -> dict:
+def instantiate_check(t: "Target", topk_mode: str | None = None) -> dict:
     """Import TabDiff + AttnGNN, build this job's denoiser on the dataset's real
     shapes (TabDiff's own TabDiffDataset) inside Model/Precond, one CPU forward
     pass. Proves the venv can build the model before a GPU is allocated."""
@@ -359,7 +368,13 @@ def instantiate_check(t: "Target") -> dict:
     d_num, cats, _ = params.shapes(t.name)
     raw = entry.load_raw_config()
     up = dict(raw["unimodmlp_params"], d_numerical=d_num, categories=[k + 1 for k in cats])
-    m = build_denoiser(t.want["denoiser"], up, t.want.get("gnn"), dim_t=t.want.get("dim_t") or C.DIM_T,
+    gnn = t.want.get("gnn")
+    if topk_mode is not None and gnn is not None:      # every rule on this dataset's shapes
+        gnn = {**{k: v for k, v in gnn.items() if k not in ("k_min", "topk_warmup_steps")},
+               "topk_mode": "fixed", **C.gnn_rule_fields(topk_mode)}
+        if topk_mode != "fixed":
+            import entmax  # noqa: F401  (adaptive_entmax15 needs it; fail here, not in a GPU job)
+    m = build_denoiser(t.want["denoiser"], up, gnn, dim_t=t.want.get("dim_t") or C.DIM_T,
                        node_noise=t.want.get("node_noise") or "shared")
     model = Model(m, **raw["diffusion_params"]["edm_params"])
     B = 4
@@ -390,6 +405,10 @@ def run_job(args, ex: Exec = None) -> int:
             r = instantiate_check(t)
             print(f"  [DRY RUN] built {r['denoiser']} ({r['params']:,} parameters) on the real shapes "
                   f"inside Model/Precond; forward: {r['forward']}")
+            if args.check_all_rules and args.denoiser == "attngnn":
+                for mode in C.TOPK_MODES:
+                    r = instantiate_check(t, topk_mode=mode)
+                    print(f"  [DRY RUN] rule {mode:17s}: built + forward {r['forward']}")
         return 0
     t.meta()
     only = set(args.stages.split(",")) if args.stages else None
@@ -423,6 +442,10 @@ def make_parser():
     ap.add_argument("--node_noise", choices=C.NODE_NOISE_CHOICES, default=C.NODE_NOISE)
     ap.add_argument("--ablation", choices=sorted(C.ABLATIONS), default=None,
                     help="NOT the main protocol: a one-change ablation (config.ABLATIONS), own run path")
+    ap.add_argument("--topk_mode", choices=C.TOPK_MODES, default=C.TOPK_MODE,
+                    help="neighbour-selection rule: fixed (main arm) | adaptive_jenks | adaptive_entmax15")
+    ap.add_argument("--check_all_rules", action="store_true",
+                    help="with --dry_run: also build + run the denoiser with every rule (imports entmax)")
     ap.add_argument("--geo_loss", action="store_true", help="reserved hook, default off (not implemented)")
     ap.add_argument("--geo_edge_bias", action="store_true", help="reserved hook, default off (not implemented)")
     ap.add_argument("--stages", default=None,

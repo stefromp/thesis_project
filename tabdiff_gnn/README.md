@@ -8,7 +8,7 @@ TabDiff ([MinkaiXu/TabDiff](https://github.com/MinkaiXu/TabDiff) @ `5ecdb33`, `t
 - `Trainer`: training loop, EMA, best-EMA checkpoint after epoch 4000, 50-step sampler.
 - `TabDiffDataset` and `TabMetrics`.
 
-One thing is substituted: the denoiser. **One configuration is run: AttnGNN V2 with `d_model` 256 on all 7 datasets** (magic, shoppers, adult, default, beijing, news, diabetes).
+One thing is substituted: the denoiser. **One configuration is run: AttnGNN V2 with `d_model` 256 on all 7 datasets** (magic, shoppers, adult, default, beijing, news, diabetes). Its neighbour-selection rule comes in three arms: the main **fixed** top-k arm, plus **adaptive_jenks** and **adaptive_entmax15** (see "Adaptive neighbour-selection arms" below). Everything except the rule is identical across the arms.
 
 **TabDiff itself is not re-run.** We compare against the reported TabDiff numbers:
 - primary: GATD's re-run of TabDiff, 3 training seeds × 20 tables, whose std includes retraining variance;
@@ -110,7 +110,8 @@ Each news `run_meta.json` records `trainer: resumable copy …` and `trainer_evi
 | file | role |
 |---|---|
 | `config.py` | datasets, arms, names, trees, Route-A + study TabDiff pins, tabpc pins, deviations |
-| `denoiser.py` | `build_denoiser("transformer" \| "attngnn")`, `AttnGNNDenoiser` (V2) |
+| `denoiser.py` | `build_denoiser("transformer" \| "attngnn")`, `AttnGNNDenoiser` (V2), `t_from_c_noise` |
+| `topk_log.py` | `KStatsLogger`: selected-neighbour count k per node and block, in 10 bins of t ∈ [0, 1] (adaptive arms) |
 | `entry.py` | thin entry point, `train` / `sample`; mirrors `tabdiff/main.py` |
 | `evaluate.py` | TabDiff evaluation (main / quality) via the study's `tabdiff_eval.py` |
 | `tabpc_eval.py` | wNMIS and C2ST (XGB) with tabpc's own classes (tabpc venv) |
@@ -123,22 +124,29 @@ Each news `run_meta.json` records `trainer: resumable copy …` and `trainer_evi
 | `bench_step_ratio.py` | CPU cost of each d256 AttnGNN relative to the A100-measured reference GNN → `jobs_tabdiff_gnn/step_ratio_cpu.csv` (drives the walltime estimates) |
 | `analysis/tabdiff/compare.py --route_a` | `ROUTE_A.md`: a Reference note (TabDiff reported, not reproduced; GATD primary, paper secondary; the bit-identity tests), then reported TabDiff vs computed AttnGNN d256 per metric, then parameter counts |
 
-Results go to `$TRANSFER_ROOT/exp_tabdiff_gnn/tabdiff_<ds>/<denoiser>/<arm>/seed<s>/`:
+Results go to `$TRANSFER_ROOT/exp_tabdiff_gnn/tabdiff_<ds>/<denoiser>/<arm>/seed<s>/` (the adaptive arms put the rule in `<arm>` in place of `topk<k>`):
 
 - `route_a_spec.json`, `run_meta.json`
 - `train_record.json`, `train_log.csv`, `ckpt/{config.pkl,best_ema_model_*}`
 - `samples/samples_<k>.csv`, `sample_record.json`
 - `tabdiff_eval/{all_results,avg_std,mle2,quality}.csv`, `eval_meta.json`
 - `tabpc_eval/{tabpc_results,avg_std}.csv`, `tabpc_meta.json`
+- `topk_k_stats.csv`, `topk_k_hist.csv` (adaptive arms only)
 - `stages/*.done`
 
 ## Install (cluster, `module load python/3.10`)
 
-Training and sampling run in the **eval venv** (`venvs/tabdiff_eval310`, see `hpc_transfer/tabdiff_study/README.md`). That venv already holds TabDiff's own package set: torch 2.2.2 cu118, category_encoders, icecream, tomli, sdmetrics. The synthcity venv is unchanged. One new venv is needed for tabpc:
+Training and sampling run in the **eval venv** (`venvs/tabdiff_eval310`, see `hpc_transfer/tabdiff_study/README.md`). That venv already holds TabDiff's own package set: torch 2.2.2 cu118, category_encoders, icecream, tomli, sdmetrics. Route A needs a few more packages there and in the synthcity venv, and one new venv for tabpc:
 
 ```bash
 module purge; module load python/3.10
 HPC_ROOT=/work/pr019/atvoulo/Rompos
+# eval venv (TabDiff training env): the adaptive_entmax15 rule, TabDiff's src.dump_config, figures
+$HPC_ROOT/venvs/tabdiff_eval310/bin/pip install entmax==1.3 tomli_w matplotlib
+# synthcity venv: torchvision matching torch 2.2.2, installed AFTER synthcity, without touching torch
+$HPC_ROOT/venvs/tabdiff_synthcity310/bin/pip install --no-deps torchvision==0.17.2+cpu \
+    --index-url https://download.pytorch.org/whl/cpu
+# tabpc venv (new)
 python -m venv $HPC_ROOT/venvs/tabpc310
 P=$HPC_ROOT/venvs/tabpc310/bin/pip
 $P install --upgrade pip
@@ -184,8 +192,10 @@ GPU="--partition=gpu --gres=${GRES} --cpus-per-task=26 --mem=120G"   # GRES: see
 
 # 1. login node, eval venv: digests, data, every job's spec, and each arm's denoiser
 #    imported + built on the real shapes + one CPU forward pass (a missing package fails here)
+#    (--check_all_rules: also imports entmax and builds the denoiser with fixed, jenks and entmax15)
 for d in magic shoppers adult default beijing news diabetes; do
-  $EV tabdiff_gnn/runner.py --dataset $d --denoiser attngnn --exp_root $HPC_ROOT/transfer_runs --dry_run | grep "DRY RUN"
+  $EV tabdiff_gnn/runner.py --dataset $d --denoiser attngnn --exp_root $HPC_ROOT/transfer_runs --dry_run \
+      --check_all_rules | grep "DRY RUN"
 done
 $EV -m pytest -q tests/test_tabdiff_gnn.py            # if pytest is in the venv
 
@@ -219,13 +229,13 @@ ROUTE_A_RESUME_DEVICE=cuda:0 srun $GPU --time=00:30:00 $EV -m pytest -q -s tests
 
 The job scripts in `hpc_transfer/jobs_tabdiff_gnn/` follow `hpc_transfer/jobs/` exactly:
 - the same header: `--cpus-per-task=26`, `--mem=120G`, `--partition=gpu`;
-- the same **TODO(GPU)** block, with the GRES line commented out (`gpu:a100:1` is rejected on the cluster). Pass `--gres="${GRES}"` on the sbatch command line, or fill it in once;
+- the same **TODO(GPU)** block, with the GRES line commented out (copied verbatim from `hpc_transfer/jobs`). The gpu partition needs `--gres`, so **every sbatch line in the submission loop passes `--gres=gpu:a100:1 --mem=24G --time=<estimate>`**; command-line flags override the scripts' `#SBATCH` directives;
 - the cluster template's OMP and module block;
 - paths overridable from the environment, `cd` to the repo root, and one sourced function (`run_route_a` from `common_tabdiff_gnn.sh`).
 
-There is **one script per dataset**, `<ds>_tabdiff_gnn.sh`. The training seed is `SEED` (default 0), as in `hpc_transfer/jobs`.
+There is **one script per dataset and rule**: `<ds>_tabdiff_gnn.sh` (fixed), `<ds>_tabdiff_gnn_jenks.sh`, `<ds>_tabdiff_gnn_entmax15.sh`. The training seed is `SEED` (default 0), as in `hpc_transfer/jobs`.
 
-News has two scripts: `news_tabdiff_gnn_train.sh`, which uses the resumable trainer with a 46.5 h budget and a 48 h walltime, and `news_tabdiff_gnn_sample_eval.sh`.
+News has two scripts per rule: `news_tabdiff_gnn[_<rule>]_train.sh`, which uses the resumable trainer with a 46.5 h budget and a 48 h walltime, and `news_tabdiff_gnn[_<rule>]_sample_eval.sh`.
 
 `hpc_transfer/submit_tabdiff_gnn.sh` lists the sbatch lines, every one commented out, behind an `exit 0` guard, as `submit_all.sh` does. Uncomment one block at a time:
 
@@ -235,7 +245,8 @@ News has two scripts: `news_tabdiff_gnn_train.sh`, which uses the resumable trai
    - Then `news_tabdiff_gnn_sample_eval.sh`.
 
    If training needs more parts than planned, the sample_eval job refuses to start ("stage 'train' is not done"). Submit the train script once more (it resumes), then sample_eval. Or regenerate with `--probe`.
-3. Seeds 1 and 2, double-commented (`##`), only after confirmation: `SEED=1 sbatch --job-name=<ds>_tabdiff_gnn_s1 --output=… --error=…`, so the seeds don't share one log.
+3. Rule arm adaptive_jenks, seed 0, then 4. adaptive_entmax15, seed 0, each in the order beijing, magic, shoppers, adult, default, diabetes, news (news as the same train ×2 → sample_eval chain).
+5. Seeds 1 and 2 of every arm, double-commented (`##`), only after confirmation: `SEED=1 sbatch --job-name=<ds>_tabdiff_gnn_s1 --output=… --error=…`, so the seeds don't share one log.
 
 No TabDiff (transformer) jobs, and no DCR.
 
@@ -253,7 +264,57 @@ Estimate per seed (hours on one A100, before the ×1.3 walltime margin; `jobs_ta
 | **seed 0** | | | | **≈ 101** | |
 | seeds 1 + 2 | | | | ≈ 201 more | |
 
-Every job script asks for `--time=48:00:00`; the per-job estimate is in its header comment. The train estimate is the A100-measured reference step time × the CPU-measured cost ratio (`step_ratio_cpu.csv`). Replace it with the probe's s/epoch via `--probe`.
+The fixed arm's scripts keep `#SBATCH --time=48:00:00` (unchanged since its seed-0 runs); the rule scripts carry the estimate × 1.3 (min 2 h; 48 h per resumable news part), and every submission line passes that `--time`. The per-job estimate is in each header comment. The train estimate is the A100-measured reference step time × the CPU-measured cost ratio (`step_ratio_cpu.csv`). Replace it with the probe's s/epoch via `--probe`.
+
+## Adaptive neighbour-selection arms (adaptive_jenks, adaptive_entmax15)
+
+`--topk_mode {fixed, adaptive_jenks, adaptive_entmax15}` (runner, entry, make_jobs; default `fixed`) selects the rule in every `DynamicAdjacency`. The rules are the thesis implementations (`adaptive_adjacency.py`, `tab_ddpm/graph_builder.py`), imported unchanged, with the settings of the thesis catfix runs (`transfer_runs/exp/*/ablation_adaptive_{jenks,entmax15}_catfix/*/run_meta.json`, all 16 identical):
+
+| setting | adaptive_jenks | adaptive_entmax15 |
+|---|---|---|
+| selection | plain 2-class Jenks natural-breaks split of the sorted off-diagonal scores | support of entmax-1.5 over the off-diagonal scores |
+| edge weights | sigmoid(score) on kept edges | sigmoid(score) on kept edges |
+| k_i range | [1, F−2] (ties kept) | [k_min, F−1] |
+| use_gate_rule / delta | False / — | — |
+| entmax_alpha | — | 1.5 |
+| k_min | 1 | 1 |
+| topk_warmup_steps | 0 | 0 |
+| TOPK_LOG_EVERY | 100 | 100 |
+| cat_input / use_attention | prob / False (as the fixed arm) | prob / False |
+
+**The source config's `top_k` is not used by either rule**: with `topk_warmup_steps 0` the fixed top-k is never applied (the thesis runs record it as "used only during warm-up and in the directory name"). Here it is not in the directory name either: the rule tag replaces `topk<k>`, so the arms never collide, and `route_a_spec.json` notes it as unused.
+
+- **Paths:** fixed unchanged, `…/v2_gcn_layers2_dim256_topk5_heads4_dimt128_noise-shared/seed0`; rules `…/v2_gcn_layers2_dim256_<jenks|entmax15>_heads4_dimt128_noise-shared/seed0`.
+- **`run_meta.json`** records `topk_mode`, `rule_settings` (all of the above) and `k_logging`. The fixed arm's spec has no rule fields, so its existing `route_a_spec.json` still matches.
+- **Per-t k logging** (`topk_log.py`): TabDiff passes c_noise = log σ/4, not an integer step. The logger recovers t ∈ [0, 1] by inverting Precond's ρ-7 schedule and writes the selected k (mean/min/max per node, per block) in 10 bins of t, plus the distribution of k, to `topk_k_stats.csv` / `topk_k_hist.csv`. Phase `train` = every 100th training forward; `sample` = every sampling forward. Observation only: outputs are identical with logging on or off (tested). DynamicAdjacency's own per-t logging (which assumes integer t) gets `timesteps=None` for the rule arms; the fixed arm's call is unchanged.
+- **entmax** (`entmax==1.3`) is needed in the eval venv. The job preflight imports it and `--dry_run --check_all_rules` builds the denoiser with each rule, so a missing package fails on the login node.
+
+**Cost** (`bench_step_ratio.py --rules` → `jobs_tabdiff_gnn/step_ratio_rules_cpu.csv`; CPU, batch 1024, median of 3 alternating rounds, same dataset):
+
+| dataset | jenks train | jenks forward | entmax15 train | entmax15 forward |
+|---|---|---|---|---|
+| magic | ×1.00 | ×1.01 | ×1.00 | ×1.02 |
+| shoppers | ×0.99 | ×1.02 | ×1.01 | ×1.06 |
+| adult | ×1.01 | ×1.01 | ×1.01 | ×1.03 |
+| default | ×0.99 | ×1.00 | ×1.00 | ×1.02 |
+| beijing | ×1.03 | ×1.00 | ×1.01 | ×1.01 |
+| news | ×1.00 | ×1.02 | ×1.06 | ×1.01 |
+| diabetes | ×1.02 | ×1.05 | ×1.03 | ×1.09 |
+
+**GPU hours per seed** (A100 estimate before the ×1.3 margin → `--time`):
+
+| dataset | fixed | jenks | entmax15 | rule job `--time` |
+|---|---|---|---|---|
+| beijing | 6.9 | 7.0 | 7.0 | 10 h |
+| magic | 3.2 | 3.2 | 3.2 | 5 h |
+| shoppers | 2.6 | 2.6 | 2.6 | 4 h |
+| adult | 4.2 | 4.2 | 4.2 | 6 h |
+| default | 12.5 | 12.4 | 12.5 | 17 h |
+| diabetes | 15.3 | 15.6 | 15.8 | 21 h |
+| news | 55.9 | 56.3 | 58.5 | 48 h + 48 h + 5 h (chain) |
+| **seed 0** | 100.6 (done) | **101.3** | **103.8** | |
+
+New seed-0 work: 205.1 GPU-h. Seeds 1 + 2 of all three arms: 611.3 GPU-h more.
 
 ## Diagnosis of the seed-0 results (beijing, magic) — CPU, no new runs
 

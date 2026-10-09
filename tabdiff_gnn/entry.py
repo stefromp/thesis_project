@@ -121,7 +121,7 @@ def load_raw_config():
 
 
 def spec_for(target: str, denoiser: str, seed: int, node_noise=C.NODE_NOISE,
-             geo_loss=False, geo_edge_bias=False, ablation=None) -> dict:
+             geo_loss=False, geo_edge_bias=False, ablation=None, topk_mode=C.TOPK_MODE) -> dict:
     """Everything that defines the model besides TabDiff's toml (route_a_spec.json)."""
     ds = C.parse_target(target)
     spec = {"study": C.STUDY, "target": target, "tabdiff_dataname": C.tabdiff_dataname(target),
@@ -129,9 +129,18 @@ def spec_for(target: str, denoiser: str, seed: int, node_noise=C.NODE_NOISE,
             "trainer": C.TRAINER[ds], "ablation": ablation}
     if ablation is not None and denoiser != "attngnn":
         raise ValueError("ablations are defined for the attngnn denoiser only")
+    if topk_mode != "fixed" and denoiser != "attngnn":
+        raise ValueError("--topk_mode is an attngnn option")
+    if topk_mode != "fixed" and ablation is not None:
+        raise ValueError("ablations are defined for the fixed arm only")
     if denoiser == "attngnn":
         g, src = C.gnn_config(ds, ablation=ablation)
-        spec.update({"variant": C.VARIANT, "gnn": {**g, **C.GNN_FIXED}, "gnn_sources": src,
+        rule = C.gnn_rule_fields(topk_mode)             # {} for fixed: spec unchanged
+        if rule:
+            src = {**src, "top_k": f"unused by {topk_mode} (topk_warmup_steps 0); source value "
+                                   f"{g['top_k']} from {src['top_k']}"}
+            spec["rule_settings"] = {**C.RULE_SETTINGS, **C.RULE_DETAILS[topk_mode], "topk_mode": topk_mode}
+        spec.update({"variant": C.VARIANT, "gnn": {**g, **C.GNN_FIXED, **rule}, "gnn_sources": src,
                      "gnn_source_dataset": C.SOURCES[ds], "dim_t": C.DIM_T, "node_noise": node_noise,
                      "d_model_rule": f"{C.D_MODEL} on every dataset"})
     else:
@@ -141,7 +150,7 @@ def spec_for(target: str, denoiser: str, seed: int, node_noise=C.NODE_NOISE,
 
 def build(spec: dict, raw_config: dict, device: str, mode: str, run_dir: str,
           ckpt_path: str | None = None, trainer_cls=None, trainer_kwargs=None, files=None,
-          num_workers: int = 4, log_append: bool = False):
+          num_workers: int = 4, log_append: bool = False, k_logging: bool = True):
     """main.py:116-259 for one target; returns (trainer, diffusion, backbone, raw_config).
     trainer_cls: None = TabDiff's Trainer (every dataset but news); resumable.ResumableTrainer
     for news. files / num_workers: tests only (a data subset, no worker processes)."""
@@ -186,6 +195,17 @@ def build(spec: dict, raw_config: dict, device: str, mode: str, run_dir: str,
                               dim_t=spec.get("dim_t") or C.DIM_T,
                               node_noise=spec.get("node_noise") or "shared",
                               geo_loss=spec["geo_loss"], geo_edge_bias=spec["geo_edge_bias"])
+    gnn = spec.get("gnn") or {}
+    if k_logging and gnn.get("topk_mode", "fixed") != "fixed":
+        # adaptive arms: per-node selected-k statistics vs t (observation only, topk_log.py)
+        from topk_log import KStatsLogger
+        cols = C.model_node_columns(C.parse_target(spec["target"]))
+        KStatsLogger(len(cols), len(backbone.blocks), cols,
+                     log_every=(spec.get("rule_settings") or {}).get("topk_log_every", 100),
+                     eval_phase=None,
+                     # sampling: every forward is "sample" (cmd_sample, like before, does not
+                     # call diffusion.eval(); outputs are mode-independent, see topk_log.py)
+                     force_phase=None if mode == "train" else "sample").attach(backbone)
     model = Model(backbone, **raw_config["diffusion_params"]["edm_params"])
     model.to(device)
 
@@ -238,7 +258,7 @@ def cmd_train(a) -> int:
     job_start = time.time()
     C.verify_tabdiff()
     spec = spec_for(a.target, a.denoiser, a.seed, node_noise=a.node_noise, geo_loss=a.geo_loss,
-                    geo_edge_bias=a.geo_edge_bias, ablation=a.ablation)
+                    geo_edge_bias=a.geo_edge_bias, ablation=a.ablation, topk_mode=a.topk_mode)
     spec["smoke_epochs"] = a.smoke_epochs
     os.makedirs(a.run_dir, exist_ok=True)
     resumable = spec["trainer"] == "resumable"
@@ -289,6 +309,8 @@ def cmd_train(a) -> int:
     t0, w0 = _now(), time.time()
     trainer.run_loop()
     trainer.logger.close()
+    if getattr(backbone, "k_logger", None) is not None:
+        backbone.k_logger.write(a.run_dir)               # merged: safe across resumed segments
     segment = {"start_epoch": getattr(trainer, "resumed_from_epoch", 0), "end_epoch": trainer.curr_epoch,
                "started_utc": t0, "finished_utc": _now(), "wall_s": round(time.time() - w0, 1),
                "paused": bool(getattr(trainer, "paused_at", None)), "n_state_saves": getattr(trainer, "n_saves", 0),
@@ -356,6 +378,8 @@ def cmd_sample(a) -> int:
         del syn_df
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+    if getattr(backbone, "k_logger", None) is not None:
+        backbone.k_logger.write(a.run_dir)
     with open(os.path.join(a.run_dir, "sample_record.json"), "w") as fh:
         json.dump({"checkpoint": os.path.basename(ckpt), "rows_per_table": n, "n_tables": a.n_tables,
                    "generation_seeds": list(range(a.n_tables)), "seconds_per_table": times,
@@ -374,6 +398,8 @@ def make_parser():
     t.add_argument("--run_dir", required=True)
     t.add_argument("--device", default="cuda:0")
     t.add_argument("--node_noise", choices=C.NODE_NOISE_CHOICES, default=C.NODE_NOISE)
+    t.add_argument("--topk_mode", choices=C.TOPK_MODES, default=C.TOPK_MODE,
+                   help="neighbour-selection rule: fixed (main arm) | adaptive_jenks | adaptive_entmax15")
     t.add_argument("--ablation", choices=sorted(C.ABLATIONS), default=None,
                    help="NOT the main protocol: one-change ablation (config.ABLATIONS)")
     t.add_argument("--geo_loss", action="store_true", help="reserved hook (not implemented)")

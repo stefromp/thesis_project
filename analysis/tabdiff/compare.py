@@ -188,7 +188,11 @@ def markdown(long: pd.DataFrame, prov: dict, exp_root: str) -> str:
 # TabDiff is not re-run: reported references (GATD's 3x20 re-run = primary,
 # TabDiff paper = secondary, tabpc's 5x1 for wNMIS / C2ST-XGB) vs the one
 # computed arm, TabDiff + AttnGNN with d_model 256.
-RA_ARM = ("attngnn", "computed: TabDiff + AttnGNN (d_model 256)")
+RA_ARM = ("attngnn", "computed: TabDiff + AttnGNN (d_model 256)")     # the fixed arm (kept for callers)
+# the neighbour-selection rule is a dimension: (topk_mode, column label)
+RA_ARMS = [("fixed", "computed: AttnGNN d256, fixed top-k"),
+           ("adaptive_jenks", "computed: AttnGNN d256, Jenks"),
+           ("adaptive_entmax15", "computed: AttnGNN d256, entmax-1.5")]
 RA_REFS = [("gatd", "reported: TabDiff, GATD re-run (3 seeds × 20 tables) — primary"),
            ("paper", "reported: TabDiff paper (1 model × 20 tables) — secondary"),
            ("tabpc", "reported: TabDiff, tabpc re-run (5 models × 1 table)")]
@@ -271,12 +275,12 @@ def ra_computed(exp_root: str):
     """Pooled over seeds: mean and std (ddof=1) over all tables of all seeds found
     (GATD: 3 seeds x 20 tables), plus the std of the per-seed means."""
     RC, _ = _ra_imports()
-    denoiser, label = RA_ARM
+    denoiser = RA_ARM[0]
     rows, prov, params = [], {}, {}
-    for ds in RA_DS:
+    for (mode, label), ds in [(arm, ds) for arm in RA_ARMS for ds in RA_DS]:
         per_metric = {}
         for seed in RC.TRAIN_SEEDS:
-            run = RC.run_dir(exp_root, RC.target_name(ds), denoiser, seed)
+            run = RC.run_dir(exp_root, RC.target_name(ds), denoiser, seed, topk_mode=mode)
             if not os.path.isdir(run):
                 continue
             meta_p = os.path.join(run, "run_meta.json")
@@ -285,18 +289,19 @@ def ra_computed(exp_root: str):
                 continue                                       # never report smoke runs
             v = ra_tables(run)
             if v:
-                prov[f"{ds}/seed{seed}"] = {"run": os.path.relpath(run, REPO),
+                prov[f"{mode}/{ds}/seed{seed}"] = {"run": os.path.relpath(run, REPO),
                                             **{k: meta.get(k) for k in ("git_commit", "tabdiff", "param_counts",
                                                                         "denoiser", "variant", "gnn",
                                                                         "train_record")}}
-                if meta.get("param_counts"):
+                if meta.get("param_counts") and mode == "fixed":
                     params[ds] = meta["param_counts"]["denoiser_total"]
             for k, arr in v.items():
                 per_metric.setdefault(k, []).append(arr)
         for k, arrs in per_metric.items():
             allv = np.concatenate(arrs)
             seed_means = [float(np.mean(a)) for a in arrs]
-            rows.append(dict(dataset=ds, metric=k, method=label, kind="computed", mean=float(np.mean(allv)),
+            rows.append(dict(dataset=ds, metric=k, method=label, topk_mode=mode, kind="computed",
+                             mean=float(np.mean(allv)),
                              std=float(np.std(allv, ddof=1)) if len(allv) > 1 else np.nan,
                              std_seed_means=float(np.std(seed_means, ddof=1)) if len(arrs) > 1 else np.nan,
                              n=len(allv), n_seeds=len(arrs), source=label))
@@ -333,9 +338,9 @@ def ra_long_reported() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def ra_markdown(comp: pd.DataFrame, params: dict, static: dict, exp_root: str) -> str:
+def ra_markdown(comp: pd.DataFrame, params: dict, static: dict, exp_root: str, kfigs=None,
+                out_dir: str = HERE) -> str:
     RC, RG = _ra_imports()
-    label = RA_ARM[1]
     out = ["# Route A: AttnGNN as the denoiser inside TabDiff", "",
            f"_Generated {dt.datetime.now().strftime('%Y-%m-%d %H:%M')} by `analysis/tabdiff/compare.py --route_a` "
            f"from `{os.path.relpath(RC.results_root(exp_root), REPO)}`._", "",
@@ -347,6 +352,9 @@ def ra_markdown(comp: pd.DataFrame, params: dict, static: dict, exp_root: str) -
            "- **The framework is TabDiff's.** Only the denoiser differs: with `denoiser=transformer` our "
            "wrapper gives bit-identical parameters and outputs to TabDiff's `UniModMLP`, and our entry point "
            "builds bit-for-bit the model `tabdiff/main.py` builds (`tests/test_tabdiff_gnn.py`).",
+           "- **Neighbour-selection rule** is a dimension: fixed top-k (the main arm), Jenks (plain 2-class "
+           "split, k_i in [1, F-2]) and entmax-1.5 (support, k_i in [1, F-1]); same model, protocol and "
+           "evaluation otherwise; rule settings as the thesis catfix runs (k_min 1, warm-up 0).",
            f"- **Ours (computed):** TabDiff + AttnGNN V2, d_model {RC.D_MODEL} on every dataset; mean ± std "
            "(ddof=1) pooled over all tables of all training seeds found (target 3 × 20); `n` = tables, `s` = "
            "seeds. No DCR in this study.", ""]
@@ -354,20 +362,29 @@ def ra_markdown(comp: pd.DataFrame, params: dict, static: dict, exp_root: str) -
     for key, title, dec in RA_METRICS:
         refs_here = [r for r in RA_REFS if any(r[0] in ra_reference(key, ds, RC.TASK[ds]) for ds in RA_DS)]
         out += [f"### {title}", "",
-                "| dataset | " + " | ".join(r[1] for r in refs_here) + f" | {label} |",
-                "|---|" + "---|" * (len(refs_here) + 1)]
+                "| dataset | " + " | ".join(r[1] for r in refs_here) + " | "
+                + " | ".join(a[1] for a in RA_ARMS) + " |",
+                "|---|" + "---|" * (len(refs_here) + len(RA_ARMS))]
         for ds in RA_DS:
             refs = ra_reference(key, ds, RC.TASK[ds])
             cells = [_cell(*refs[r[0]], dec) if r[0] in refs else "—" for r in refs_here]
-            r = comp[(comp.dataset == ds) & (comp.metric == key)] if len(comp) else comp
-            if len(r):
-                r = r.iloc[0]
-                cells.append(_cell(r["mean"], r["std"], dec, f" (n={int(r['n'])}, s={int(r['n_seeds'])})"))
-            else:
-                cells.append("—")
+            for _, alabel in RA_ARMS:
+                r = (comp[(comp.dataset == ds) & (comp.metric == key) & (comp.method == alabel)]
+                     if len(comp) else comp)
+                if len(r):
+                    r = r.iloc[0]
+                    cells.append(_cell(r["mean"], r["std"], dec, f" (n={int(r['n'])}, s={int(r['n_seeds'])})"))
+                else:
+                    cells.append("—")
             out.append(f"| {ds} | " + " | ".join(cells) + " |")
         out.append("")
-    out += ["## Parameter counts (denoiser)", "",
+    if kfigs:
+        out += ["## Selected k per node vs t (adaptive rules)", "",
+                "Mean selected k of each node (lines) over the diffusion time t in [0, 1] (recovered from "
+                "TabDiff's c_noise), averaged over blocks; sampling-phase statistics where present, else "
+                "training (`topk_k_stats.csv` in each run dir, tabdiff_gnn/topk_log.py).", ""]
+        out += [f"![{os.path.basename(f)}]({os.path.relpath(f, out_dir)})" for f in kfigs] + [""]
+    out += ["## Parameter counts (denoiser; identical for every rule -- the rules add no parameters)", "",
             f"| dataset | AttnGNN (d_model {RC.D_MODEL}) | TabDiff UniModMLP | ratio | reported: TabDiff (GATD Table 16) |",
             "|---|---|---|---|---|"]
     for ds in RA_DS:
@@ -383,9 +400,62 @@ def ra_markdown(comp: pd.DataFrame, params: dict, static: dict, exp_root: str) -
     return "\n".join(out)
 
 
+def ra_k_figures(exp_root: str, out_dir: str, seed: int = 0) -> list:
+    """One figure per dataset with results: selected k per node vs t, one panel per adaptive rule."""
+    RC, _ = _ra_imports()
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    figs = []
+    rules = [m for m, _ in RA_ARMS if m != "fixed"]
+    for ds in RA_DS:
+        data = {}
+        for mode in rules:
+            p = os.path.join(RC.run_dir(exp_root, RC.target_name(ds), "attngnn", seed, topk_mode=mode),
+                             "topk_k_stats.csv")
+            if os.path.exists(p):
+                t = pd.read_csv(p)
+                phase = "sample" if (t.phase == "sample").any() else "train"
+                t = t[t.phase == phase]
+                g = t.groupby(["column", "t_bin"]).agg(n=("n", "sum"), k=("k_sum", "sum")).reset_index()
+                g["k_mean"] = g["k"] / g["n"]
+                g["t"] = (g["t_bin"] + 0.5) / 10
+                data[mode] = (g, phase)
+        if not data:
+            continue
+        fig, axes = plt.subplots(1, len(rules), figsize=(6 * len(rules), 4), squeeze=False)
+        for ax, mode in zip(axes[0], rules):
+            if mode not in data:
+                ax.set_title(f"{ds} / {mode}: no results")
+                ax.axis("off")
+                continue
+            g, phase = data[mode]
+            colors, styles = plt.cm.tab20.colors, ["-", "--", ":"]
+            groups = list(g.groupby("column"))
+            for i, (col, gg) in enumerate(groups):
+                ax.plot(gg["t"], gg["k_mean"], marker=".", lw=1, label=col, color=colors[i % 20],
+                        ls=styles[(i // 20) % 3])
+            ax.set_xlabel("diffusion time t (0 = clean, 1 = noise)")
+            ax.set_ylabel("selected k (mean over blocks)")
+            ax.set_title(f"{ds} / {mode} ({phase})", fontsize=9)
+            if len(groups) <= 24:
+                ax.legend(fontsize=6, ncol=2)
+            else:
+                ax.text(0.01, 0.01, f"{len(groups)} nodes; legend omitted (topk_k_stats.csv)",
+                        transform=ax.transAxes, fontsize=7)
+        fig.tight_layout()
+        os.makedirs(os.path.join(out_dir, "figures"), exist_ok=True)
+        f = os.path.join(out_dir, "figures", f"route_a_k_vs_t_{ds}.png")
+        fig.savefig(f, dpi=120)
+        plt.close(fig)
+        figs.append(f)
+    return figs
+
+
 def route_a_main(exp_root: str, out_dir: str) -> int:
     comp, prov, params = ra_computed(exp_root)
-    md = ra_markdown(comp, params, ra_static_params(), exp_root)
+    kfigs = ra_k_figures(exp_root, out_dir)
+    md = ra_markdown(comp, params, ra_static_params(), exp_root, kfigs, out_dir)
     pd.concat([ra_long_reported(), comp], ignore_index=True).to_csv(
         os.path.join(out_dir, "route_a_long.csv"), index=False)
     with open(os.path.join(out_dir, "route_a_provenance.json"), "w") as fh:

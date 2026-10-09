@@ -14,6 +14,9 @@
 #   STAGES          comma list of the stages this job runs, in order:
 #                   train, sample, eval_main, eval_quality, eval_tabpc
 #                   (all five, or one part of a chain)
+#   TOPK_MODE       unset/fixed = the main arm; adaptive_jenks | adaptive_entmax15 for the rule arms
+#                   (with TOPK_WARMUP_STEPS, K_MIN, TOPK_LOG_EVERY, which must keep the thesis
+#                   values fixed in tabdiff_gnn/config.py RULE_SETTINGS -- the preflight checks)
 #   ABLATION        empty for the main runs; a tabdiff_gnn/config.py ABLATIONS name for an
 #                   ablation job (own run path, recorded in run_meta.json)
 #   TRAIN_BUDGET_H  news' resumable training only: hours after which the run state
@@ -33,6 +36,10 @@ _route_a_args() {
              --exp_root "${TRANSFER_ROOT}" --repo_root "${REPO_ROOT}")
     if [ -n "${TRAIN_BUDGET_H:-}" ]; then RA_ARGS+=(--train_budget_h "${TRAIN_BUDGET_H}"); fi
     if [ -n "${ABLATION:-}" ]; then RA_ARGS+=(--ablation "${ABLATION}"); fi
+    # neighbour-selection rule (unset or "fixed" = the main fixed arm, unchanged call)
+    if [ -n "${TOPK_MODE:-}" ] && [ "${TOPK_MODE}" != "fixed" ]; then
+        RA_ARGS+=(--topk_mode "${TOPK_MODE}")
+    fi
     # LOCAL MOCK ONLY (never set on the cluster): shortened training / fewer tables
     if [ -n "${ROUTE_A_MOCK_EPOCHS:-}" ]; then
         RA_ARGS+=(--smoke_epochs "${ROUTE_A_MOCK_EPOCHS}" --n_runs "${ROUTE_A_MOCK_RUNS:-2}")
@@ -46,7 +53,7 @@ _route_a_args() {
 # imports TabDiff + our AttnGNN; the synthcity and tabpc venvs carry their pins.
 route_a_preflight() {
     _route_a_args
-    if ! "${PYTHON_BIN}" "${REPO_ROOT}/${TG_DIR}/runner.py" "${RA_ARGS[@]}" --dry_run; then
+    if ! "${PYTHON_BIN}" "${REPO_ROOT}/${TG_DIR}/runner.py" "${RA_ARGS[@]}" --dry_run --check_all_rules; then
         echo "PREFLIGHT FAILED: runner --dry_run" >&2; return 1
     fi
     if ! "${EVAL_PYTHON}" - "${REPO_ROOT}" <<'PYEOF'
@@ -62,6 +69,12 @@ assert torch.cuda.is_available() or os.environ.get("TABDIFF_PREFLIGHT_ALLOW_CPU"
     "eval venv torch has no CUDA (training and sampling run on this GPU)"
 import denoiser, entry  # TabDiff modules + tab_ddpm.graph_denoiser import here
 entry._tabdiff_imports()
+import entmax  # noqa: F401  (adaptive_entmax15; the dry run above also built every rule)
+rs = C.RULE_SETTINGS
+for var, key in (("TOPK_WARMUP_STEPS", "topk_warmup_steps"), ("K_MIN", "k_min"), ("TOPK_LOG_EVERY", "topk_log_every")):
+    v = os.environ.get(var)
+    assert v in (None, "", str(rs[key])), f"{var}={v} differs from the thesis setting {rs[key]} (config.RULE_SETTINGS)"
+assert os.environ.get("TOPK_MODE", "fixed") in C.TOPK_MODES, os.environ.get("TOPK_MODE")
 import numpy as np
 from xgboost import XGBClassifier
 X = np.random.rand(200, 3); y = (X[:, 0] > .5).astype(int)
@@ -105,9 +118,15 @@ PYEOF
 
 run_route_a() {
     cd "${REPO_ROOT}" || { echo "ERROR: cannot cd to ${REPO_ROOT}" >&2; return 1; }
+    # sbatch exports the submitting shell's environment: a TOPK_MODE left over from
+    # hpc_transfer/jobs must not turn a fixed-arm script into a rule run.
+    if [ "${TOPK_MODE:-fixed}" != "fixed" ] && [ "${RULE_ARM:-0}" != "1" ]; then
+        echo "ERROR: TOPK_MODE=${TOPK_MODE} in the environment of a fixed-arm script; unset it" >&2
+        return 1
+    fi
     echo "===================================================================="
     echo "  study        : tabdiff_gnn_route_a"
-    echo "  dataset      : ${DATASET}   denoiser: ${DENOISER}   seed: ${SEED}${ABLATION:+   ABLATION: ${ABLATION}}"
+    echo "  dataset      : ${DATASET}   denoiser: ${DENOISER}   seed: ${SEED}   rule: ${TOPK_MODE:-fixed}${ABLATION:+   ABLATION: ${ABLATION}}"
     echo "  stages       : ${STAGES}${TRAIN_BUDGET_H:+   (resumable training, budget ${TRAIN_BUDGET_H} h)}"
     echo "  results tree : ${TRANSFER_ROOT}/exp_tabdiff_gnn/"
     echo "  pythons      : train ${PYTHON_BIN} | eval ${EVAL_PYTHON}"

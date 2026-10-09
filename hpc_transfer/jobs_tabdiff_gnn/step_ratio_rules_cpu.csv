@@ -1,0 +1,16 @@
+# CPU arm, torch 2.5.1, 6 threads, batch 1024, 3 reps x 3 alternating rounds (median), rule vs fixed on the same dataset
+dataset,topk_mode,gnn_type,nodes,train_ratio_vs_fixed,eval_ratio_vs_fixed,train_ratio_spread
+magic,adaptive_jenks,gatv2,11,1.003,1.008,1.00-1.01
+magic,adaptive_entmax15,gatv2,11,0.999,1.019,1.00-1.01
+shoppers,adaptive_jenks,gcn,18,0.988,1.022,0.99-1.02
+shoppers,adaptive_entmax15,gcn,18,1.014,1.06,1.01-1.02
+adult,adaptive_jenks,gcn,15,1.009,1.01,1.00-1.03
+adult,adaptive_entmax15,gcn,15,1.007,1.032,1.00-1.02
+default,adaptive_jenks,gatv2,24,0.992,1.003,0.98-1.00
+default,adaptive_entmax15,gatv2,24,1.004,1.017,1.00-1.01
+beijing,adaptive_jenks,gatv2,12,1.026,0.998,1.01-1.03
+beijing,adaptive_entmax15,gatv2,12,1.01,1.013,1.01-1.02
+news,adaptive_jenks,gatv2,48,1.004,1.022,0.11-1.01
+news,adaptive_entmax15,gatv2,48,1.055,1.014,1.01-1.13
+diabetes,adaptive_jenks,gcn,37,1.018,1.049,1.00-1.02
+diabetes,adaptive_entmax15,gcn,37,1.027,1.085,1.02-1.03

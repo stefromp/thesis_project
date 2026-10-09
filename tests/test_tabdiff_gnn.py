@@ -457,7 +457,8 @@ class FakeExec:
         tgt = cmd[cmd.index("--target") + 1]
         spec = entry.spec_for(tgt, cmd[cmd.index("--denoiser") + 1], int(cmd[cmd.index("--seed") + 1]),
                               node_noise=cmd[cmd.index("--node_noise") + 1],
-                              ablation=cmd[cmd.index("--ablation") + 1] if "--ablation" in cmd else None)
+                              ablation=cmd[cmd.index("--ablation") + 1] if "--ablation" in cmd else None,
+                              topk_mode=cmd[cmd.index("--topk_mode") + 1] if "--topk_mode" in cmd else "fixed")
         spec["smoke_epochs"] = None
         os.makedirs(os.path.join(run, "ckpt"), exist_ok=True)
         open(os.path.join(run, "ckpt", "best_ema_model_1.0_5000.pt"), "w").close()
@@ -627,6 +628,9 @@ def test_job_scripts_follow_hpc_transfer_jobs():
     want = {f"{ds}_tabdiff_gnn" for ds in C.ORDER if ds != "news"} | {"news_tabdiff_gnn_train",
                                                                       "news_tabdiff_gnn_sample_eval",
                                                                       "beijing_tabdiff_gnn_ablation_topk_dense"}
+    for tag in ("jenks", "entmax15"):                        # the adaptive-rule arms
+        want |= {f"{ds}_tabdiff_gnn_{tag}" for ds in C.ORDER if ds != "news"} | {
+            f"news_tabdiff_gnn_{tag}_train", f"news_tabdiff_gnn_{tag}_sample_eval"}
     assert names == want                                     # one script per dataset, no per-seed copies
     ref = open(REF_JOB).read()
     norm = lambda t: re.sub(r"(--job-name=|jobs_out/)\S+|--time=\S+", "X", t)
@@ -668,9 +672,10 @@ def test_over_cap_jobs_are_flagged_and_blocked():
             assert "OVER_CAP" not in txt and all(ln.startswith("# ") for ln in lines)
 
 
-def test_news_is_a_resumable_training_chain():
-    train = open(os.path.join(JOBS, "news_tabdiff_gnn_train.sh")).read()
-    post = open(os.path.join(JOBS, "news_tabdiff_gnn_sample_eval.sh")).read()
+@pytest.mark.parametrize("tag", ["", "_jenks", "_entmax15"])
+def test_news_is_a_resumable_training_chain(tag):
+    train = open(os.path.join(JOBS, f"news_tabdiff_gnn{tag}_train.sh")).read()
+    post = open(os.path.join(JOBS, f"news_tabdiff_gnn{tag}_sample_eval.sh")).read()
     assert 'STAGES="${STAGES:-train}"' in train and 'TRAIN_BUDGET_H="${TRAIN_BUDGET_H:-46.5}"' in train
     assert "#SBATCH --time=48:00:00" in train and "resumable copy of TabDiff's Trainer.run_loop" in train
     assert 'STAGES="${STAGES:-sample,eval_main,eval_quality,eval_tabpc}"' in post
@@ -683,11 +688,12 @@ def test_news_is_a_resumable_training_chain():
                 assert "TabDiff's Trainer, unchanged" in txt and 'TRAIN_BUDGET_H="${TRAIN_BUDGET_H:-}"' in txt
     sub = open(os.path.join(REPO, "hpc_transfer", "submit_tabdiff_gnn.sh")).read()
     seed0 = sub.split("# === training seed 1")[0]
-    news = [ln for ln in seed0.splitlines() if "news_tabdiff_gnn" in ln and "sbatch" in ln]
+    news = [ln for ln in seed0.splitlines() if re.search(rf"news_tabdiff_gnn{tag}_(train|sample_eval)\.sh", ln)
+            and "sbatch" in ln]
     mj = _load_route_a("make_jobs")
-    parts = mj.train_parts("gnn", "news")
+    parts = mj.train_parts("gnn" + tag, "news")
     assert len(news) == parts + 1
-    assert all("news_tabdiff_gnn_train.sh" in ln for ln in news[:parts]) and "sample_eval.sh" in news[-1]
+    assert all(f"news_tabdiff_gnn{tag}_train.sh" in ln for ln in news[:parts]) and "sample_eval.sh" in news[-1]
     assert all("--dependency=afterok:${jid}" in ln for ln in news[1:])
     eff = [re.search(r"--job-name=(\S+)", ln).group(1) if "--job-name" in ln
            else re.search(r"jobs_tabdiff_gnn/(\w+)\.sh", ln).group(1) for ln in news]
@@ -699,9 +705,9 @@ def test_submission_loop_commented_and_ordered():
     s = open(os.path.join(REPO, "hpc_transfer", "submit_tabdiff_gnn.sh")).read()
     active = [ln for ln in s.splitlines() if "sbatch" in ln and not ln.lstrip().startswith("#")]
     assert active == []
-    assert "exit 0" in s and 'export GRES=' in s and all('--gres="${GRES}"' in ln for ln in s.splitlines()
-                                                         if "sbatch --" in ln and "hpc_transfer/jobs_tabdiff_gnn/" in ln)
-    seed0 = s.split("# === training seed 1")[0]
+    assert "exit 0" in s and all("--gres=gpu:a100:1 --mem=24G --time=" in ln for ln in s.splitlines()
+                                 if "sbatch" in ln and "hpc_transfer/jobs_tabdiff_gnn/" in ln)
+    seed0 = s.split("# === block 3")[0]                       # the fixed arm (blocks 1-2)
     order = []
     for m in re.finditer(r"jobs_tabdiff_gnn/(\w+?)_tabdiff_gnn", seed0):
         if m.group(1) not in order:
@@ -717,14 +723,14 @@ def test_route_a_report_is_reported_vs_computed(tmp_path):
     sys.path.insert(0, os.path.join(REPO, "analysis", "tabdiff"))
     import compare
     import pandas as pd
-    rows = [dict(dataset="magic", metric="shape", method=compare.RA_ARM[1], kind="computed", mean=1.1,
+    rows = [dict(dataset="magic", metric="shape", method=compare.RA_ARMS[0][1], kind="computed", mean=1.1,
                  std=0.05, std_seed_means=float("nan"), n=20, n_seeds=1, source="x")]
     md = compare.ra_markdown(pd.DataFrame(rows), {}, compare.ra_static_params(), str(tmp_path))
     assert "## Reference" in md and "reported, not reproduced" in md and "bit-identical" in md
     assert "GATD" in md and "primary" in md and "secondary" in md
     assert "REPRODUCTION" not in md and "repro check" not in md
     hdr = [ln for ln in md.splitlines() if ln.startswith("| dataset | reported:")]
-    assert hdr and all("computed: TabDiff + AttnGNN (d_model 256)" in h for h in hdr)
+    assert hdr and all(all(lab in h for _, lab in compare.RA_ARMS) for h in hdr)
     assert "1.10 ± 0.05 (n=20, s=1)" in md
     assert "| magic | 3,478,403 | 10,589,231 | 0.328 |" in md
 
@@ -1014,3 +1020,274 @@ def test_diagnosis_column_typing_and_eta():
     assert len(num) == 10 and cat == ["class"]
     assert D.eta(["a", "a", "b", "b"], [1, 1, 3, 3]) == pytest.approx(1.0)
     assert D.eta(["a", "b", "a", "b"], [1, 1, 3, 3]) == pytest.approx(0.0)
+
+
+# ---------------------------------------------------------------------------
+# Adaptive neighbour-selection rules (adaptive_jenks, adaptive_entmax15)
+# ---------------------------------------------------------------------------
+RULES = ("adaptive_jenks", "adaptive_entmax15")
+FIXED_ARM_COMMIT = "008ffe0"     # last commit before the rule arms: the fixed arm's reference
+FIXED_GNN_KEYS = {"gnn_type", "n_layers", "d_model", "top_k", "n_heads", "use_attention", "graph_mode",
+                  "topk_mode", "dropout"}
+
+
+def test_rule_paths_and_fixed_path_unchanged(tmp_path):
+    for ds in C.ORDER:
+        g, _ = C.gnn_config(ds)
+        fixed = C.run_dir(str(tmp_path), C.target_name(ds), "attngnn", 0)
+        # byte-identical to the path the fixed runs were made with
+        assert fixed.endswith(f"v2_{g['gnn_type']}_layers{g['n_layers']}_dim256_topk{g['top_k']}_heads{g['n_heads']}"
+                              f"_dimt128_noise-shared/seed0")
+        assert C.run_dir(str(tmp_path), C.target_name(ds), "attngnn", 0, topk_mode="fixed") == fixed
+        paths = {fixed} | {C.run_dir(str(tmp_path), C.target_name(ds), "attngnn", 0, topk_mode=m) for m in RULES}
+        assert len(paths) == 3                                         # arms never collide
+    assert C.run_dir(str(tmp_path), "tabdiff_shoppers", "attngnn", 0, topk_mode="adaptive_jenks").endswith(
+        "v2_gcn_layers2_dim256_jenks_heads4_dimt128_noise-shared/seed0")
+    assert C.run_dir(str(tmp_path), "tabdiff_shoppers", "attngnn", 0, topk_mode="adaptive_entmax15").endswith(
+        "v2_gcn_layers2_dim256_entmax15_heads4_dimt128_noise-shared/seed0")
+    with pytest.raises(ValueError):
+        C.run_dir(str(tmp_path), "tabdiff_beijing", "attngnn", 0, topk_mode="adaptive_jenks", ablation="topk_dense")
+
+
+def test_fixed_spec_unchanged_and_rule_specs_mirror_the_thesis():
+    import entry
+    for ds in C.ORDER:
+        sp = entry.spec_for(C.target_name(ds), "attngnn", 0)
+        assert set(sp["gnn"]) == FIXED_GNN_KEYS and sp["gnn"]["topk_mode"] == "fixed"
+        assert "rule_settings" not in sp                          # fixed runs' route_a_spec.json still matches
+        for m in RULES:
+            r = entry.spec_for(C.target_name(ds), "attngnn", 0, topk_mode=m)
+            assert r["gnn"]["topk_mode"] == m and r["gnn"]["k_min"] == 1 and r["gnn"]["topk_warmup_steps"] == 0
+            assert r["rule_settings"]["topk_log_every"] == 100
+            assert {k: v for k, v in r["gnn"].items() if k not in ("topk_mode", "k_min", "topk_warmup_steps")} == \
+                   {k: v for k, v in sp["gnn"].items() if k != "topk_mode"}         # nothing else differs
+    assert C.RULE_DETAILS["adaptive_jenks"]["use_gate_rule"] is False
+    assert C.RULE_DETAILS["adaptive_entmax15"]["entmax_alpha"] == 1.5
+    # the catfix runs' settings (transfer_runs/ is local only; checked when present)
+    metas = glob.glob(os.path.join(REPO, "transfer_runs", "exp", "*", "ablation_adaptive_*_catfix", "*", "run_meta.json"))
+    for f in metas:
+        m = json.load(open(f))
+        assert (m["k_min"], m["topk_warmup_steps"], m["topk_log_every"]) == (1, 0, 100)
+
+
+def _rule_model(ds, mode, seed=0):
+    import torch
+    from denoiser import build_denoiser
+    up, raw = _unimod_params(C.target_name(ds))
+    g, _ = C.gnn_config(ds)
+    torch.manual_seed(seed)
+    m = build_denoiser("attngnn", up, {**g, **C.GNN_FIXED, **C.gnn_rule_fields(mode)}, dim_t=C.DIM_T)
+    return m, up, raw
+
+
+@pytest.mark.parametrize("ds", C.ORDER)
+@pytest.mark.parametrize("mode", RULES)
+def test_rules_forward_backward_and_score_gradients(ds, mode):
+    _need_tabdiff()
+    pytest.importorskip("entmax")
+    import torch
+    m, up, raw = _rule_model(ds, mode)                    # imports denoiser (puts TabDiff on sys.path)
+    from tabdiff.modules.main_modules import Model
+    assert all(b.dynamic_adj.topk_mode == mode and b.dynamic_adj.k_min == 1
+               and b.dynamic_adj.topk_warmup_steps == 0 for b in m.blocks)
+    x_num, x_cat, t, sigma = _batch(up["d_numerical"], up["categories"], B=16)
+    model = Model(m, **raw["diffusion_params"]["edm_params"])
+    D_x, lg = model(x_num, x_cat, t, sigma)
+    assert D_x.shape == (16, up["d_numerical"]) and D_x.dtype == torch.float32 and lg.shape == x_cat.shape
+    (D_x.pow(2).mean() + lg.pow(2).mean()).backward()
+    for b in m.blocks:                                     # the score parameters receive gradient
+        for proj in (b.dynamic_adj.q_proj, b.dynamic_adj.k_proj):
+            assert proj.weight.grad is not None and proj.weight.grad.abs().sum() > 0
+
+
+def test_fixed_outputs_identical_to_committed_denoiser():
+    """The fixed arm's model and outputs are bit-identical to denoiser.py before the rule arms."""
+    _need_tabdiff()
+    import importlib.util
+    import torch
+    from denoiser import build_denoiser                  # puts TabDiff on sys.path for the HEAD copy too
+    old_src = subprocess.run(["git", "-C", REPO, "show", f"{FIXED_ARM_COMMIT}:tabdiff_gnn/denoiser.py"],
+                             capture_output=True, text=True)
+    if old_src.returncode != 0:
+        pytest.skip("no git history")
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        p = os.path.join(d, "denoiser_head.py")
+        open(p, "w").write(old_src.stdout)
+        spec = importlib.util.spec_from_file_location("denoiser_head", p)
+        old = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(old)
+    for ds in ("shoppers", "beijing"):
+        up, _ = _unimod_params(C.target_name(ds))
+        g, _ = C.gnn_config(ds)
+        cfg = {**g, **C.GNN_FIXED}
+        torch.manual_seed(0)
+        a = build_denoiser("attngnn", up, cfg, dim_t=C.DIM_T)
+        torch.manual_seed(0)
+        b = old.build_denoiser("attngnn", up, cfg, dim_t=C.DIM_T)
+        sa, sb = a.state_dict(), b.state_dict()
+        assert sa.keys() == sb.keys() and all(torch.equal(sa[k], sb[k]) for k in sa)
+        x_num, x_cat, _, _ = _batch(up["d_numerical"], up["categories"], B=32)
+        c = torch.log(torch.rand(32) * 80 + 0.002) / 4
+        for train in (True, False):
+            a.train(train); b.train(train)
+            torch.manual_seed(1); oa = a(x_num, x_cat, c)
+            torch.manual_seed(1); ob = b(x_num, x_cat, c)
+            assert torch.equal(oa[0], ob[0]) and torch.equal(oa[1], ob[1])
+
+
+@pytest.mark.parametrize("mode", RULES)
+def test_k_logging_changes_nothing_and_respects_rule_ranges(mode, tmp_path):
+    _need_tabdiff()
+    pytest.importorskip("entmax")
+    import torch
+    from topk_log import KStatsLogger
+    ds = "shoppers"
+    a, up, _ = _rule_model(ds, mode)
+    b, _, _ = _rule_model(ds, mode)
+    cols = C.model_node_columns(ds)
+    log = KStatsLogger(len(cols), len(b.blocks), cols, log_every=1, eval_phase="sample").attach(b)
+    x_num, x_cat, _, _ = _batch(up["d_numerical"], up["categories"], B=64)
+    c = torch.log(torch.rand(64) * 80 + 0.002) / 4
+    for train in (True, False):
+        a.train(train); b.train(train)
+        with torch.no_grad():
+            oa, ob = a(x_num, x_cat, c), b(x_num, x_cat, c)
+        assert torch.equal(oa[0], ob[0]) and torch.equal(oa[1], ob[1])      # logging on vs off
+    log.write(str(tmp_path))
+    import pandas as pd
+    st = pd.read_csv(tmp_path / "topk_k_stats.csv")
+    F = len(cols)
+    hi = F - 2 if mode == "adaptive_jenks" else F - 1
+    assert set(st.phase) == {"train", "sample"} and st.k_min.min() >= 1 and st.k_max.max() <= hi
+    assert set(st.column) <= set(cols) and st.t_bin.between(0, 9).all()
+    assert (st.groupby(["phase", "block"])["n"].sum() == 64 * F).all()     # every (sample, node) counted once
+    # writing again merges (resumed segments), never double-counts what was already written
+    log.write(str(tmp_path))
+    assert pd.read_csv(tmp_path / "topk_k_stats.csv")["n"].sum() == st["n"].sum()
+
+
+def test_rule_jobs_and_fixed_jobs_unchanged():
+    for ds in C.ORDER:
+        for tag in ("jenks", "entmax15"):
+            names = (["news_tabdiff_gnn_%s_train" % tag, "news_tabdiff_gnn_%s_sample_eval" % tag]
+                     if ds == "news" else [f"{ds}_tabdiff_gnn_{tag}"])
+            for n in names:
+                t = open(os.path.join(JOBS, n + ".sh")).read()
+                mode = {"jenks": "adaptive_jenks", "entmax15": "adaptive_entmax15"}[tag]
+                assert f'TOPK_MODE="${{TOPK_MODE:-{mode}}}"' in t and "RULE_ARM=1" in t
+                assert 'K_MIN="${K_MIN:-1}"' in t and 'TOPK_WARMUP_STEPS="${TOPK_WARMUP_STEPS:-0}"' in t
+                assert 'TOPK_LOG_EVERY="${TOPK_LOG_EVERY:-100}"' in t and f"_{tag}_heads" in t
+                h = int(re.search(r"#SBATCH --time=(\d+):00:00", t).group(1))
+                assert 2 <= h <= 48
+                assert subprocess.run(["bash", "-n", os.path.join(JOBS, n + ".sh")]).returncode == 0
+    # the fixed arm's scripts are byte-identical to the ones it was run with
+    fixed = [f for f in glob.glob(os.path.join(JOBS, "*_tabdiff_gnn*.sh"))
+             if not re.search(r"_(jenks|entmax15)(_|\.)", os.path.basename(f))
+             and not f.endswith("common_tabdiff_gnn.sh")]
+    if subprocess.run(["git", "-C", REPO, "cat-file", "-e", FIXED_ARM_COMMIT],
+                      capture_output=True).returncode == 0:          # no git history on the cluster
+        r = subprocess.run(["git", "-C", REPO, "diff", "--quiet", FIXED_ARM_COMMIT, "--"] + fixed)
+        assert r.returncode == 0, "a fixed-arm job script changed"
+
+
+def test_rule_submission_blocks():
+    s = open(os.path.join(REPO, "hpc_transfer", "submit_tabdiff_gnn.sh")).read()
+    for ln in s.splitlines():
+        if "sbatch" in ln and "hpc_transfer/jobs_tabdiff_gnn/" in ln:
+            assert "--gres=gpu:a100:1" in ln and "--mem=24G" in ln and re.search(r"--time=\d+:00:00", ln), ln
+    seed0 = s.split("# === training seed 1")[0]
+    for tag in ("jenks", "entmax15"):
+        order = []
+        for m in re.finditer(r"jobs_tabdiff_gnn/(\w+?)_tabdiff_gnn_%s" % tag, seed0):
+            if m.group(1) not in order:
+                order.append(m.group(1))
+        assert order == ["beijing", "magic", "shoppers", "adult", "default", "diabetes", "news"], (tag, order)
+    for ln in s.split("# === training seed 1")[1].splitlines():
+        if "sbatch" in ln:
+            assert ln.startswith("## ") or ln.startswith("### ")
+
+
+def test_runner_records_the_rule(tmp_path):
+    runner = _load_route_a("runner")
+    runner.run_job(_args(tmp_path, "--dataset", "shoppers", "--denoiser", "attngnn", "--topk_mode", "adaptive_entmax15"),
+                   FakeExec())
+    run = C.run_dir(str(tmp_path), "tabdiff_shoppers", "attngnn", 0, topk_mode="adaptive_entmax15")
+    meta = json.load(open(os.path.join(run, "run_meta.json")))
+    assert meta["topk_mode"] == "adaptive_entmax15" and meta["rule_settings"]["entmax_alpha"] == 1.5
+    assert meta["rule_settings"]["k_min"] == 1 and meta["rule_settings"]["topk_warmup_steps"] == 0
+    assert "topk_k_stats.csv" in meta["k_logging"]
+
+
+@pytest.mark.parametrize("mode", ("fixed",) + RULES)
+def test_denoiser_outputs_independent_of_module_mode(mode):
+    """entry.cmd_sample calls Trainer.sample_synthetic without diffusion.eval() (TabDiff's
+    evaluate_generation calls it first), so sampling runs in training mode. That is harmless
+    only if no module behaves differently in train vs eval mode: dropout 0, fixed path
+    mode-free, rules with topk_warmup_steps 0. Checked on every dataset's shape."""
+    _need_tabdiff()
+    if mode != "fixed":
+        pytest.importorskip("entmax")
+    import torch
+    for ds in C.ORDER:
+        m, up, _ = _rule_model(ds, mode)
+        x_num, x_cat, _, _ = _batch(up["d_numerical"], up["categories"], B=32)
+        c = torch.log(torch.rand(32) * 80 + 0.002) / 4
+        with torch.no_grad():
+            m.train(); a = m(x_num, x_cat, c)
+            m.eval(); b = m(x_num, x_cat, c)
+        assert torch.equal(a[0], b[0]) and torch.equal(a[1], b[1]), ds
+
+
+def test_sampling_process_logs_phase_sample(tmp_path):
+    _need_tabdiff()
+    pytest.importorskip("entmax")
+    import numpy as np
+    import torch
+    from topk_log import KStatsLogger
+    m, up, _ = _rule_model("shoppers", "adaptive_jenks")
+    cols = C.model_node_columns("shoppers")
+    KStatsLogger(len(cols), len(m.blocks), cols, log_every=100, force_phase="sample").attach(m)
+    m.train()                                               # as in cmd_sample
+    x_num, x_cat, _, _ = _batch(up["d_numerical"], up["categories"], B=8)
+    with torch.no_grad():
+        for t in (0.05, 0.5, 0.95):                         # every forward logged, binned by t
+            sig = (0.002 ** (1 / 7) + t * (80 ** (1 / 7) - 0.002 ** (1 / 7))) ** 7
+            m(x_num, x_cat, torch.full((8,), float(np.log(sig) / 4)))
+    m.k_logger.write(str(tmp_path))
+    import pandas as pd
+    st = pd.read_csv(tmp_path / "topk_k_stats.csv")
+    assert set(st.phase) == {"sample"} and set(st.t_bin) == {0, 5, 9}
+    assert st.n.sum() == 3 * 8 * len(cols) * len(m.blocks)
+
+
+def test_route_a_report_rule_dimension_and_k_figure(tmp_path):
+    """ROUTE_A.md: one computed column per rule; the fixed and rule arms never mix; k-vs-t figure."""
+    runner = _load_route_a("runner")
+    for mode in ("fixed", "adaptive_jenks"):
+        extra = [] if mode == "fixed" else ["--topk_mode", mode]
+        runner.run_job(_args(tmp_path, "--dataset", "shoppers", "--denoiser", "attngnn", *extra), FakeExec())
+    run = C.run_dir(str(tmp_path), "tabdiff_shoppers", "attngnn", 0, topk_mode="adaptive_jenks")
+    cols = C.model_node_columns("shoppers")
+    with open(os.path.join(run, "topk_k_stats.csv"), "w", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["phase", "block", "t_bin", "t_lo", "t_hi", "node", "column", "n", "k_sum", "k_sumsq",
+                    "k_min", "k_max", "k_mean"])
+        for b in range(2):
+            for tb in range(10):
+                for i, c in enumerate(cols):
+                    k = 1 + (i + tb) % 16
+                    w.writerow(["sample", b, tb, tb / 10, (tb + 1) / 10, i, c, 10, 10 * k, 10 * k * k, k, k, k])
+    sys.path.insert(0, os.path.join(REPO, "analysis", "tabdiff"))
+    import compare
+    comp, prov, _ = compare.ra_computed(str(tmp_path))
+    assert any(k.startswith("fixed/shoppers/") for k in prov) and any(k.startswith("adaptive_jenks/shoppers/")
+                                                                      for k in prov)
+    assert len(comp) and set(comp.topk_mode) == {"fixed", "adaptive_jenks"}
+    assert (comp.groupby("topk_mode").method.nunique() == 1).all()
+    out = tmp_path / "report"
+    out.mkdir()
+    figs = compare.ra_k_figures(str(tmp_path), str(out))
+    assert [os.path.basename(f) for f in figs] == ["route_a_k_vs_t_shoppers.png"] and os.path.getsize(figs[0]) > 0
+    md = compare.ra_markdown(comp, {}, compare.ra_static_params(), str(tmp_path), figs, str(out))
+    assert "](figures/route_a_k_vs_t_shoppers.png)" in md and "Neighbour-selection rule" in md

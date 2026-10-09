@@ -95,6 +95,8 @@ class AttnGNNDenoiser(nn.Module):
         geo_loss: bool = False,
         geo_edge_bias: bool = False,
         bias: bool = True,
+        k_min: int = 1,
+        topk_warmup_steps: int = 0,
     ) -> None:
         super().__init__()
         if node_noise not in NODE_NOISE:
@@ -105,6 +107,8 @@ class AttnGNNDenoiser(nn.Module):
         self.categories = list(categories)
         self.n_nodes = d_numerical + len(self.categories)
         self.d_model, self.dim_t, self.node_noise = d_model, dim_t, node_noise
+        self.topk_mode = topk_mode
+        self.k_logger = None        # topk_log.KStatsLogger (adaptive arms), observation only
         self.geo_loss, self.geo_edge_bias = geo_loss, geo_edge_bias
         if self.n_nodes == 0:
             raise ValueError("AttnGNNDenoiser needs at least one column")
@@ -115,7 +119,9 @@ class AttnGNNDenoiser(nn.Module):
         self.blocks = nn.ModuleList([
             AttnGNNBlock(gnn_type, d_model=d_model, n_heads=n_heads, dropout=dropout,
                          graph_mode=graph_mode, n_nodes=self.n_nodes, top_k=top_k,
-                         use_attention=use_attention, topk_mode=topk_mode)
+                         use_attention=use_attention, topk_mode=topk_mode,
+                         **({} if topk_mode == "fixed" else
+                            {"k_min": k_min, "topk_warmup_steps": topk_warmup_steps}))
             for _ in range(n_layers)
         ])
         self.detokenizer = Reconstructor(d_numerical, self.categories, d_model)
@@ -156,8 +162,14 @@ class AttnGNNDenoiser(nn.Module):
         else:
             lv = self.node_noise_levels(timesteps)                   # (B, N)
             h = e + self._embed(lv.reshape(-1)).reshape(B, N, -1)
+        if self.k_logger is not None:
+            self.k_logger.begin(timesteps, self.training)
+        # DynamicAdjacency reads `timesteps` only for its own per-t logging, which assumes
+        # integer t in [0, T); TabDiff passes c_noise, so the adaptive arms hand it None
+        # (topk_log.KStatsLogger logs k against t in [0, 1] instead). Fixed: unchanged call.
+        block_t = timesteps if self.topk_mode == "fixed" else None
         for i, block in enumerate(self.blocks):
-            h = block(h, timesteps=timesteps, block_idx=i)
+            h = block(h, timesteps=block_t, block_idx=i)
         x_num_pred, x_cat_pred = self.detokenizer(h)
         x_cat_pred = (torch.cat(x_cat_pred, dim=-1) if len(x_cat_pred) > 0
                       else torch.zeros_like(x_cat).to(x_num_pred.dtype))
@@ -184,7 +196,8 @@ def build_denoiser(denoiser: str, unimodmlp_params: dict, gnn: Optional[dict] = 
         graph_mode=gnn.get("graph_mode", "dynamic"), topk_mode=gnn.get("topk_mode", "fixed"),
         use_attention=gnn.get("use_attention", False), dropout=gnn.get("dropout", 0.0),
         node_noise=node_noise, geo_loss=geo_loss, geo_edge_bias=geo_edge_bias,
-        bias=unimodmlp_params.get("bias", True))
+        bias=unimodmlp_params.get("bias", True),
+        k_min=gnn.get("k_min", 1), topk_warmup_steps=gnn.get("topk_warmup_steps", 0))
 
 
 def count_params(module: nn.Module) -> int:

@@ -94,7 +94,8 @@ $E install --upgrade pip
 $E install torch==2.2.2 --index-url https://download.pytorch.org/whl/cu118
 $E install numpy==1.26.4 pandas==2.2.3 "scipy<1.16" scikit-learn==1.5.2 \
            sdmetrics==0.18.0 xgboost==2.1.4 category_encoders==2.6.4 statsmodels==0.14.4 \
-           icecream prdc plotly pillow tqdm tomli
+           icecream prdc plotly pillow tqdm tomli tomli_w matplotlib
+$E install entmax==1.3          # Route A's adaptive_entmax15 rule (tabdiff_gnn trains in this venv)
 
 # 2. synthcity venv: alpha-precision / beta-recall (TabDiff keeps it separate too)
 python -m venv $HPC_ROOT/venvs/tabdiff_synthcity310
@@ -102,6 +103,9 @@ P=$HPC_ROOT/venvs/tabdiff_synthcity310/bin/pip
 $P install --upgrade pip
 $P install torch==2.2.2 --index-url https://download.pytorch.org/whl/cpu
 $P install synthcity==0.2.12 opacus==1.5.2 numpy==1.26.4 xgboost==2.1.4 category_encoders tomli
+# synthcity imports torchvision; install the build matching torch 2.2.2 AFTER synthcity, without
+# letting pip touch torch:
+$P install --no-deps torchvision==0.17.2+cpu --index-url https://download.pytorch.org/whl/cpu
 ```
 
 Why these pins (TabDiff's `tabdiff.yaml` / `synthcity.yaml` pin none of them):

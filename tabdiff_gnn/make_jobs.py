@@ -109,7 +109,16 @@ TABPC_S_MEASURED = {"magic": 5.5, "news": 11.8, "diabetes": 133.2}
 TABPC_CLUSTER_FACTOR = 2.0
 ARMS = {  # name -> (denoiser, datasets, training seeds)
     "gnn": ("attngnn", list(C.ORDER), list(C.TRAIN_SEEDS)),
+    "gnn_jenks": ("attngnn", list(C.ORDER), list(C.TRAIN_SEEDS)),
+    "gnn_entmax15": ("attngnn", list(C.ORDER), list(C.TRAIN_SEEDS)),
 }
+# neighbour-selection rule of each arm (config.TOPK_MODES); "gnn" = the fixed main arm
+ARM_RULE = {"gnn": "fixed", "gnn_jenks": "adaptive_jenks", "gnn_entmax15": "adaptive_entmax15"}
+RULE_RATIO_CSV = os.path.join(OUT, "step_ratio_rules_cpu.csv")
+# Every sbatch line carries what the gpu partition requires (plain sbatch fails without --gres);
+# command-line flags override the script's #SBATCH directives.
+SBATCH_FLAGS = "--gres=gpu:a100:1 --mem=24G"
+RULE_ORDER = ["beijing", "magic", "shoppers", "adult", "default", "diabetes", "news"]
 POST = ["sample", "eval_main", "eval_quality", "eval_tabpc"]
 # Ablation jobs (NOT the main protocol): (arm, dataset, config.ABLATIONS key), seed 0 only.
 ABLATION_JOBS = [("gnn", "beijing", "topk_dense")]
@@ -123,7 +132,21 @@ SUBMIT_BLOCKS = [
      [("gnn", "magic"), ("gnn", "shoppers"), ("gnn", "adult"), ("gnn", "beijing")]),
     ("AttnGNN d256 seed 0: default, news (resumable 3-job chain), diabetes",
      [("gnn", "default"), ("gnn", "news"), ("gnn", "diabetes")]),
+    ("AttnGNN d256 + adaptive_jenks, seed 0",
+     [("gnn_jenks", ds) for ds in RULE_ORDER]),
+    ("AttnGNN d256 + adaptive_entmax15, seed 0",
+     [("gnn_entmax15", ds) for ds in RULE_ORDER]),
 ]
+
+
+def rule_ratios() -> dict:
+    """(dataset, topk_mode) -> {train_ratio_vs_fixed, eval_ratio_vs_fixed} (bench_step_ratio.py --rules)."""
+    if not os.path.exists(RULE_RATIO_CSV):
+        raise SystemExit(f"{RULE_RATIO_CSV} missing: run  python tabdiff_gnn/bench_step_ratio.py --rules")
+    with open(RULE_RATIO_CSV) as fh:
+        rows = list(csv.DictReader(ln for ln in fh if not ln.startswith("#")))
+    return {(r["dataset"], r["topk_mode"]): {k: float(r[k]) for k in ("train_ratio_vs_fixed",
+                                                                       "eval_ratio_vs_fixed")} for r in rows}
 
 
 def ratios() -> dict:
@@ -188,11 +211,17 @@ def stage_hours(arm: str, ds: str) -> dict:
     g, _ = C.gnn_config(ds)
     ref = reference(g["gnn_type"])
     rt = ratios()[ds]
+    rule = ARM_RULE.get(arm, "fixed")
+    rr = {"train_ratio_vs_fixed": 1.0, "eval_ratio_vs_fixed": 1.0} if rule == "fixed" else rule_ratios()[(ds, rule)]
     s_step = ref["train_s_per_step"] * rt["train_ratio"]
     s_epoch = PROBE_S_PER_EPOCH.get(ds, EPOCH_OVERHEAD_S + spe * s_step * (1 + rt["eval_over_train"]))
+    if rule != "fixed":           # training step and the per-epoch EMA forward pass scale separately
+        s_epoch = (PROBE_S_PER_EPOCH[ds] * rr["train_ratio_vs_fixed"] if ds in PROBE_S_PER_EPOCH else
+                   EPOCH_OVERHEAD_S + spe * s_step * (rr["train_ratio_vs_fixed"]
+                                                       + rt["eval_over_train"] * rr["eval_ratio_vs_fixed"]))
     st = {"train": EPOCHS * s_epoch / 3600 + STAGE_OVERHEAD_H,
-          "sample": C.N_TABLES * n * NFE * ref["sample_s_per_row_step"] * rt["eval_ratio"] / 3600
-          + STAGE_OVERHEAD_H}
+          "sample": C.N_TABLES * n * NFE * ref["sample_s_per_row_step"] * rt["eval_ratio"]
+          * rr["eval_ratio_vs_fixed"] / 3600 + STAGE_OVERHEAD_H}
     f_up, _ = gnn_scale(tgt, g)
     upper = EPOCHS * (EPOCH_OVERHEAD_S + spe * ref["train_s_per_step"] * f_up * (1 + EMA_PASS)) / 3600
     cols = len(info["column_names"])
@@ -203,6 +232,9 @@ def stage_hours(arm: str, ds: str) -> dict:
              f"{rt['train_ratio']:.2f} = {s_step:.3f} s/step; {s_epoch:.1f} s/epoch")
     if ds in PROBE_S_PER_EPOCH:
         basis = f"A100 timing probe: {s_epoch:.1f} s/epoch"
+    if rule != "fixed":
+        basis += (f"; {rule}: train x{rr['train_ratio_vs_fixed']:.2f}, forward x{rr['eval_ratio_vs_fixed']:.2f} "
+                  f"vs fixed (bench_step_ratio.py --rules)")
     return {"target": tgt, "n_train": n, "steps_per_epoch": spe, "nodes": n_nodes(tgt), "stages_h": st,
             "train_h_upper": upper, "basis": basis}
 
@@ -327,7 +359,7 @@ cd "${{REPO_ROOT}}" || {{ echo "ERROR: cannot cd to ${{REPO_ROOT}}" >&2; exit 1;
 #   {arch}
 #   GNN type / layers / top_k / heads from hpc_transfer/configs/{src}.sh{src_note}
 #   d_model {d_model} on every dataset, dim_t {dim_t}, one shared noise embedding,
-#   fixed top-k rule, dynamic graph, no global attention.
+#   {rule_line}, dynamic graph, no global attention.
 # Trainer: {trainer}
 # Results: $TRANSFER_ROOT/exp_tabdiff_gnn/{target}/attngnn/{arm_dir}/seed<SEED>/
 # ---------------------------------------------------------------------------
@@ -340,7 +372,7 @@ DENOISER="attngnn"
 # ---------------------------------------------------------------------------
 ABLATION="${{ABLATION:-{ablation}}}"
 
-# ---------------------------------------------------------------------------
+{rule_block}# ---------------------------------------------------------------------------
 # Stages this job runs (each leaves <run>/stages/<stage>.done; a resubmitted
 # job skips what is done):
 #   {stage_line}
@@ -365,7 +397,7 @@ SEED="${{SEED:-0}}"
 DATASET="{ds}"
 
 export HPC_ROOT REPO_ROOT PYTHON_BIN EVAL_PYTHON SYNTHCITY_PYTHON TABPC_PYTHON \
-       TRANSFER_ROOT DATASET DENOISER ABLATION STAGES TRAIN_BUDGET_H DEVICE SEED
+       TRANSFER_ROOT DATASET DENOISER ABLATION STAGES TRAIN_BUDGET_H DEVICE SEED{rule_exports}
 
 # shellcheck source-path=SCRIPTDIR
 # shellcheck source=common_tabdiff_gnn.sh
@@ -381,7 +413,11 @@ def jobs_for(arm: str, ds: str, ablation: str | None = None) -> list:
     e = dict(stage_hours(arm, ds))
     chain = pack(arm, ds)
     blocked = over_cap(arm, ds)
-    base = f"{ds}_tabdiff_gnn" + (f"_ablation_{ablation}" if ablation else "")
+    rule = ARM_RULE.get(arm, "fixed")
+    base = (f"{ds}_tabdiff_gnn" + (f"_{C.RULE_TAG[rule]}" if rule != "fixed" else "")
+            + (f"_ablation_{ablation}" if ablation else ""))
+    # the fixed arm keeps its 48 h scripts (unchanged); the rule arms get estimate x 1.3 (cap 48 h)
+    wall = (lambda est: JOB_WALLTIME_H) if rule == "fixed" else _hours
     if ablation:
         f = ABLATION_COST[ablation]
         e["stages_h"] = {k: (v * f if k in ("train", "sample") else v) for k, v in e["stages_h"].items()}
@@ -391,17 +427,17 @@ def jobs_for(arm: str, ds: str, ablation: str | None = None) -> list:
             raise SystemExit(f"ablation jobs are single-job datasets only ({ds})")
     if len(chain) == 1:
         (stages, est), = chain
-        return [dict(name=base, stages=stages, hours=JOB_WALLTIME_H, est=est, budget="", parts=1,
-                     blocked=blocked, e=e)]
+        return [dict(name=base, stages=stages, hours=wall(est), est=est, budget="", parts=1,
+                     blocked=blocked, e=e, rule=rule)]
     trains = [c for c in chain if c[0] == ["train"]]
     post = chain[-1]
     resumable = ds in C.RESUMABLE_DATASETS
     tr_est = sum(c[1] for c in trains)
-    return [dict(name=f"{base}_train", stages=["train"], hours=JOB_WALLTIME_H,
+    return [dict(name=f"{base}_train", stages=["train"], hours=CAP_H if resumable else wall(tr_est),
                  est=tr_est, budget=f"{CAP_H - TRAIN_BUDGET_RESERVE:g}" if resumable else "",
-                 parts=len(trains), blocked=blocked, e=e),
-            dict(name=f"{base}_sample_eval", stages=post[0], hours=JOB_WALLTIME_H, est=post[1], budget="",
-                 parts=1, blocked=blocked, e=e)]
+                 parts=len(trains), blocked=blocked, e=e, rule=rule),
+            dict(name=f"{base}_sample_eval", stages=post[0], hours=wall(post[1]), est=post[1], budget="",
+                 parts=1, blocked=blocked, e=e, rule=rule)]
 
 
 TRAIN_BUDGET_RESERVE = TRAIN_RESERVE_H
@@ -437,13 +473,39 @@ def write_jobs() -> dict:
                     chain_note += (f"\n# OVER_CAP -- DO NOT SUBMIT YET: training is estimated at "
                                    f"{e['stages_h']['train']:.1f} h (x{MARGIN} > {CAP_H} h) and TabDiff's Trainer "
                                    f"cannot resume; run the timing probe (tabdiff_gnn/README.md) first.")
-                why = (f"fixed at {JOB_WALLTIME_H} h for every job; estimate {j['est']:.2f} h "
-                       f"(x{MARGIN} = {math.ceil(j['est'] * MARGIN)} h)"
-                       if not j["budget"] else
-                       f"fixed at {JOB_WALLTIME_H} h; resumable training budget {j['budget']} h + reserve")
+                rule = j["rule"]
+                if j["budget"]:
+                    why = f"fixed at {JOB_WALLTIME_H} h; resumable training budget {j['budget']} h + reserve"
+                elif rule == "fixed":
+                    why = (f"fixed at {JOB_WALLTIME_H} h for every job; estimate {j['est']:.2f} h "
+                           f"(x{MARGIN} = {math.ceil(j['est'] * MARGIN)} h)")
+                else:
+                    why = (f"estimate {j['est']:.2f} h x {MARGIN}, rounded up (min {MIN_H}, cap {CAP_H})")
+                if rule == "fixed":
+                    rule_line, rule_block, rule_exports = "fixed top-k rule", "", ""
+                    sel = f"top-k {g['top_k']} (fixed)"
+                else:
+                    rd = C.RULE_DETAILS[rule]
+                    rule_line = f"adaptive neighbour selection {rule} (source top_k {g['top_k']} unused)"
+                    sel = f"rule {C.RULE_TAG[rule]} (k_i in {rd['k_range']})"
+                    rule_block = (
+                        "# ---------------------------------------------------------------------------\n"
+                        f"# Neighbour-selection rule (TOPK_MODE, as in hpc_transfer/jobs): {rule} --\n"
+                        f"# {rd['rule']}; edge weights = the same sigmoid gates as fixed.\n"
+                        "# Settings of the thesis catfix runs, fixed in tabdiff_gnn/config.py (RULE_SETTINGS):\n"
+                        "# TOPK_WARMUP_STEPS / K_MIN / TOPK_LOG_EVERY must keep these values (the run path\n"
+                        "# encodes only the rule; the preflight refuses others).\n"
+                        "# Selected-k statistics vs t in [0,1]: <run>/topk_k_stats.csv, topk_k_hist.csv.\n"
+                        "# ---------------------------------------------------------------------------\n"
+                        "RULE_ARM=1\n"
+                        f'TOPK_MODE="${{TOPK_MODE:-{rule}}}"\n'
+                        f'TOPK_WARMUP_STEPS="${{TOPK_WARMUP_STEPS:-{C.RULE_SETTINGS["topk_warmup_steps"]}}}"\n'
+                        f'K_MIN="${{K_MIN:-{C.RULE_SETTINGS["k_min"]}}}"\n'
+                        f'TOPK_LOG_EVERY="${{TOPK_LOG_EVERY:-{C.RULE_SETTINGS["topk_log_every"]}}}"\n\n')
+                    rule_exports = " \\\n       RULE_ARM TOPK_MODE TOPK_WARMUP_STEPS K_MIN TOPK_LOG_EVERY"
                 body = BODY.format(
                     commit_short=C.TABDIFF_COMMIT[:7],
-                    arch=(f"{g['gnn_type']} L{g['n_layers']} d{g['d_model']} top-k {g['top_k']} (fixed) "
+                    arch=(f"{g['gnn_type']} L{g['n_layers']} d{g['d_model']} {sel} "
                           f"heads {g['n_heads']}"
                           + (f"\n#   ABLATION {ablation} (NOT the main protocol): {C.ABLATIONS[ablation]['change']}"
                              f"\n#   question: {C.ABLATIONS[ablation]['question']}" if ablation else "")),
@@ -453,17 +515,23 @@ def write_jobs() -> dict:
                     trainer=("resumable copy of TabDiff's Trainer.run_loop (news only; verbatim + "
                              "save/restore hooks; evidence tests/test_tabdiff_gnn.py)"
                              if ds in C.RESUMABLE_DATASETS else "TabDiff's Trainer, unchanged"),
-                    target=C.target_name(ds), arm_dir=C.arm_name(denoiser, ds, ablation=ablation),
+                    target=C.target_name(ds), arm_dir=C.arm_name(denoiser, ds, ablation=ablation, topk_mode=rule),
+                    rule_line=rule_line, rule_block=rule_block, rule_exports=rule_exports,
                     ablation=ablation or "",
-                    stage_line=stage_line, time=f"{JOB_WALLTIME_H}:00:00",
+                    stage_line=stage_line, time=f"{j['hours']}:00:00",
                     why=f"{why}; {e['basis']}", chain_note=chain_note,
                     stages=",".join(j["stages"]), budget=j["budget"], ds=ds)
                 path = os.path.join(OUT, f"{j['name']}.sh")
                 with open(path, "w") as fh:
-                    fh.write(HEADER.format(job=j["name"], time=f"{JOB_WALLTIME_H}:00:00") + body)
+                    fh.write(HEADER.format(job=j["name"], time=f"{j['hours']}:00:00") + body)
                 os.chmod(path, 0o755)
             plan[(arm, ds) if ablation is None else (arm, ds, ablation)] = js
     return plan
+
+
+def sbatch_hours(j: dict) -> int:
+    """--time on the sbatch line: the estimate x 1.3 (min 2, cap 48); 48 for a resumable training part."""
+    return CAP_H if j["budget"] else _hours(j["est"])
 
 
 def _submit_lines(js, seed: int, c: str) -> tuple:
@@ -481,11 +549,13 @@ def _submit_lines(js, seed: int, c: str) -> tuple:
             over = ("" if name == j["name"] else
                     f"--job-name={name} --output=${{OUT}}/{name}.out --error=${{OUT}}/{name}.err ")
             dep = "--dependency=afterok:${jid} " if prev else ""
+            # realistic walltime from the estimate (resumable training parts: the 48 h cap)
+            flags = f"{SBATCH_FLAGS} --time={sbatch_hours(j)}:00:00 "
             if len(js) > 1 or j["parts"] > 1:
-                out.append(f'{c}jid=$({env}sbatch --parsable --gres="${{GRES}}" {dep}{over}'
+                out.append(f'{c}jid=$({env}sbatch --parsable {flags}{dep}{over}'
                            f'hpc_transfer/jobs_tabdiff_gnn/{j["name"]}.sh)')
             else:
-                out.append(f'{c}{env}sbatch --gres="${{GRES}}" {over}hpc_transfer/jobs_tabdiff_gnn/{j["name"]}.sh')
+                out.append(f'{c}{env}sbatch {flags}{over}hpc_transfer/jobs_tabdiff_gnn/{j["name"]}.sh')
             prev = True
     return out, gpu_h
 
@@ -497,8 +567,9 @@ def write_submit(plan: dict) -> dict:
         e = js[0]["e"]
         g, _ = C.gnn_config(ds)
         cfg = f"{g['gnn_type']}_L{g['n_layers']}_d{g['d_model']}"
-        jobs_txt = " + ".join((f"{j['parts']}x " if j["parts"] > 1 else "") + f"{j['hours']} h" for j in js)
-        rows.append(f"#   {ds:9s} {cfg:16s} {e['nodes']:3d}  {e['n_train']:7,d}  "
+        rule = C.RULE_TAG.get(ARM_RULE[arm], "fixed")
+        jobs_txt = " + ".join((f"{j['parts']}x " if j["parts"] > 1 else "") + f"{sbatch_hours(j)} h" for j in js)
+        rows.append(f"#   {rule:8s} {ds:9s} {cfg:16s} {e['nodes']:3d}  {e['n_train']:7,d}  "
                     f"{sum(j['est'] for j in js):6.1f} h   {jobs_txt}"
                     + ("   OVER_CAP (blocked)" if js[0]["blocked"] else ""))
     lines = ["#!/usr/bin/env bash", "#",
@@ -522,17 +593,22 @@ def write_submit(plan: dict) -> dict:
              "# The training seed is SEED (default 0). Seeds 1-2 are double-commented (##): submit",
              "# them only after confirmation; they get their own job name and logs.",
              "#",
+             "# Rule arms (adaptive_jenks, adaptive_entmax15): same as the fixed arm except the",
+             "# neighbour selection; scripts <ds>_tabdiff_gnn_<jenks|entmax15>.sh, results ..._<rule>_...",
+             "#",
+             "# Every sbatch line carries what the gpu partition requires: --gres=gpu:a100:1 --mem=24G",
+             "# and a realistic --time (estimate x1.3, min 2 h, cap 48 h; 48 h for a resumable",
+             "# training part); command-line flags override the scripts' #SBATCH directives.",
+             "#",
              "# Estimates per seed (hours on one A100, before the x1.3 walltime margin):",
              "#",
-             "#   dataset   config            N  n_train   estimate   walltime",
+             "#   rule     dataset   config            N  n_train   estimate   --time",
              *rows,
              "#",
              "# Re-size from a measured A100 time (timing probe, tabdiff_gnn/README.md):",
              "#     python3 tabdiff_gnn/make_jobs.py --probe news=<s/epoch>",
              "#",
-             "# Before anything:",
-             "#     sinfo -p gpu -o \"%N %G\"",
-             "#     export GRES=gpu:1",
+             "# Before anything (seed 1-2 lines use it for their own logs):",
              "#     OUT=/work/pr019/atvoulo/Rompos/jobs_out",
              "# ---------------------------------------------------------------------------",
              "",
@@ -560,13 +636,16 @@ def write_submit(plan: dict) -> dict:
         tot = 0.0
         for arm, ds in [x for _, items in SUBMIT_BLOCKS for x in items]:
             ls, g = _submit_lines(plan[(arm, ds)], seed, "## ")
-            lines += [f"# --- {ds} seed {seed} (~{g:.1f} GPU-h)"] + ls
+            tag = C.RULE_TAG.get(ARM_RULE.get(arm, "fixed"), "fixed")
+            lines += [f"# --- {ds} {tag} seed {seed} (~{g:.1f} GPU-h)"] + ls
             tot += g
         totals[f"seed {seed}"] = tot
         lines.append("")
     s0 = sum(v for k, v in totals.items() if k.startswith("block"))
+    s0_fixed = sum(v for k, v in totals.items() if k.startswith("block") and "adaptive" not in k)
     ab = sum(v for k, v in totals.items() if k.startswith("ablation"))
-    lines += [f"# GPU-h (estimate, before the x{MARGIN} margin): seed 0 {s0:.1f}; ablation {ab:.1f}; "
+    lines += [f"# GPU-h (estimate, before the x{MARGIN} margin): seed 0 {s0:.1f} (fixed {s0_fixed:.1f}, "
+              f"rules {s0 - s0_fixed:.1f}); ablation {ab:.1f}; "
               f"seeds 1-2 {totals.get('seed 1', 0) + totals.get('seed 2', 0):.1f} more",
               "# Analysis afterwards: python3 analysis/tabdiff/compare.py --route_a", ""]
     with open(SUBMIT, "w") as fh:
