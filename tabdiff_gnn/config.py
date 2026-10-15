@@ -251,10 +251,13 @@ def n_nodes(ds: str, repo_root: str = REPO) -> int:
 # against the main run of the same dataset; the run path encodes the change
 # (e.g. ..._topk11_...) and run_meta.json records {"ablation": ...}.
 ABLATIONS = {
-    "topk_dense": {"datasets": ("beijing",), "change": "top_k = N - 1 (dense graph: every node "
+    "topk_dense": {"datasets": ("beijing", "magic"), "change": "top_k = N - 1 (dense graph: every node "
                    "keeps all N-1 others; DynamicAdjacency masks nothing, edge weights are the "
                    "sigmoid scores)", "question": "is the sparse top-k graph the cause of the "
-                   "beijing failure?"},
+                   "beijing failure?",
+                   # per-dataset question where it differs from "question"
+                   "question_by_dataset": {"magic": "is the sparse top-k graph (k = 3) the cause of "
+                                                    "magic's gap (fixed and entmax15 trail TabDiff)?"}},
 }
 
 

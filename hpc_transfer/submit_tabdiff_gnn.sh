@@ -122,6 +122,8 @@ exit 0
 # === ABLATION (NOT the main protocol; seed 0; compare with the main run) ========
 # --- beijing topk_dense: top_k = N - 1 (~6.9 GPU-h)
 # sbatch --gres=gpu:a100:1 --mem=24G --time=10:00:00 hpc_transfer/jobs_tabdiff_gnn/beijing_tabdiff_gnn_ablation_topk_dense.sh
+# --- magic topk_dense: top_k = N - 1 (~3.2 GPU-h)
+# sbatch --gres=gpu:a100:1 --mem=24G --time=05:00:00 hpc_transfer/jobs_tabdiff_gnn/magic_tabdiff_gnn_ablation_topk_dense.sh
 
 # === training seed 1 -- ONLY AFTER CONFIRMATION ==============================
 # --- magic fixed seed 1 (~3.2 GPU-h)
@@ -223,5 +225,5 @@ exit 0
 ## jid=$(SEED=2 sbatch --parsable --gres=gpu:a100:1 --mem=24G --time=48:00:00 --dependency=afterok:${jid} --job-name=news_tabdiff_gnn_entmax15_train_p2_s2 --output=${OUT}/news_tabdiff_gnn_entmax15_train_p2_s2.out --error=${OUT}/news_tabdiff_gnn_entmax15_train_p2_s2.err hpc_transfer/jobs_tabdiff_gnn/news_tabdiff_gnn_entmax15_train.sh)
 ## jid=$(SEED=2 sbatch --parsable --gres=gpu:a100:1 --mem=24G --time=5:00:00 --dependency=afterok:${jid} --job-name=news_tabdiff_gnn_entmax15_sample_eval_s2 --output=${OUT}/news_tabdiff_gnn_entmax15_sample_eval_s2.out --error=${OUT}/news_tabdiff_gnn_entmax15_sample_eval_s2.err hpc_transfer/jobs_tabdiff_gnn/news_tabdiff_gnn_entmax15_sample_eval.sh)
 
-# GPU-h (estimate, before the x1.3 margin): seed 0 305.7 (fixed 100.6, rules 205.1); ablation 6.9; seeds 1-2 611.3 more
+# GPU-h (estimate, before the x1.3 margin): seed 0 305.7 (fixed 100.6, rules 205.1); ablation 10.1; seeds 1-2 611.3 more
 # Analysis afterwards: python3 analysis/tabdiff/compare.py --route_a

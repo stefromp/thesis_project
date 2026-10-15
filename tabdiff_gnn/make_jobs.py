@@ -121,9 +121,10 @@ SBATCH_FLAGS = "--gres=gpu:a100:1 --mem=24G"
 RULE_ORDER = ["beijing", "magic", "shoppers", "adult", "default", "diabetes", "news"]
 POST = ["sample", "eval_main", "eval_quality", "eval_tabpc"]
 # Ablation jobs (NOT the main protocol): (arm, dataset, config.ABLATIONS key), seed 0 only.
-ABLATION_JOBS = [("gnn", "beijing", "topk_dense")]
+ABLATION_JOBS = [("gnn", "beijing", "topk_dense"), ("gnn", "magic", "topk_dense")]
 # Measured cost of the ablation relative to the main run (CPU, beijing, 3 alternating rounds,
-# median): GATv2 scores every node pair and then masks, so top_k = N-1 costs the same.
+# median): GATv2 scores every node pair and then masks, so top_k = N-1 costs the same
+# (magic is GATv2 too).
 ABLATION_COST = {"topk_dense": 1.00}
 RATIO_CSV = os.path.join(OUT, "step_ratio_cpu.csv")
 # Submission blocks (seed 0), in order; seeds 1-2 follow, double-commented.
@@ -421,7 +422,8 @@ def jobs_for(arm: str, ds: str, ablation: str | None = None) -> list:
     if ablation:
         f = ABLATION_COST[ablation]
         e["stages_h"] = {k: (v * f if k in ("train", "sample") else v) for k, v in e["stages_h"].items()}
-        e["basis"] += f"; ablation {ablation}: x{f:.2f} measured"
+        e["basis"] += f"; ablation {ablation}: x{f:.2f} measured" + ("" if ds == "beijing" else
+                                                                     " on beijing (same GNN type)")
         chain = [(st, sum(e["stages_h"][x] for x in st)) for st, _ in chain]
         if len(chain) > 1 or ds in C.RESUMABLE_DATASETS:
             raise SystemExit(f"ablation jobs are single-job datasets only ({ds})")
@@ -508,7 +510,8 @@ def write_jobs() -> dict:
                     arch=(f"{g['gnn_type']} L{g['n_layers']} d{g['d_model']} {sel} "
                           f"heads {g['n_heads']}"
                           + (f"\n#   ABLATION {ablation} (NOT the main protocol): {C.ABLATIONS[ablation]['change']}"
-                             f"\n#   question: {C.ABLATIONS[ablation]['question']}" if ablation else "")),
+                             f"\n#   question: {C.ABLATIONS[ablation].get('question_by_dataset', {}).get(ds, C.ABLATIONS[ablation]['question'])}"
+                             if ablation else "")),
                     src=C.SOURCES[ds],
                     src_note=(" -- our choice: diabetes has no TabDDPM source" if ds in C.SOURCE_NOTES else ""),
                     d_model=C.D_MODEL, dim_t=C.DIM_T,
@@ -534,8 +537,8 @@ def sbatch_hours(j: dict) -> int:
     return CAP_H if j["budget"] else _hours(j["est"])
 
 
-def _submit_lines(js, seed: int, c: str) -> tuple:
-    """Commented sbatch lines for one dataset and seed."""
+def _submit_lines(js, seed: int, c: str, pad: bool = False) -> tuple:
+    """Commented sbatch lines for one dataset and seed (pad: --time=HH:00:00, two digits)."""
     gpu_h = sum(j["est"] for j in js)
     if js[0]["blocked"]:
         c = "### "
@@ -550,7 +553,8 @@ def _submit_lines(js, seed: int, c: str) -> tuple:
                     f"--job-name={name} --output=${{OUT}}/{name}.out --error=${{OUT}}/{name}.err ")
             dep = "--dependency=afterok:${jid} " if prev else ""
             # realistic walltime from the estimate (resumable training parts: the 48 h cap)
-            flags = f"{SBATCH_FLAGS} --time={sbatch_hours(j)}:00:00 "
+            hh = f"{sbatch_hours(j):02d}" if pad else f"{sbatch_hours(j)}"
+            flags = f"{SBATCH_FLAGS} --time={hh}:00:00 "
             if len(js) > 1 or j["parts"] > 1:
                 out.append(f'{c}jid=$({env}sbatch --parsable {flags}{dep}{over}'
                            f'hpc_transfer/jobs_tabdiff_gnn/{j["name"]}.sh)')
@@ -627,7 +631,7 @@ def write_submit(plan: dict) -> dict:
         lines.append("")
     lines.append("# === ABLATION (NOT the main protocol; seed 0; compare with the main run) " + "=" * 8)
     for arm, ds, abl in ABLATION_JOBS:
-        ls, g = _submit_lines(plan[(arm, ds, abl)], 0, "# ")
+        ls, g = _submit_lines(plan[(arm, ds, abl)], 0, "# ", pad=True)
         lines += [f"# --- {ds} {abl}: {C.ABLATIONS[abl]['change'].split('(')[0].strip()} (~{g:.1f} GPU-h)"] + ls
         totals[f"ablation {ds} {abl}"] = g
     lines.append("")

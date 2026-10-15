@@ -627,7 +627,8 @@ def test_job_scripts_follow_hpc_transfer_jobs():
     names = {os.path.basename(f)[:-3] for f in files}
     want = {f"{ds}_tabdiff_gnn" for ds in C.ORDER if ds != "news"} | {"news_tabdiff_gnn_train",
                                                                       "news_tabdiff_gnn_sample_eval",
-                                                                      "beijing_tabdiff_gnn_ablation_topk_dense"}
+                                                                      "beijing_tabdiff_gnn_ablation_topk_dense",
+                                                                      "magic_tabdiff_gnn_ablation_topk_dense"}
     for tag in ("jenks", "entmax15"):                        # the adaptive-rule arms
         want |= {f"{ds}_tabdiff_gnn_{tag}" for ds in C.ORDER if ds != "news"} | {
             f"news_tabdiff_gnn_{tag}_train", f"news_tabdiff_gnn_{tag}_sample_eval"}
@@ -968,7 +969,7 @@ def test_topk_dense_ablation_changes_only_top_k(tmp_path):
     p_abl = C.run_dir(str(tmp_path), "tabdiff_beijing", "attngnn", 0, ablation="topk_dense")
     assert "_topk11_" in p_abl and "_topk5_" in p_main and p_abl != p_main
     with pytest.raises(ValueError):
-        C.gnn_config("magic", ablation="topk_dense")              # defined for beijing only
+        C.gnn_config("shoppers", ablation="topk_dense")           # defined for beijing and magic only
     with pytest.raises(ValueError):
         C.gnn_config("beijing", ablation="nope")
 
@@ -995,16 +996,22 @@ def test_ablation_run_meta_and_spec(tmp_path):
 
 
 def test_ablation_job_script():
-    t = open(os.path.join(JOBS, "beijing_tabdiff_gnn_ablation_topk_dense.sh")).read()
-    assert 'ABLATION="${ABLATION:-topk_dense}"' in t and "_topk11_" in t and "top-k 11" in t
-    assert "#SBATCH --job-name=beijing_tabdiff_gnn_ablation_topk_dense" in t and "#SBATCH --time=48:00:00" in t
+    for ds, k, layers in (("beijing", 11, 3), ("magic", 10, 2)):
+        t = open(os.path.join(JOBS, f"{ds}_tabdiff_gnn_ablation_topk_dense.sh")).read()
+        assert 'ABLATION="${ABLATION:-topk_dense}"' in t and f"_topk{k}_" in t and f"top-k {k} (fixed)" in t
+        assert f"#SBATCH --job-name={ds}_tabdiff_gnn_ablation_topk_dense" in t and "#SBATCH --time=48:00:00" in t
+        assert f"gatv2 L{layers} d256 top-k {k} (fixed) heads 8" in t and f'DATASET="{ds}"' in t
+        assert subprocess.run(["bash", "-n", os.path.join(JOBS, f"{ds}_tabdiff_gnn_ablation_topk_dense.sh")]
+                              ).returncode == 0
     for ds in C.ORDER:
         for f in glob.glob(os.path.join(JOBS, f"{ds}_tabdiff_gnn*.sh")):
             if "ablation" not in f:
                 assert 'ABLATION="${ABLATION:-}"' in open(f).read()
     sub = open(os.path.join(REPO, "hpc_transfer", "submit_tabdiff_gnn.sh")).read()
     abl = [ln for ln in sub.splitlines() if "ablation_topk_dense" in ln and "sbatch" in ln]
-    assert len(abl) == 1 and abl[0].startswith("# ")
+    assert len(abl) == 2 and all(ln.startswith("# ") for ln in abl)
+    assert ("# sbatch --gres=gpu:a100:1 --mem=24G --time=05:00:00 "
+            "hpc_transfer/jobs_tabdiff_gnn/magic_tabdiff_gnn_ablation_topk_dense.sh") in abl
     assert sub.index("=== ABLATION") > sub.index("block 2")       # after the main runs
 
 
@@ -1291,3 +1298,106 @@ def test_route_a_report_rule_dimension_and_k_figure(tmp_path):
     assert [os.path.basename(f) for f in figs] == ["route_a_k_vs_t_shoppers.png"] and os.path.getsize(figs[0]) > 0
     md = compare.ra_markdown(comp, {}, compare.ra_static_params(), str(tmp_path), figs, str(out))
     assert "](figures/route_a_k_vs_t_shoppers.png)" in md and "Neighbour-selection rule" in md
+
+
+# ---------------------------------------------------------------------------
+# topk_dense extended to magic (top_k = N - 1 = 10)
+# ---------------------------------------------------------------------------
+ABLATION_BASE_COMMIT = "de83865"          # last commit before magic's topk_dense ablation
+
+# every run path as committed before the magic ablation (spelled out, so a change shows here)
+MAIN_ARM_DIRS = {
+    "magic": "v2_gatv2_layers2_dim256_{}_heads8_dimt128_noise-shared",
+    "shoppers": "v2_gcn_layers2_dim256_{}_heads4_dimt128_noise-shared",
+    "adult": "v2_gcn_layers2_dim256_{}_heads4_dimt128_noise-shared",
+    "default": "v2_gatv2_layers3_dim256_{}_heads8_dimt128_noise-shared",
+    "beijing": "v2_gatv2_layers3_dim256_{}_heads8_dimt128_noise-shared",
+    "news": "v2_gatv2_layers3_dim256_{}_heads8_dimt128_noise-shared",
+    "diabetes": "v2_gcn_layers2_dim256_{}_heads4_dimt128_noise-shared",
+}
+MAIN_TOPK = {"magic": 3, "shoppers": 5, "adult": 5, "default": 5, "beijing": 5, "news": 5, "diabetes": 5}
+
+
+def test_main_arm_and_beijing_ablation_paths_unchanged(tmp_path):
+    root = os.path.join(str(tmp_path), C.RESULTS_DIRNAME)
+    for ds, arm in MAIN_ARM_DIRS.items():
+        for mode, sel in (("fixed", f"topk{MAIN_TOPK[ds]}"), ("adaptive_jenks", "jenks"),
+                          ("adaptive_entmax15", "entmax15")):
+            assert C.run_dir(str(tmp_path), C.target_name(ds), "attngnn", 0, topk_mode=mode) == \
+                os.path.join(root, C.target_name(ds), "attngnn", arm.format(sel), "seed0")
+    assert C.run_dir(str(tmp_path), "tabdiff_beijing", "attngnn", 0, ablation="topk_dense") == \
+        os.path.join(root, "tabdiff_beijing", "attngnn", MAIN_ARM_DIRS["beijing"].format("topk11"), "seed0")
+    assert C.run_dir(str(tmp_path), "tabdiff_magic", "attngnn", 0, ablation="topk_dense") == \
+        os.path.join(root, "tabdiff_magic", "attngnn", MAIN_ARM_DIRS["magic"].format("topk10"), "seed0")
+    # the ablation's own path never collides with any main arm
+    assert MAIN_ARM_DIRS["magic"].format("topk10") not in {MAIN_ARM_DIRS["magic"].format(x)
+                                                           for x in ("topk3", "jenks", "entmax15")}
+    for ds in ("shoppers", "adult", "default", "news", "diabetes"):     # still beijing + magic only
+        with pytest.raises(ValueError):
+            C.run_dir(str(tmp_path), C.target_name(ds), "attngnn", 0, ablation="topk_dense")
+
+
+def test_magic_topk_dense_spec_and_beijing_spec_unchanged():
+    import entry
+    m = entry.spec_for("tabdiff_magic", "attngnn", 0, ablation="topk_dense")
+    main = entry.spec_for("tabdiff_magic", "attngnn", 0)
+    assert m["gnn"] == {**main["gnn"], "top_k": 10} and m["ablation"] == "topk_dense"
+    assert (m["gnn"]["gnn_type"], m["gnn"]["n_layers"], m["gnn"]["n_heads"], m["gnn"]["d_model"]) == \
+        ("gatv2", 2, 8, 256)
+    assert "wilt.sh" in m["gnn_sources"]["gnn_type"] and "N - 1 = 10" in m["gnn_sources"]["top_k"]
+    b = entry.spec_for("tabdiff_beijing", "attngnn", 0, ablation="topk_dense")
+    assert b["gnn"]["top_k"] == 11 and b["ablation"] == "topk_dense" and "rule_settings" not in b
+
+
+def test_magic_topk_dense_builds_with_top_k_10():
+    """Built from the ablation's spec on magic's real shapes: every block keeps all 10 others."""
+    import torch
+    import entry
+    from denoiser import build_denoiser
+    spec = entry.spec_for("tabdiff_magic", "attngnn", 0, ablation="topk_dense")
+    info = json.load(open(C.data_files("tabdiff_magic")["info"]))
+    d_num = len(info["num_col_idx"]) + (len(info["target_col_idx"]) if info["task_type"] == "regression" else 0)
+    n_cat = C.n_nodes("magic") - d_num
+    up = {"d_numerical": d_num, "categories": [3] * n_cat}          # K + 1 (mask); widths do not matter here
+    m = build_denoiser("attngnn", up, spec["gnn"], dim_t=C.DIM_T)
+    assert C.n_nodes("magic") == 11 and len(m.blocks) == 2
+    assert all(b.dynamic_adj.top_k == 10 and b.dynamic_adj.n_nodes == 11 for b in m.blocks)
+    adj = m.blocks[0].dynamic_adj(torch.randn(4, 11, 256))
+    assert ((adj > 0).sum(-1) == 11).all()                          # dense: every edge + self-loop
+
+
+def test_magic_topk_dense_dry_run_builds_top_k_10(tmp_path, capsys):
+    _need_tabdiff()
+    runner = _load_route_a("runner")
+    rc = runner.run_job(_args(tmp_path, "--dataset", "magic", "--denoiser", "attngnn", "--ablation", "topk_dense",
+                              "--dry_run"), FakeExec())
+    out = capsys.readouterr().out
+    assert rc == 0 and "_topk10_" in out and "forward" in out
+    t = runner.Target("magic", _args(tmp_path, "--dataset", "magic", "--denoiser", "attngnn",
+                                     "--ablation", "topk_dense"), REPO)
+    assert t.want["gnn"]["top_k"] == 10
+    assert runner.instantiate_check(t)["forward"] == "ok"
+
+
+def test_magic_topk_dense_run_meta_links_main_run(tmp_path):
+    runner = _load_route_a("runner")
+    runner.run_job(_args(tmp_path, "--dataset", "magic", "--denoiser", "attngnn", "--ablation", "topk_dense"),
+                   FakeExec())
+    run = C.run_dir(str(tmp_path), "tabdiff_magic", "attngnn", 0, ablation="topk_dense")
+    meta = json.load(open(os.path.join(run, "run_meta.json")))
+    assert meta["ablation"]["name"] == "topk_dense" and "not part of the main" in meta["ablation"]["note"]
+    assert meta["ablation"]["main_run_dir"] == C.run_dir(str(tmp_path), "tabdiff_magic", "attngnn", 0)
+    assert meta["gnn"]["top_k"] == 10 and run.endswith(os.path.join("v2_gatv2_layers2_dim256_topk10_heads8_"
+                                                                    "dimt128_noise-shared", "seed0"))
+    assert not os.path.exists(C.run_dir(str(tmp_path), "tabdiff_magic", "attngnn", 0))   # main run untouched
+
+
+def test_only_the_magic_ablation_job_is_new():
+    """Every other job script is byte-identical to the commit before the magic ablation."""
+    if subprocess.run(["git", "-C", REPO, "cat-file", "-e", ABLATION_BASE_COMMIT],
+                      capture_output=True).returncode != 0:
+        pytest.skip("no git history (cluster)")
+    scripts = [f for f in glob.glob(os.path.join(JOBS, "*.sh"))
+               if not f.endswith("magic_tabdiff_gnn_ablation_topk_dense.sh")]
+    r = subprocess.run(["git", "-C", REPO, "diff", "--quiet", ABLATION_BASE_COMMIT, "--"] + scripts)
+    assert r.returncode == 0, "a job script other than magic's ablation changed"

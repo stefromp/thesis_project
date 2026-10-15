@@ -336,7 +336,7 @@ $EV analysis/tabdiff/route_a_diagnosis.py report --exp_root $HPC_ROOT/transfer_r
 
 TabDiff's Trainer computes the EMA loss but never logs it, so the report has no EMA-loss curve. It does have the selected checkpoint's EMA loss and epoch.
 
-## Ablation: beijing with a dense graph (not part of the main protocol)
+## Ablation: beijing and magic with a dense graph (not part of the main protocol)
 
 `--ablation topk_dense` keeps every setting of the main beijing run except `top_k = N − 1 = 11`. With N = 12 nodes, `DynamicAdjacency` then masks nothing and every node attends to all the others.
 - **Path:** `…/tabdiff_beijing/attngnn/v2_gatv2_layers3_dim256_topk11_heads8_dimt128_noise-shared/seed0/`.
@@ -344,3 +344,8 @@ TabDiff's Trainer computes the EMA loss but never logs it, so the report has no 
 - **`ROUTE_A.md`** never reads ablation runs.
 - **Job:** `hpc_transfer/jobs_tabdiff_gnn/beijing_tabdiff_gnn_ablation_topk_dense.sh`, in the "ABLATION" block of the submission loop, commented out.
 - **Cost:** the same as the main beijing run. GATv2 scores all node pairs and then masks, and the CPU timing ratio is 1.00. That is about 6.9 GPU-h; the job asks for 48:00:00 like every job.
+
+**magic** (same ablation, `topk_dense`): magic's own source config (`configs/wilt.sh`: GATv2, 2 layers, 8 heads; d_model 256) with `top_k = N − 1 = 10` (main run: 3).
+- **Path:** `…/tabdiff_magic/attngnn/v2_gatv2_layers2_dim256_topk10_heads8_dimt128_noise-shared/seed0/`; `run_meta.json` links the main magic run (`…_topk3_…`).
+- **Job:** `hpc_transfer/jobs_tabdiff_gnn/magic_tabdiff_gnn_ablation_topk_dense.sh`, ABLATION block, `--gres=gpu:a100:1 --mem=24G --time=05:00:00`.
+- **Cost:** about 3.2 GPU-h (the main magic estimate × the 1.00 dense ratio measured on beijing; magic is GATv2 too).
