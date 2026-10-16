@@ -623,7 +623,8 @@ def _blocks(text):
 
 
 def test_job_scripts_follow_hpc_transfer_jobs():
-    files = sorted(f for f in glob.glob(os.path.join(JOBS, "*.sh")) if not f.endswith("common_tabdiff_gnn.sh"))
+    files = sorted(f for f in glob.glob(os.path.join(JOBS, "*.sh")) if not f.endswith("common_tabdiff_gnn.sh")
+                   and not os.path.basename(f).startswith("analysis_"))   # hand-written analysis jobs
     names = {os.path.basename(f)[:-3] for f in files}
     want = {f"{ds}_tabdiff_gnn" for ds in C.ORDER if ds != "news"} | {"news_tabdiff_gnn_train",
                                                                       "news_tabdiff_gnn_sample_eval",
@@ -1398,6 +1399,7 @@ def test_only_the_magic_ablation_job_is_new():
                       capture_output=True).returncode != 0:
         pytest.skip("no git history (cluster)")
     scripts = [f for f in glob.glob(os.path.join(JOBS, "*.sh"))
-               if not f.endswith("magic_tabdiff_gnn_ablation_topk_dense.sh")]
+               if not f.endswith("magic_tabdiff_gnn_ablation_topk_dense.sh")
+               and not os.path.basename(f).startswith("analysis_")]          # analysis jobs: own tests
     r = subprocess.run(["git", "-C", REPO, "diff", "--quiet", ABLATION_BASE_COMMIT, "--"] + scripts)
     assert r.returncode == 0, "a job script other than magic's ablation changed"

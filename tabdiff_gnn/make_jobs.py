@@ -445,11 +445,18 @@ def jobs_for(arm: str, ds: str, ablation: str | None = None) -> list:
 TRAIN_BUDGET_RESERVE = TRAIN_RESERVE_H
 
 
+def keep_on_regenerate(path: str) -> bool:
+    """Scripts in OUT this generator does not own: the shared runner and the
+    hand-written analysis jobs (analysis_*.sh)."""
+    name = os.path.basename(path)
+    return name == "common_tabdiff_gnn.sh" or name.startswith("analysis_")
+
+
 def write_jobs() -> dict:
     import glob
     os.makedirs(OUT, exist_ok=True)
     for old in glob.glob(os.path.join(OUT, "*.sh")):
-        if os.path.basename(old) != "common_tabdiff_gnn.sh":
+        if not keep_on_regenerate(old):
             os.remove(old)
     plan = {}
     todo = [(arm, ds, None) for arm, (_, dsets, _) in ARMS.items() for ds in dsets] + ABLATION_JOBS
