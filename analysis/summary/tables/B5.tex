@@ -1,0 +1,21 @@
+% requires \usepackage{booktabs,graphicx}
+\begin{table}[t]
+\centering
+\caption{TabDiff as reported in its paper.}
+\label{tab:summary_b5}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccccccccc}
+\toprule
+Dataset & task & Shape err.\ (\%) $\downarrow$ & Trend err.\ (\%) $\downarrow$ & MLE-1: AUC / $R^2$ $\uparrow$ & MLE-2: $F_1\uparrow$ / RMSE$\downarrow$ & $\alpha$-prec.\ (\%) $\uparrow$ & $\beta$-rec.\ (\%) $\uparrow$ & C2ST (LR) $\uparrow$ & wNMIS $\uparrow$ & C2ST (XGB) $\uparrow$ & Params \\
+\midrule
+adult & clf. & 0.63{\scriptsize$\pm$0.05}$^\dagger$ & 1.49{\scriptsize$\pm$0.16}$^\dagger$ & 0.912{\scriptsize$\pm$0.002}$^\dagger$ & ---$^{p}$ & 99.02{\scriptsize$\pm$0.20}$^\dagger$ & 51.64{\scriptsize$\pm$0.20}$^\dagger$ & 0.9950$^\dagger$ & ---$^{p}$ & ---$^{p}$ & 10{,}622{,}989 \\
+beijing & reg. & 1.03{\scriptsize$\pm$0.05}$^\dagger$ & 2.59{\scriptsize$\pm$0.15}$^\dagger$ & ---$^{p}$ & 0.555{\scriptsize$\pm$0.013}$^\dagger$ & 98.06{\scriptsize$\pm$0.24}$^\dagger$ & 59.63{\scriptsize$\pm$0.23}$^\dagger$ & 0.9781$^\dagger$ & ---$^{p}$ & ---$^{p}$ & 10{,}598{,}109 \\
+default & clf. & 1.24{\scriptsize$\pm$0.07}$^\dagger$ & 2.55{\scriptsize$\pm$0.75}$^\dagger$ & 0.763{\scriptsize$\pm$0.005}$^\dagger$ & ---$^{p}$ & 98.49{\scriptsize$\pm$0.28}$^\dagger$ & 51.09{\scriptsize$\pm$0.25}$^\dagger$ & 0.9774$^\dagger$ & ---$^{p}$ & ---$^{p}$ & 10{,}696{,}637 \\
+diabetes & clf. & 0.89{\scriptsize$\pm$0.23}$^\dagger$ & 2.20{\scriptsize$\pm$0.16}$^\dagger$ & 0.689{\scriptsize$\pm$0.016}$^\dagger$ & ---$^{p}$ & 95.69{\scriptsize$\pm$0.19}$^\dagger$ & 41.74{\scriptsize$\pm$0.17}$^\dagger$ & 0.9865$^\dagger$ & ---$^{p}$ & ---$^{p}$ & 10{,}822{,}529 \\
+magic & clf. & 0.78{\scriptsize$\pm$0.08}$^\dagger$ & 0.76{\scriptsize$\pm$0.12}$^\dagger$ & 0.936{\scriptsize$\pm$0.003}$^\dagger$ & ---$^{p}$ & 99.47{\scriptsize$\pm$0.21}$^\dagger$ & 48.01{\scriptsize$\pm$0.31}$^\dagger$ & 0.9989$^\dagger$ & ---$^{p}$ & ---$^{p}$ & 10{,}589{,}231 \\
+shoppers & clf. & 1.28{\scriptsize$\pm$0.09}$^\dagger$ & 1.74{\scriptsize$\pm$0.08}$^\dagger$ & 0.921{\scriptsize$\pm$0.004}$^\dagger$ & ---$^{p}$ & 99.11{\scriptsize$\pm$0.34}$^\dagger$ & 49.75{\scriptsize$\pm$0.64}$^\dagger$ & 0.9843$^\dagger$ & ---$^{p}$ & ---$^{p}$ & 10{,}647{,}279 \\
+news & reg. & 2.35{\scriptsize$\pm$0.03}$^\dagger$ & 1.28{\scriptsize$\pm$0.04}$^\dagger$ & ---$^{p}$ & 0.866{\scriptsize$\pm$0.021}$^\dagger$ & 97.36{\scriptsize$\pm$0.17}$^\dagger$ & 42.10{\scriptsize$\pm$0.32}$^\dagger$ & 0.9308$^\dagger$ & ---$^{p}$ & ---$^{p}$ & 10{,}893{,}027 \\
+\bottomrule
+\end{tabular}}
+\par\smallskip\footnotesize TabDiff paper Tables 1--3, 7--9 (C2ST printed without std). Params computed by us. ---: no value ($^{p}$ not reported, $^{n}$ not computed, $^{a}$ not applicable, $^{d}$ no run on disk); \emph{pending}: run in progress. $^\dagger$reported (paper or the authors' released evaluation files); unmarked: computed by us.
+\end{table}

@@ -1,0 +1,118 @@
+table,dataset,model,metric,mean,std,n,std_kind,kind,status,source,source_commit,producer_commit,note
+A4,abalone,TabDDPM (MLP denoiser),mle_paper,0.55,0.01,50.0,std over 50 runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A4,abalone,TabDDPM (MLP denoiser),mle,0.5499,0.0103,50.0,authors' std over their runs,reported,ok,exp/abalone/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,abalone,TabDDPM (MLP denoiser),shape_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,abalone,TabDDPM (MLP denoiser),trend_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,abalone,TabDDPM (MLP denoiser),mia_auc,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,abalone,TabDDPM (MLP denoiser),wasserstein,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,abalone,TabDDPM (MLP denoiser),dcr,0.04990887224573338,,1.0,one generated sample,reported,ok,exp/abalone/ddpm_cb_best/privacy.json,7f84875,,authors' privacy.json; same recipe as dcr_baseline (analysis/paper_tables/DCR_RECIPE_CHECK.md)
+A4,abalone,TabDDPM (MLP denoiser),dcr_ratio,1.019089307567774,,1.0,,computed,ok,exp/abalone/ddpm_cb_best/privacy.json; analysis/paper_tables/holdout_dcr.csv,7f84875; 24855d0,,derived: authors' DCR / our holdout DCR
+A4,abalone,TabDDPM (MLP denoiser),params,167691.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,"MLP d_layers 512-128 from the authors' tuned config.toml, instantiated on CPU"
+A4,adult,TabDDPM (MLP denoiser),mle_paper,0.795,0.001,50.0,std over 50 runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A4,adult,TabDDPM (MLP denoiser),mle,0.7951,0.0014,50.0,authors' std over their runs,reported,ok,exp/adult/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,adult,TabDDPM (MLP denoiser),shape_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,adult,TabDDPM (MLP denoiser),trend_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,adult,TabDDPM (MLP denoiser),mia_auc,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,adult,TabDDPM (MLP denoiser),wasserstein,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,adult,TabDDPM (MLP denoiser),dcr,0.1043782482006405,,1.0,one generated sample,reported,ok,exp/adult/ddpm_cb_best/privacy.json,7f84875,,authors' privacy.json; same recipe as dcr_baseline (analysis/paper_tables/DCR_RECIPE_CHECK.md)
+A4,adult,TabDDPM (MLP denoiser),dcr_ratio,0.985214376255562,,1.0,,computed,ok,exp/adult/ddpm_cb_best/privacy.json; analysis/paper_tables/holdout_dcr.csv,7f84875; 24855d0,,derived: authors' DCR / our holdout DCR
+A4,adult,TabDDPM (MLP denoiser),params,3782380.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,"MLP d_layers 256-1024-1024-1024-1024-256 from the authors' tuned config.toml, instantiated on CPU"
+A4,buddy,TabDDPM (MLP denoiser),mle_paper,0.906,0.003,50.0,std over 50 runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A4,buddy,TabDDPM (MLP denoiser),mle,0.9057,0.0029,50.0,authors' std over their runs,reported,ok,exp/buddy/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,buddy,TabDDPM (MLP denoiser),shape_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,buddy,TabDDPM (MLP denoiser),trend_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,buddy,TabDDPM (MLP denoiser),mia_auc,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,buddy,TabDDPM (MLP denoiser),wasserstein,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,buddy,TabDDPM (MLP denoiser),dcr,0.1429755682714082,,1.0,one generated sample,reported,ok,exp/buddy/ddpm_cb_best/privacy.json,7f84875,,authors' privacy.json; same recipe as dcr_baseline (analysis/paper_tables/DCR_RECIPE_CHECK.md)
+A4,buddy,TabDDPM (MLP denoiser),dcr_ratio,0.8708740520007284,,1.0,,computed,ok,exp/buddy/ddpm_cb_best/privacy.json; analysis/paper_tables/holdout_dcr.csv,7f84875; 24855d0,,derived: authors' DCR / our holdout DCR
+A4,buddy,TabDDPM (MLP denoiser),params,1277280.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,"MLP d_layers 1024-512-512-512 from the authors' tuned config.toml, instantiated on CPU"
+A4,california,TabDDPM (MLP denoiser),mle_paper,0.836,0.002,50.0,std over 50 runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A4,california,TabDDPM (MLP denoiser),mle,0.8362,0.0015,50.0,authors' std over their runs,reported,ok,exp/california/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,california,TabDDPM (MLP denoiser),shape_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,california,TabDDPM (MLP denoiser),trend_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,california,TabDDPM (MLP denoiser),mia_auc,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,california,TabDDPM (MLP denoiser),wasserstein,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,california,TabDDPM (MLP denoiser),dcr,0.04060183504124948,,1.0,one generated sample,reported,ok,exp/california/ddpm_cb_best/privacy.json,7f84875,,authors' privacy.json; same recipe as dcr_baseline (analysis/paper_tables/DCR_RECIPE_CHECK.md)
+A4,california,TabDDPM (MLP denoiser),dcr_ratio,0.9943833217751173,,1.0,,computed,ok,exp/california/ddpm_cb_best/privacy.json; analysis/paper_tables/holdout_dcr.csv,7f84875; 24855d0,,derived: authors' DCR / our holdout DCR
+A4,california,TabDDPM (MLP denoiser),params,463113.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,"MLP d_layers 512-256-256-256-256-128 from the authors' tuned config.toml, instantiated on CPU"
+A4,cardio,TabDDPM (MLP denoiser),mle_paper,0.737,0.001,50.0,std over 50 runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A4,cardio,TabDDPM (MLP denoiser),mle,0.7374,0.0011,50.0,authors' std over their runs,reported,ok,exp/cardio/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,cardio,TabDDPM (MLP denoiser),shape_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,cardio,TabDDPM (MLP denoiser),trend_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,cardio,TabDDPM (MLP denoiser),mia_auc,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,cardio,TabDDPM (MLP denoiser),wasserstein,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,cardio,TabDDPM (MLP denoiser),dcr,0.0121709921531676,,1.0,one generated sample,reported,ok,exp/cardio/ddpm_cb_best/privacy.json,7f84875,,authors' privacy.json; same recipe as dcr_baseline (analysis/paper_tables/DCR_RECIPE_CHECK.md)
+A4,cardio,TabDDPM (MLP denoiser),dcr_ratio,1.0720344842474878,,1.0,,computed,ok,exp/cardio/ddpm_cb_best/privacy.json; analysis/paper_tables/holdout_dcr.csv,7f84875; 24855d0,,derived: authors' DCR / our holdout DCR
+A4,cardio,TabDDPM (MLP denoiser),params,4845075.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,"MLP d_layers 512-1024-1024-1024-1024-1024 from the authors' tuned config.toml, instantiated on CPU"
+A4,churn2,TabDDPM (MLP denoiser),mle_paper,0.755,0.006,50.0,std over 50 runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A4,churn2,TabDDPM (MLP denoiser),mle,0.7548,0.0059,50.0,authors' std over their runs,reported,ok,exp/churn2/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,churn2,TabDDPM (MLP denoiser),shape_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,churn2,TabDDPM (MLP denoiser),trend_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,churn2,TabDDPM (MLP denoiser),mia_auc,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,churn2,TabDDPM (MLP denoiser),wasserstein,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,churn2,TabDDPM (MLP denoiser),dcr,0.15735060469196344,,1.0,one generated sample,reported,ok,exp/churn2/ddpm_cb_best/privacy.json,7f84875,,authors' privacy.json; same recipe as dcr_baseline (analysis/paper_tables/DCR_RECIPE_CHECK.md)
+A4,churn2,TabDDPM (MLP denoiser),dcr_ratio,0.7330769740164359,,1.0,,computed,ok,exp/churn2/ddpm_cb_best/privacy.json; analysis/paper_tables/holdout_dcr.csv,7f84875; 24855d0,,derived: authors' DCR / our holdout DCR
+A4,churn2,TabDDPM (MLP denoiser),params,4308624.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,"MLP d_layers 512-1024-1024-1024-1024-512 from the authors' tuned config.toml, instantiated on CPU"
+A4,default,TabDDPM (MLP denoiser),mle_paper,0.691,0.004,50.0,std over 50 runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A4,default,TabDDPM (MLP denoiser),mle,0.691,0.004,50.0,authors' std over their runs,reported,ok,exp/default/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,default,TabDDPM (MLP denoiser),shape_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,default,TabDDPM (MLP denoiser),trend_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,default,TabDDPM (MLP denoiser),mia_auc,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,default,TabDDPM (MLP denoiser),wasserstein,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,default,TabDDPM (MLP denoiser),dcr,0.11229893083908625,,1.0,one generated sample,reported,ok,exp/default/ddpm_cb_best/privacy.json,7f84875,,authors' privacy.json; same recipe as dcr_baseline (analysis/paper_tables/DCR_RECIPE_CHECK.md)
+A4,default,TabDDPM (MLP denoiser),dcr_ratio,,,,,computed,not computed,,,,authors' data differ from ours (default)
+A4,default,TabDDPM (MLP denoiser),params,4061531.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,"MLP d_layers 256-1024-1024-1024-1024-512 from the authors' tuned config.toml, instantiated on CPU"
+A4,diabetes,TabDDPM (MLP denoiser),mle_paper,0.74,0.02,50.0,std over 50 runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A4,diabetes,TabDDPM (MLP denoiser),mle,0.7398,0.0196,50.0,authors' std over their runs,reported,ok,exp/diabetes/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,diabetes,TabDDPM (MLP denoiser),shape_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,diabetes,TabDDPM (MLP denoiser),trend_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,diabetes,TabDDPM (MLP denoiser),mia_auc,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,diabetes,TabDDPM (MLP denoiser),wasserstein,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,diabetes,TabDDPM (MLP denoiser),dcr,0.20361711289451803,,1.0,one generated sample,reported,ok,exp/diabetes/ddpm_cb_best/privacy.json,7f84875,,authors' privacy.json; same recipe as dcr_baseline (analysis/paper_tables/DCR_RECIPE_CHECK.md)
+A4,diabetes,TabDDPM (MLP denoiser),dcr_ratio,1.1673141230972635,,1.0,,computed,ok,exp/diabetes/ddpm_cb_best/privacy.json; analysis/paper_tables/holdout_dcr.csv,7f84875; 24855d0,,derived: authors' DCR / our holdout DCR
+A4,diabetes,TabDDPM (MLP denoiser),params,121096.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,"MLP d_layers 128-512 from the authors' tuned config.toml, instantiated on CPU"
+A4,gesture,TabDDPM (MLP denoiser),mle_paper,0.597,0.006,50.0,std over 50 runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A4,gesture,TabDDPM (MLP denoiser),mle,0.5967,0.0062,50.0,authors' std over their runs,reported,ok,exp/gesture/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,gesture,TabDDPM (MLP denoiser),shape_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,gesture,TabDDPM (MLP denoiser),trend_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,gesture,TabDDPM (MLP denoiser),mia_auc,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,gesture,TabDDPM (MLP denoiser),wasserstein,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,gesture,TabDDPM (MLP denoiser),dcr,0.05890877157371753,,1.0,one generated sample,reported,ok,exp/gesture/ddpm_cb_best/privacy.json,7f84875,,authors' privacy.json; same recipe as dcr_baseline (analysis/paper_tables/DCR_RECIPE_CHECK.md)
+A4,gesture,TabDDPM (MLP denoiser),dcr_ratio,0.7012224683648319,,1.0,,computed,ok,exp/gesture/ddpm_cb_best/privacy.json; analysis/paper_tables/holdout_dcr.csv,7f84875; 24855d0,,derived: authors' DCR / our holdout DCR
+A4,gesture,TabDDPM (MLP denoiser),params,941216.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,"MLP d_layers 128-512-512-1024 from the authors' tuned config.toml, instantiated on CPU"
+A4,house,TabDDPM (MLP denoiser),mle_paper,0.677,0.01,50.0,std over 50 runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A4,house,TabDDPM (MLP denoiser),mle,0.6766,0.0096,50.0,authors' std over their runs,reported,ok,exp/house/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,house,TabDDPM (MLP denoiser),shape_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,house,TabDDPM (MLP denoiser),trend_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,house,TabDDPM (MLP denoiser),mia_auc,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,house,TabDDPM (MLP denoiser),wasserstein,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,house,TabDDPM (MLP denoiser),dcr,0.08585241886686137,,1.0,one generated sample,reported,ok,exp/house/ddpm_cb_best/privacy.json,7f84875,,authors' privacy.json; same recipe as dcr_baseline (analysis/paper_tables/DCR_RECIPE_CHECK.md)
+A4,house,TabDDPM (MLP denoiser),dcr_ratio,0.9055815771445455,,1.0,,computed,ok,exp/house/ddpm_cb_best/privacy.json; analysis/paper_tables/holdout_dcr.csv,7f84875; 24855d0,,derived: authors' DCR / our holdout DCR
+A4,house,TabDDPM (MLP denoiser),params,1041553.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,"MLP d_layers 128-512-512-512-512-256 from the authors' tuned config.toml, instantiated on CPU"
+A4,insurance,TabDDPM (MLP denoiser),mle_paper,0.809,0.002,50.0,std over 50 runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A4,insurance,TabDDPM (MLP denoiser),mle,0.8092,0.0024,50.0,authors' std over their runs,reported,ok,exp/insurance/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,insurance,TabDDPM (MLP denoiser),shape_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,insurance,TabDDPM (MLP denoiser),trend_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,insurance,TabDDPM (MLP denoiser),mia_auc,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,insurance,TabDDPM (MLP denoiser),wasserstein,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,insurance,TabDDPM (MLP denoiser),dcr,0.040526590490555875,,1.0,one generated sample,reported,ok,exp/insurance/ddpm_cb_best/privacy.json,7f84875,,authors' privacy.json; same recipe as dcr_baseline (analysis/paper_tables/DCR_RECIPE_CHECK.md)
+A4,insurance,TabDDPM (MLP denoiser),dcr_ratio,0.3991203923180373,,1.0,,computed,ok,exp/insurance/ddpm_cb_best/privacy.json; analysis/paper_tables/holdout_dcr.csv,7f84875; 24855d0,,derived: authors' DCR / our holdout DCR
+A4,insurance,TabDDPM (MLP denoiser),params,1121676.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,"MLP d_layers 256-512-512-512-512-256 from the authors' tuned config.toml, instantiated on CPU"
+A4,king,TabDDPM (MLP denoiser),mle_paper,0.833,0.014,50.0,std over 50 runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A4,king,TabDDPM (MLP denoiser),mle,0.8331,0.0143,50.0,authors' std over their runs,reported,ok,exp/king/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,king,TabDDPM (MLP denoiser),shape_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,king,TabDDPM (MLP denoiser),trend_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,king,TabDDPM (MLP denoiser),mia_auc,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,king,TabDDPM (MLP denoiser),wasserstein,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,king,TabDDPM (MLP denoiser),dcr,0.18873427136201132,,1.0,one generated sample,reported,ok,exp/king/ddpm_cb_best/privacy.json,7f84875,,authors' privacy.json; same recipe as dcr_baseline (analysis/paper_tables/DCR_RECIPE_CHECK.md)
+A4,king,TabDDPM (MLP denoiser),dcr_ratio,1.0769513421998413,,1.0,,computed,ok,exp/king/ddpm_cb_best/privacy.json; analysis/paper_tables/holdout_dcr.csv,7f84875; 24855d0,,derived: authors' DCR / our holdout DCR
+A4,king,TabDDPM (MLP denoiser),params,3752094.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,"MLP d_layers 256-1024-1024-1024-1024-256 from the authors' tuned config.toml, instantiated on CPU"
+A4,wilt,TabDDPM (MLP denoiser),mle_paper,0.904,0.009,50.0,std over 50 runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A4,wilt,TabDDPM (MLP denoiser),mle,0.9045,0.009,50.0,authors' std over their runs,reported,ok,exp/wilt/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,wilt,TabDDPM (MLP denoiser),shape_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,wilt,TabDDPM (MLP denoiser),trend_err,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,wilt,TabDDPM (MLP denoiser),mia_auc,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,wilt,TabDDPM (MLP denoiser),wasserstein,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,wilt,TabDDPM (MLP denoiser),dcr,0.016434497626387577,,1.0,one generated sample,reported,ok,exp/wilt/ddpm_cb_best/privacy.json,7f84875,,authors' privacy.json; same recipe as dcr_baseline (analysis/paper_tables/DCR_RECIPE_CHECK.md)
+A4,wilt,TabDDPM (MLP denoiser),dcr_ratio,0.9871970744608229,,1.0,,computed,ok,exp/wilt/ddpm_cb_best/privacy.json; analysis/paper_tables/holdout_dcr.csv,7f84875; 24855d0,,derived: authors' DCR / our holdout DCR
+A4,wilt,TabDDPM (MLP denoiser),params,2070533.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,"MLP d_layers 1024-512-512-512-512-512-512-128 from the authors' tuned config.toml, instantiated on CPU"

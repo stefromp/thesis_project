@@ -1,0 +1,18 @@
+% requires \usepackage{booktabs,graphicx}
+\begin{table}[t]
+\centering
+\caption{Wins / ties / losses against TabDiff's reported values (paper metrics only).}
+\label{tab:summary_b6}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccccc}
+\toprule
+GNN arm vs.\ TabDiff (paper) & datasets & Shape & Trend & MLE (AUC/RMSE) & $\alpha$ & $\beta$ & C2ST (LR) & all six \\
+\midrule
+GNN fixed & 6 & 2 / 3 / 1 & 2 / 2 / 2 & 2 / 2 / 2 & 3 / 1 / 2 & 3 / 0 / 3 & 2 / 2 / 2 & 14 / 10 / 12 \\
+GNN adaptive\_jenks & 4 & 0 / 4 / 0 & 1 / 1 / 2 & 1 / 2 / 1 & 1 / 1 / 2 & 2 / 0 / 2 & 1 / 2 / 1 & 6 / 10 / 8 \\
+GNN adaptive\_entmax15 & 6 & 4 / 2 / 0 & 3 / 2 / 1 & 2 / 2 / 2 & 4 / 1 / 1 & 2 / 0 / 4 & 2 / 4 / 0 & 17 / 11 / 8 \\
+best arm per dataset (selected on test, optimistic) & 6 & 4 / 2 / 0 & 3 / 2 / 1 & 2 / 3 / 1 & 4 / 2 / 0 & 2 / 0 / 4 & 3 / 3 / 0 & 18 / 12 / 6 \\
+\bottomrule
+\end{tabular}}
+\par\smallskip\footnotesize Tie: $|\text{ours}-\text{TabDiff}|\le$ our std over 20 tables. Last row: arm chosen per dataset on the same test tables---optimistic, not a fair comparison. ---: no value ($^{p}$ not reported, $^{n}$ not computed, $^{a}$ not applicable, $^{d}$ no run on disk); \emph{pending}: run in progress. $^\dagger$reported (paper or the authors' released evaluation files); unmarked: computed by us.
+\end{table}

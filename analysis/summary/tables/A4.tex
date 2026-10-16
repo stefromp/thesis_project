@@ -1,0 +1,27 @@
+% requires \usepackage{booktabs,graphicx}
+\begin{table}[t]
+\centering
+\caption{TabDDPM (original MLP denoiser) on the same datasets.}
+\label{tab:summary_a4}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccccccc}
+\toprule
+Dataset & unit & MLE (paper) $\uparrow$ & MLE (release) $\uparrow$ & Shape err.\ (\%) $\downarrow$ & Trend err.\ (\%) $\downarrow$ & DCR $\uparrow$ & DCR/holdout & MIA AUC ($\to0.5$) & Wasserstein $\downarrow$ & Params \\
+\midrule
+abalone$^{*}$ & $R^2$ & 0.550{\scriptsize$\pm$0.010}$^\dagger$ & 0.5499{\scriptsize$\pm$0.0103}$^\dagger$ & ---$^{n}$ & ---$^{n}$ & 0.0499$^\dagger$ & 1.019 & ---$^{n}$ & ---$^{n}$ & 167{,}691 \\
+adult$^{*}$ & $F_1$ & 0.795{\scriptsize$\pm$0.001}$^\dagger$ & 0.7951{\scriptsize$\pm$0.0014}$^\dagger$ & ---$^{n}$ & ---$^{n}$ & 0.1044$^\dagger$ & 0.985 & ---$^{n}$ & ---$^{n}$ & 3{,}782{,}380 \\
+buddy$^{*}$ & $F_1$ & 0.906{\scriptsize$\pm$0.003}$^\dagger$ & 0.9057{\scriptsize$\pm$0.0029}$^\dagger$ & ---$^{n}$ & ---$^{n}$ & 0.1430$^\dagger$ & 0.871 & ---$^{n}$ & ---$^{n}$ & 1{,}277{,}280 \\
+california$^{*}$ & $R^2$ & 0.836{\scriptsize$\pm$0.002}$^\dagger$ & 0.8362{\scriptsize$\pm$0.0015}$^\dagger$ & ---$^{n}$ & ---$^{n}$ & 0.0406$^\dagger$ & 0.994 & ---$^{n}$ & ---$^{n}$ & 463{,}113 \\
+cardio & $F_1$ & 0.737{\scriptsize$\pm$0.001}$^\dagger$ & 0.7374{\scriptsize$\pm$0.0011}$^\dagger$ & ---$^{n}$ & ---$^{n}$ & 0.0122$^\dagger$ & 1.072 & ---$^{n}$ & ---$^{n}$ & 4{,}845{,}075 \\
+churn2$^{*}$ & $F_1$ & 0.755{\scriptsize$\pm$0.006}$^\dagger$ & 0.7548{\scriptsize$\pm$0.0059}$^\dagger$ & ---$^{n}$ & ---$^{n}$ & 0.1574$^\dagger$ & 0.733 & ---$^{n}$ & ---$^{n}$ & 4{,}308{,}624 \\
+default$^\ddagger$ & $F_1$ & 0.691{\scriptsize$\pm$0.004}$^\dagger$ & 0.6910{\scriptsize$\pm$0.0040}$^\dagger$ & ---$^{n}$ & ---$^{n}$ & 0.1123$^\dagger$ & ---$^{n}$ & ---$^{n}$ & ---$^{n}$ & 4{,}061{,}531 \\
+diabetes$^{*}$ & $F_1$ & 0.740{\scriptsize$\pm$0.020}$^\dagger$ & 0.7398{\scriptsize$\pm$0.0196}$^\dagger$ & ---$^{n}$ & ---$^{n}$ & 0.2036$^\dagger$ & 1.167 & ---$^{n}$ & ---$^{n}$ & 121{,}096 \\
+gesture$^{*}$ & $F_1$ & 0.597{\scriptsize$\pm$0.006}$^\dagger$ & 0.5967{\scriptsize$\pm$0.0062}$^\dagger$ & ---$^{n}$ & ---$^{n}$ & 0.0589$^\dagger$ & 0.701 & ---$^{n}$ & ---$^{n}$ & 941{,}216 \\
+house & $R^2$ & 0.677{\scriptsize$\pm$0.010}$^\dagger$ & 0.6766{\scriptsize$\pm$0.0096}$^\dagger$ & ---$^{n}$ & ---$^{n}$ & 0.0859$^\dagger$ & 0.906 & ---$^{n}$ & ---$^{n}$ & 1{,}041{,}553 \\
+insurance$^{*}$ & $R^2$ & 0.809{\scriptsize$\pm$0.002}$^\dagger$ & 0.8092{\scriptsize$\pm$0.0024}$^\dagger$ & ---$^{n}$ & ---$^{n}$ & 0.0405$^\dagger$ & 0.399 & ---$^{n}$ & ---$^{n}$ & 1{,}121{,}676 \\
+king & $R^2$ & 0.833{\scriptsize$\pm$0.014}$^\dagger$ & 0.8331{\scriptsize$\pm$0.0143}$^\dagger$ & ---$^{n}$ & ---$^{n}$ & 0.1887$^\dagger$ & 1.077 & ---$^{n}$ & ---$^{n}$ & 3{,}752{,}094 \\
+wilt$^{*}$ & $F_1$ & 0.904{\scriptsize$\pm$0.009}$^\dagger$ & 0.9045{\scriptsize$\pm$0.0090}$^\dagger$ & ---$^{n}$ & ---$^{n}$ & 0.0164$^\dagger$ & 0.987 & ---$^{n}$ & ---$^{n}$ & 2{,}070{,}533 \\
+\bottomrule
+\end{tabular}}
+\par\smallskip\footnotesize MLE (paper): as printed in Table~5 of the TabDDPM paper. DCR: the authors' released value, same statistic and code as ours, one sample. $^\ddagger$Authors' version of \textit{default}. ---: no value ($^{p}$ not reported, $^{n}$ not computed, $^{a}$ not applicable, $^{d}$ no run on disk); \emph{pending}: run in progress. $^\dagger$reported (paper or the authors' released evaluation files); unmarked: computed by us.
+\end{table}

@@ -1,0 +1,21 @@
+% requires \usepackage{booktabs,graphicx}
+\begin{table}[t]
+\centering
+\caption{AttnGNN (d\_model 256) as TabDiff's denoiser, adaptive\_entmax15 rule.}
+\label{tab:summary_b3}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccccccccc}
+\toprule
+Dataset & task & Shape err.\ (\%) $\downarrow$ & Trend err.\ (\%) $\downarrow$ & MLE-1: AUC / $R^2$ $\uparrow$ & MLE-2: $F_1\uparrow$ / RMSE$\downarrow$ & $\alpha$-prec.\ (\%) $\uparrow$ & $\beta$-rec.\ (\%) $\uparrow$ & C2ST (LR) $\uparrow$ & wNMIS $\uparrow$ & C2ST (XGB) $\uparrow$ & Params \\
+\midrule
+adult & clf. & 0.52{\scriptsize$\pm$0.04} & 1.23{\scriptsize$\pm$0.05} & 0.914{\scriptsize$\pm$0.001} & 0.674{\scriptsize$\pm$0.006} & 99.38{\scriptsize$\pm$0.17} & 49.81{\scriptsize$\pm$0.23} & 0.9983{\scriptsize$\pm$0.0023} & 0.9889{\scriptsize$\pm$0.0006} & 0.8590{\scriptsize$\pm$0.0051} & 2{,}746{,}353 \\
+beijing & reg. & 0.81{\scriptsize$\pm$0.05} & 2.45{\scriptsize$\pm$0.13} & 0.672{\scriptsize$\pm$0.015} & 0.588{\scriptsize$\pm$0.013} & 98.93{\scriptsize$\pm$0.24} & 58.25{\scriptsize$\pm$0.20} & 0.9844{\scriptsize$\pm$0.0037} & 0.9951{\scriptsize$\pm$0.0005} & 0.7753{\scriptsize$\pm$0.0076} & 5{,}226{,}705 \\
+default & clf. & 0.84{\scriptsize$\pm$0.06} & 2.57{\scriptsize$\pm$0.60} & 0.761{\scriptsize$\pm$0.003} & 0.443{\scriptsize$\pm$0.014} & 98.92{\scriptsize$\pm$0.14} & 46.85{\scriptsize$\pm$0.45} & 0.9764{\scriptsize$\pm$0.0055} & 0.9821{\scriptsize$\pm$0.0012} & 0.5885{\scriptsize$\pm$0.0076} & 5{,}237{,}465 \\
+diabetes & clf. & 0.80{\scriptsize$\pm$0.02} & 1.85{\scriptsize$\pm$0.14} & 0.693{\scriptsize$\pm$0.002} & 0.569{\scriptsize$\pm$0.004} & 96.16{\scriptsize$\pm$0.20} & 53.22{\scriptsize$\pm$0.19} & 0.9902{\scriptsize$\pm$0.0038} & 0.9909{\scriptsize$\pm$0.0003} & 0.8724{\scriptsize$\pm$0.0058} & 3{,}843{,}133 \\
+magic & clf. & 0.81{\scriptsize$\pm$0.10} & 1.00{\scriptsize$\pm$0.19} & 0.933{\scriptsize$\pm$0.002} & 0.814{\scriptsize$\pm$0.008} & 99.33{\scriptsize$\pm$0.17} & 43.74{\scriptsize$\pm$0.23} & 0.9957{\scriptsize$\pm$0.0044} & 0.9830{\scriptsize$\pm$0.0015} & 0.6770{\scriptsize$\pm$0.0063} & 3{,}478{,}403 \\
+shoppers & clf. & 1.33{\scriptsize$\pm$0.13} & 1.77{\scriptsize$\pm$0.10} & 0.924{\scriptsize$\pm$0.004} & 0.616{\scriptsize$\pm$0.020} & 98.13{\scriptsize$\pm$0.36} & 53.28{\scriptsize$\pm$0.51} & 0.9843{\scriptsize$\pm$0.0080} & 0.9817{\scriptsize$\pm$0.0012} & 0.7775{\scriptsize$\pm$0.0130} & 2{,}729{,}675 \\
+news & reg. & \emph{pending} & \emph{pending} & \emph{pending} & \emph{pending} & \emph{pending} & \emph{pending} & \emph{pending} & \emph{pending} & \emph{pending} & 5{,}222{,}031 \\
+\bottomrule
+\end{tabular}}
+\par\smallskip\footnotesize Mean$\pm$std (ddof=1) over 20 tables from one trained model (seed 0). MLE-1: AUROC/$R^2$; MLE-2: $F_1$/RMSE. wNMIS, C2ST (XGB): tabpc. news: still running (pending). ---: no value ($^{p}$ not reported, $^{n}$ not computed, $^{a}$ not applicable, $^{d}$ no run on disk); \emph{pending}: run in progress. $^\dagger$reported (paper or the authors' released evaluation files); unmarked: computed by us.
+\end{table}

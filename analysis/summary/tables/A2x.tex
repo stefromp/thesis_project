@@ -1,0 +1,27 @@
+% requires \usepackage{booktabs,graphicx}
+\begin{table}[t]
+\centering
+\caption{GNN denoiser, adaptive\_jenks rule: all other recorded metrics.}
+\label{tab:summary_a2x}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccccccccc}
+\toprule
+Dataset & Acc.\ $\uparrow$ & RMSE $\downarrow$ & ROC AUC $\uparrow$ & macro-P $\uparrow$ & macro-R $\uparrow$ & w-$F_1$ $\uparrow$ & w-P $\uparrow$ & w-R $\uparrow$ & DCR mean-L2, no label & assoc.\ (mean abs) $\downarrow$ & assoc.\ (Frob.) $\downarrow$ \\
+\midrule
+abalone$^{*}$ & ---$^{a}$ & 2.0145{\scriptsize$\pm$0.0231} & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & 0.0487{\scriptsize$\pm$0.0005} & 0.0487{\scriptsize$\pm$0.0126} & 0.556{\scriptsize$\pm$0.165} \\
+adult$^{*}$ & 0.8588{\scriptsize$\pm$0.0008} & ---$^{a}$ & 0.9128{\scriptsize$\pm$0.0006} & 0.8133{\scriptsize$\pm$0.0014} & 0.7779{\scriptsize$\pm$0.0014} & 0.8546{\scriptsize$\pm$0.0008} & 0.8533{\scriptsize$\pm$0.0009} & 0.8588{\scriptsize$\pm$0.0008} & 0.3165{\scriptsize$\pm$0.0011} & 0.0171{\scriptsize$\pm$0.0003} & 0.421{\scriptsize$\pm$0.005} \\
+buddy$^{*}$ & 0.8958{\scriptsize$\pm$0.0028} & ---$^{a}$ & ---$^{n}$ & 0.9132{\scriptsize$\pm$0.0029} & 0.9038{\scriptsize$\pm$0.0034} & 0.8957{\scriptsize$\pm$0.0028} & 0.8964{\scriptsize$\pm$0.0030} & 0.8958{\scriptsize$\pm$0.0028} & 0.2027{\scriptsize$\pm$0.0007} & 0.0140{\scriptsize$\pm$0.0016} & 0.168{\scriptsize$\pm$0.013} \\
+california$^{*}$ & ---$^{a}$ & 0.4813{\scriptsize$\pm$0.0022} & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & 0.0348{\scriptsize$\pm$0.0001} & 0.0165{\scriptsize$\pm$0.0039} & 0.229{\scriptsize$\pm$0.089} \\
+cardio & 0.7369{\scriptsize$\pm$0.0007} & ---$^{a}$ & 0.8042{\scriptsize$\pm$0.0004} & 0.7387{\scriptsize$\pm$0.0007} & 0.7370{\scriptsize$\pm$0.0007} & 0.7364{\scriptsize$\pm$0.0007} & 0.7388{\scriptsize$\pm$0.0007} & 0.7369{\scriptsize$\pm$0.0007} & 0.0164{\scriptsize$\pm$0.0000} & 0.0070{\scriptsize$\pm$0.0015} & 0.130{\scriptsize$\pm$0.052} \\
+churn2$^{*}$ & 0.8587{\scriptsize$\pm$0.0026} & ---$^{a}$ & 0.8535{\scriptsize$\pm$0.0042} & 0.8086{\scriptsize$\pm$0.0077} & 0.7141{\scriptsize$\pm$0.0051} & 0.8460{\scriptsize$\pm$0.0027} & 0.8487{\scriptsize$\pm$0.0033} & 0.8587{\scriptsize$\pm$0.0026} & 0.2119{\scriptsize$\pm$0.0005} & 0.0137{\scriptsize$\pm$0.0021} & 0.216{\scriptsize$\pm$0.028} \\
+default$^\ddagger$ & 0.8175{\scriptsize$\pm$0.0025} & ---$^{a}$ & 0.7696{\scriptsize$\pm$0.0066} & 0.7444{\scriptsize$\pm$0.0072} & 0.6655{\scriptsize$\pm$0.0046} & 0.8002{\scriptsize$\pm$0.0019} & 0.8003{\scriptsize$\pm$0.0027} & 0.8175{\scriptsize$\pm$0.0025} & 0.2813{\scriptsize$\pm$0.0814} & 0.0260{\scriptsize$\pm$0.0027} & 1.078{\scriptsize$\pm$0.236} \\
+diabetes$^{*}$ & 0.7751{\scriptsize$\pm$0.0172} & ---$^{a}$ & 0.8515{\scriptsize$\pm$0.0219} & 0.7615{\scriptsize$\pm$0.0192} & 0.7276{\scriptsize$\pm$0.0244} & 0.7670{\scriptsize$\pm$0.0200} & 0.7707{\scriptsize$\pm$0.0182} & 0.7751{\scriptsize$\pm$0.0172} & 0.2036{\scriptsize$\pm$0.0058} & 0.1016{\scriptsize$\pm$0.0211} & 1.106{\scriptsize$\pm$0.235} \\
+gesture$^{*}$ & 0.6076{\scriptsize$\pm$0.0047} & ---$^{a}$ & ---$^{n}$ & 0.5716{\scriptsize$\pm$0.0067} & 0.5440{\scriptsize$\pm$0.0054} & 0.5986{\scriptsize$\pm$0.0049} & 0.5978{\scriptsize$\pm$0.0051} & 0.6076{\scriptsize$\pm$0.0047} & 0.1100{\scriptsize$\pm$0.0001} & 0.0359{\scriptsize$\pm$0.0022} & 1.585{\scriptsize$\pm$0.085} \\
+house & ---$^{a}$ & 32564.3{\scriptsize$\pm$301.3} & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & 0.1030{\scriptsize$\pm$0.0002} & 0.0170{\scriptsize$\pm$0.0025} & 0.393{\scriptsize$\pm$0.076} \\
+insurance$^{*}$ & ---$^{a}$ & 4746.4{\scriptsize$\pm$17.9} & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & 0.0939{\scriptsize$\pm$0.0011} & 0.0397{\scriptsize$\pm$0.0041} & 0.338{\scriptsize$\pm$0.042} \\
+king & ---$^{a}$ & 136123.9{\scriptsize$\pm$5610.9} & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & 0.2211{\scriptsize$\pm$0.0008} & 0.0293{\scriptsize$\pm$0.0024} & 0.980{\scriptsize$\pm$0.100} \\
+wilt$^{*}$ & 0.9792{\scriptsize$\pm$0.0018} & ---$^{a}$ & 0.9920{\scriptsize$\pm$0.0011} & 0.9013{\scriptsize$\pm$0.0078} & 0.8923{\scriptsize$\pm$0.0154} & 0.9791{\scriptsize$\pm$0.0019} & 0.9790{\scriptsize$\pm$0.0020} & 0.9792{\scriptsize$\pm$0.0018} & 0.0214{\scriptsize$\pm$0.0002} & 0.0333{\scriptsize$\pm$0.0142} & 0.248{\scriptsize$\pm$0.093} \\
+\bottomrule
+\end{tabular}}
+\par\smallskip\footnotesize Same cells as Table~\ref{tab:summary_a2}: CatBoost metrics (50 runs) and per-generation-seed metrics (5 seeds). ---: no value ($^{p}$ not reported, $^{n}$ not computed, $^{a}$ not applicable, $^{d}$ no run on disk); \emph{pending}: run in progress. $^\dagger$reported (paper or the authors' released evaluation files); unmarked: computed by us.
+\end{table}

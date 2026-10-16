@@ -1,0 +1,105 @@
+table,dataset,model,metric,mean,std,n,std_kind,kind,status,source,source_commit,producer_commit,note
+A0,abalone,Real,mle_paper,0.556,0.004,50.0,std over runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A0,abalone,Real,mle,0.5562,0.0038,10.0,authors' std over their runs,reported,ok,exp/abalone/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,abalone,Real,accuracy,,,,,reported,not applicable,,,,
+A0,abalone,Real,rmse,2.0096,0.0087,10.0,authors' std over their runs,reported,ok,exp/abalone/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,abalone,Real,roc_auc,,,,,reported,not applicable,,,,
+A0,abalone,Real,shape_err,2.6976549293757035,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,abalone,Real,trend_err,1.9619639196914007,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,abalone,Real,dcr_holdout,0.0489739926374551,,1.0,,computed,ok,analysis/paper_tables/holdout_dcr.csv,24855d0,,"real test split vs real train split, dcr_baseline recipe"
+A0,adult,Real,mle_paper,0.815,0.002,50.0,std over runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A0,adult,Real,mle,0.8152,0.0017,10.0,authors' std over their runs,reported,ok,exp/adult/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,adult,Real,accuracy,0.8742,0.0011,10.0,authors' std over their runs,reported,ok,exp/adult/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,adult,Real,rmse,,,,,reported,not applicable,,,,
+A0,adult,Real,roc_auc,0.9276,0.0005,10.0,authors' std over their runs,reported,ok,exp/adult/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,adult,Real,shape_err,0.6436746215284006,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,adult,Real,trend_err,1.6049241558570237,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,adult,Real,dcr_holdout,0.1059447067726964,,1.0,,computed,ok,analysis/paper_tables/holdout_dcr.csv,24855d0,,"real test split vs real train split, dcr_baseline recipe"
+A0,buddy,Real,mle_paper,0.906,0.002,50.0,std over runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A0,buddy,Real,mle,0.9063,0.0018,10.0,authors' std over their runs,reported,ok,exp/buddy/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,buddy,Real,accuracy,0.8922,0.0022,10.0,authors' std over their runs,reported,ok,exp/buddy/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,buddy,Real,rmse,,,,,reported,not applicable,,,,
+A0,buddy,Real,roc_auc,,,,,reported,not reported,exp/buddy/ddpm_cb_best/eval_catboost.json,7f84875,,not in the authors' eval_catboost.json
+A0,buddy,Real,shape_err,1.6361272350833955,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,buddy,Real,trend_err,4.06150511116754,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,buddy,Real,dcr_holdout,0.1641747942115614,,1.0,,computed,ok,analysis/paper_tables/holdout_dcr.csv,24855d0,,"real test split vs real train split, dcr_baseline recipe"
+A0,california,Real,mle_paper,0.857,0.001,50.0,std over runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A0,california,Real,mle,0.8568,0.0013,10.0,authors' std over their runs,reported,ok,exp/california/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,california,Real,accuracy,,,,,reported,not applicable,,,,
+A0,california,Real,rmse,0.4321,0.002,10.0,authors' std over their runs,reported,ok,exp/california/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,california,Real,roc_auc,,,,,reported,not applicable,,,,
+A0,california,Real,shape_err,1.4238087511001196,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,california,Real,trend_err,0.8200151972037606,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,california,Real,dcr_holdout,0.0408311705879875,,1.0,,computed,ok,analysis/paper_tables/holdout_dcr.csv,24855d0,,"real test split vs real train split, dcr_baseline recipe"
+A0,cardio,Real,mle_paper,0.738,0.001,50.0,std over runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A0,cardio,Real,mle,0.7379,0.0008,10.0,authors' std over their runs,reported,ok,exp/cardio/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,cardio,Real,accuracy,0.7382,0.0008,10.0,authors' std over their runs,reported,ok,exp/cardio/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,cardio,Real,rmse,,,,,reported,not applicable,,,,
+A0,cardio,Real,roc_auc,0.8053,0.0004,10.0,authors' std over their runs,reported,ok,exp/cardio/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,cardio,Real,shape_err,0.5418526785714417,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,cardio,Real,trend_err,1.0259476287926006,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,cardio,Real,dcr_holdout,0.0113531722458639,,1.0,,computed,ok,analysis/paper_tables/holdout_dcr.csv,24855d0,,"real test split vs real train split, dcr_baseline recipe"
+A0,churn2,Real,mle_paper,0.74,0.009,50.0,std over runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A0,churn2,Real,mle,0.7403,0.0086,10.0,authors' std over their runs,reported,ok,exp/churn2/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,churn2,Real,accuracy,0.8593,0.0024,10.0,authors' std over their runs,reported,ok,exp/churn2/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,churn2,Real,rmse,,,,,reported,not applicable,,,,
+A0,churn2,Real,roc_auc,0.8568,0.0018,10.0,authors' std over their runs,reported,ok,exp/churn2/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,churn2,Real,shape_err,1.4872395833333218,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,churn2,Real,trend_err,2.868109835515298,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,churn2,Real,dcr_holdout,0.214644041852603,,1.0,,computed,ok,analysis/paper_tables/holdout_dcr.csv,24855d0,,"real test split vs real train split, dcr_baseline recipe"
+A0,default,Real,mle_paper,0.688,0.003,50.0,std over runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A0,default,Real,mle,0.688,0.0028,10.0,authors' std over their runs,reported,ok,exp/default/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,default,Real,accuracy,0.8223,0.0024,10.0,authors' std over their runs,reported,ok,exp/default/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,default,Real,rmse,,,,,reported,not applicable,,,,
+A0,default,Real,roc_auc,0.7789,0.004,10.0,authors' std over their runs,reported,ok,exp/default/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,default,Real,shape_err,0.9791666666666643,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,default,Real,trend_err,1.518399704297002,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,default,Real,dcr_holdout,0.0743220876505854,,1.0,,computed,ok,analysis/paper_tables/holdout_dcr.csv,24855d0,,"real test split vs real train split, dcr_baseline recipe"
+A0,diabetes,Real,mle_paper,0.785,0.013,50.0,std over runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A0,diabetes,Real,mle,0.7849,0.0129,10.0,authors' std over their runs,reported,ok,exp/diabetes/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,diabetes,Real,accuracy,0.8149,0.0106,10.0,authors' std over their runs,reported,ok,exp/diabetes/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,diabetes,Real,rmse,,,,,reported,not applicable,,,,
+A0,diabetes,Real,roc_auc,0.8761,0.0042,10.0,authors' std over their runs,reported,ok,exp/diabetes/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,diabetes,Real,shape_err,7.7413647678413415,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,diabetes,Real,trend_err,4.918508379355724,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,diabetes,Real,dcr_holdout,0.1744321505802189,,1.0,,computed,ok,analysis/paper_tables/holdout_dcr.csv,24855d0,,"real test split vs real train split, dcr_baseline recipe"
+A0,gesture,Real,mle_paper,0.636,0.007,50.0,std over runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A0,gesture,Real,mle,0.6365,0.0073,10.0,authors' std over their runs,reported,ok,exp/gesture/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,gesture,Real,accuracy,0.6856,0.0056,10.0,authors' std over their runs,reported,ok,exp/gesture/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,gesture,Real,rmse,,,,,reported,not applicable,,,,
+A0,gesture,Real,roc_auc,,,,,reported,not reported,exp/gesture/ddpm_cb_best/eval_catboost.json,7f84875,,not in the authors' eval_catboost.json
+A0,gesture,Real,shape_err,1.9809733771290028,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,gesture,Real,trend_err,2.684582431991478,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,gesture,Real,dcr_holdout,0.0840086766059933,,1.0,,computed,ok,analysis/paper_tables/holdout_dcr.csv,24855d0,,"real test split vs real train split, dcr_baseline recipe"
+A0,house,Real,mle_paper,0.662,0.003,50.0,std over runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A0,house,Real,mle,0.6616,0.0027,10.0,authors' std over their runs,reported,ok,exp/house/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,house,Real,accuracy,,,,,reported,not applicable,,,,
+A0,house,Real,rmse,31256.3238,125.69,10.0,authors' std over their runs,reported,ok,exp/house/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,house,Real,roc_auc,,,,,reported,not applicable,,,,
+A0,house,Real,shape_err,1.5143393395640636,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,house,Real,trend_err,1.102349428257876,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,house,Real,dcr_holdout,0.0948036278935453,,1.0,,computed,ok,analysis/paper_tables/holdout_dcr.csv,24855d0,,"real test split vs real train split, dcr_baseline recipe"
+A0,insurance,Real,mle_paper,0.814,0.001,50.0,std over runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A0,insurance,Real,mle,0.8137,0.0012,10.0,authors' std over their runs,reported,ok,exp/insurance/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,insurance,Real,accuracy,,,,,reported,not applicable,,,,
+A0,insurance,Real,rmse,4754.9749,15.7113,10.0,authors' std over their runs,reported,ok,exp/insurance/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,insurance,Real,roc_auc,,,,,reported,not applicable,,,,
+A0,insurance,Real,shape_err,3.2613135922523573,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,insurance,Real,trend_err,8.11584875711876,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,insurance,Real,dcr_holdout,0.1015397641177463,,1.0,,computed,ok,analysis/paper_tables/holdout_dcr.csv,24855d0,,"real test split vs real train split, dcr_baseline recipe"
+A0,king,Real,mle_paper,0.907,0.002,50.0,std over runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A0,king,Real,mle,0.907,0.0022,10.0,authors' std over their runs,reported,ok,exp/king/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,king,Real,accuracy,,,,,reported,not applicable,,,,
+A0,king,Real,rmse,107162.1466,1243.2756,10.0,authors' std over their runs,reported,ok,exp/king/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,king,Real,roc_auc,,,,,reported,not applicable,,,,
+A0,king,Real,shape_err,1.3078701321254216,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,king,Real,trend_err,0.9766275840448202,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,king,Real,dcr_holdout,0.1752486523453252,,1.0,,computed,ok,analysis/paper_tables/holdout_dcr.csv,24855d0,,"real test split vs real train split, dcr_baseline recipe"
+A0,wilt,Real,mle_paper,0.898,0.006,50.0,std over runs (paper),reported,ok,"Kotelnikov et al., TabDDPM, arXiv:2209.15421v2, Table 5 (transcribed in analysis/topk_comparison/paper_comparison.py)",24855d0,,
+A0,wilt,Real,mle,0.8982,0.0063,10.0,authors' std over their runs,reported,ok,exp/wilt/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,wilt,Real,accuracy,0.9801,0.0009,10.0,authors' std over their runs,reported,ok,exp/wilt/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,wilt,Real,rmse,,,,,reported,not applicable,,,,
+A0,wilt,Real,roc_auc,0.9883,0.0019,10.0,authors' std over their runs,reported,ok,exp/wilt/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A0,wilt,Real,shape_err,2.9352723855895047,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,wilt,Real,trend_err,2.410937635502597,,1.0,,computed,ok,analysis/dependency_fidelity/floor.csv,24855d0,,real test split vs real train split
+A0,wilt,Real,dcr_holdout,0.0166476360714132,,1.0,,computed,ok,analysis/paper_tables/holdout_dcr.csv,24855d0,,"real test split vs real train split, dcr_baseline recipe"

@@ -1,0 +1,71 @@
+table,dataset,model,metric,mean,std,n,std_kind,kind,status,source,source_commit,producer_commit,note
+B5,adult,TabDiff (UniModMLP),shape,0.63,0.05,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 1 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,adult,TabDiff (UniModMLP),trend,1.49,0.16,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 2 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,adult,TabDiff (UniModMLP),mle1,0.912,0.002,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 3 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,adult,TabDiff (UniModMLP),mle2,,,,,reported,not reported,,,,paper Table 3 gives AUC (classification) / RMSE (regression) only
+B5,adult,TabDiff (UniModMLP),alpha,99.02,0.2,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 7 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,adult,TabDiff (UniModMLP),beta,51.64,0.2,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 8 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,adult,TabDiff (UniModMLP),c2st,0.995,,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 9 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,adult,TabDiff (UniModMLP),wnmis,,,,,reported,not reported,,,,not in the TabDiff paper
+B5,adult,TabDiff (UniModMLP),c2st_xgb,,,,,reported,not reported,,,,not in the TabDiff paper
+B5,adult,TabDiff (UniModMLP),params,10622989.0,,1.0,,computed,ok,hpc_transfer/jobs_tabdiff_gnn/params.csv,e28ae2c,,"TabDiff's UniModMLP from its own toml, instantiated on the dataset's shapes (tabdiff_gnn/params.py)"
+B5,beijing,TabDiff (UniModMLP),shape,1.03,0.05,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 1 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,beijing,TabDiff (UniModMLP),trend,2.59,0.15,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 2 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,beijing,TabDiff (UniModMLP),mle1,,,,,reported,not reported,,,,paper Table 3 gives AUC (classification) / RMSE (regression) only
+B5,beijing,TabDiff (UniModMLP),mle2,0.555,0.013,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 3 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,beijing,TabDiff (UniModMLP),alpha,98.06,0.24,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 7 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,beijing,TabDiff (UniModMLP),beta,59.63,0.23,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 8 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,beijing,TabDiff (UniModMLP),c2st,0.9781,,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 9 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,beijing,TabDiff (UniModMLP),wnmis,,,,,reported,not reported,,,,not in the TabDiff paper
+B5,beijing,TabDiff (UniModMLP),c2st_xgb,,,,,reported,not reported,,,,not in the TabDiff paper
+B5,beijing,TabDiff (UniModMLP),params,10598109.0,,1.0,,computed,ok,hpc_transfer/jobs_tabdiff_gnn/params.csv,e28ae2c,,"TabDiff's UniModMLP from its own toml, instantiated on the dataset's shapes (tabdiff_gnn/params.py)"
+B5,default,TabDiff (UniModMLP),shape,1.24,0.07,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 1 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,default,TabDiff (UniModMLP),trend,2.55,0.75,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 2 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,default,TabDiff (UniModMLP),mle1,0.763,0.005,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 3 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,default,TabDiff (UniModMLP),mle2,,,,,reported,not reported,,,,paper Table 3 gives AUC (classification) / RMSE (regression) only
+B5,default,TabDiff (UniModMLP),alpha,98.49,0.28,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 7 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,default,TabDiff (UniModMLP),beta,51.09,0.25,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 8 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,default,TabDiff (UniModMLP),c2st,0.9774,,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 9 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,default,TabDiff (UniModMLP),wnmis,,,,,reported,not reported,,,,not in the TabDiff paper
+B5,default,TabDiff (UniModMLP),c2st_xgb,,,,,reported,not reported,,,,not in the TabDiff paper
+B5,default,TabDiff (UniModMLP),params,10696637.0,,1.0,,computed,ok,hpc_transfer/jobs_tabdiff_gnn/params.csv,e28ae2c,,"TabDiff's UniModMLP from its own toml, instantiated on the dataset's shapes (tabdiff_gnn/params.py)"
+B5,diabetes,TabDiff (UniModMLP),shape,0.89,0.23,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 1 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,diabetes,TabDiff (UniModMLP),trend,2.2,0.16,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 2 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,diabetes,TabDiff (UniModMLP),mle1,0.689,0.016,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 3 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,diabetes,TabDiff (UniModMLP),mle2,,,,,reported,not reported,,,,paper Table 3 gives AUC (classification) / RMSE (regression) only
+B5,diabetes,TabDiff (UniModMLP),alpha,95.69,0.19,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 7 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,diabetes,TabDiff (UniModMLP),beta,41.74,0.17,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 8 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,diabetes,TabDiff (UniModMLP),c2st,0.9865,,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 9 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,diabetes,TabDiff (UniModMLP),wnmis,,,,,reported,not reported,,,,not in the TabDiff paper
+B5,diabetes,TabDiff (UniModMLP),c2st_xgb,,,,,reported,not reported,,,,not in the TabDiff paper
+B5,diabetes,TabDiff (UniModMLP),params,10822529.0,,1.0,,computed,ok,hpc_transfer/jobs_tabdiff_gnn/params.csv,e28ae2c,,"TabDiff's UniModMLP from its own toml, instantiated on the dataset's shapes (tabdiff_gnn/params.py)"
+B5,magic,TabDiff (UniModMLP),shape,0.78,0.08,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 1 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,magic,TabDiff (UniModMLP),trend,0.76,0.12,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 2 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,magic,TabDiff (UniModMLP),mle1,0.936,0.003,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 3 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,magic,TabDiff (UniModMLP),mle2,,,,,reported,not reported,,,,paper Table 3 gives AUC (classification) / RMSE (regression) only
+B5,magic,TabDiff (UniModMLP),alpha,99.47,0.21,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 7 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,magic,TabDiff (UniModMLP),beta,48.01,0.31,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 8 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,magic,TabDiff (UniModMLP),c2st,0.9989,,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 9 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,magic,TabDiff (UniModMLP),wnmis,,,,,reported,not reported,,,,not in the TabDiff paper
+B5,magic,TabDiff (UniModMLP),c2st_xgb,,,,,reported,not reported,,,,not in the TabDiff paper
+B5,magic,TabDiff (UniModMLP),params,10589231.0,,1.0,,computed,ok,hpc_transfer/jobs_tabdiff_gnn/params.csv,e28ae2c,,"TabDiff's UniModMLP from its own toml, instantiated on the dataset's shapes (tabdiff_gnn/params.py)"
+B5,shoppers,TabDiff (UniModMLP),shape,1.28,0.09,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 1 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,shoppers,TabDiff (UniModMLP),trend,1.74,0.08,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 2 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,shoppers,TabDiff (UniModMLP),mle1,0.921,0.004,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 3 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,shoppers,TabDiff (UniModMLP),mle2,,,,,reported,not reported,,,,paper Table 3 gives AUC (classification) / RMSE (regression) only
+B5,shoppers,TabDiff (UniModMLP),alpha,99.11,0.34,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 7 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,shoppers,TabDiff (UniModMLP),beta,49.75,0.64,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 8 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,shoppers,TabDiff (UniModMLP),c2st,0.9843,,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 9 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,shoppers,TabDiff (UniModMLP),wnmis,,,,,reported,not reported,,,,not in the TabDiff paper
+B5,shoppers,TabDiff (UniModMLP),c2st_xgb,,,,,reported,not reported,,,,not in the TabDiff paper
+B5,shoppers,TabDiff (UniModMLP),params,10647279.0,,1.0,,computed,ok,hpc_transfer/jobs_tabdiff_gnn/params.csv,e28ae2c,,"TabDiff's UniModMLP from its own toml, instantiated on the dataset's shapes (tabdiff_gnn/params.py)"
+B5,news,TabDiff (UniModMLP),shape,2.35,0.03,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 1 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,news,TabDiff (UniModMLP),trend,1.28,0.04,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 2 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,news,TabDiff (UniModMLP),mle1,,,,,reported,not reported,,,,paper Table 3 gives AUC (classification) / RMSE (regression) only
+B5,news,TabDiff (UniModMLP),mle2,0.866,0.021,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 3 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,news,TabDiff (UniModMLP),alpha,97.36,0.17,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 7 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,news,TabDiff (UniModMLP),beta,42.1,0.32,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 8 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,news,TabDiff (UniModMLP),c2st,0.9308,,20.0,std over 20 sampled tables (paper),reported,ok,"Shi et al., TabDiff, ICLR 2025, Table 9 (transcribed in analysis/tabdiff/reported.py)",da8acba,,
+B5,news,TabDiff (UniModMLP),wnmis,,,,,reported,not reported,,,,not in the TabDiff paper
+B5,news,TabDiff (UniModMLP),c2st_xgb,,,,,reported,not reported,,,,not in the TabDiff paper
+B5,news,TabDiff (UniModMLP),params,10893027.0,,1.0,,computed,ok,hpc_transfer/jobs_tabdiff_gnn/params.csv,e28ae2c,,"TabDiff's UniModMLP from its own toml, instantiated on the dataset's shapes (tabdiff_gnn/params.py)"

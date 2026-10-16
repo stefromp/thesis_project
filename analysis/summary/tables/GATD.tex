@@ -1,0 +1,21 @@
+% requires \usepackage{booktabs,graphicx}
+\begin{table}[t]
+\centering
+\caption{Appendix: TabDiff as re-run by GATD (3 training seeds $\times$ 20 tables).}
+\label{tab:summary_gatd}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccc}
+\toprule
+Dataset & task & Shape err.\ (\%) & Trend err.\ (\%) & MLE-1: AUROC/$R^2$ & MLE-2: $F_1$/RMSE \\
+\midrule
+adult & clf. & 0.67{\scriptsize$\pm$0.07}$^\dagger$ & 1.53{\scriptsize$\pm$0.21}$^\dagger$ & 0.912{\scriptsize$\pm$0.002}$^\dagger$ & 0.667{\scriptsize$\pm$0.009}$^\dagger$ \\
+beijing & reg. & 1.00{\scriptsize$\pm$0.06}$^\dagger$ & 2.60{\scriptsize$\pm$0.09}$^\dagger$ & 0.698{\scriptsize$\pm$0.014}$^\dagger$ & 0.564{\scriptsize$\pm$0.013}$^\dagger$ \\
+default & clf. & 1.29{\scriptsize$\pm$0.08}$^\dagger$ & 4.71{\scriptsize$\pm$1.58}$^\dagger$ & 0.758{\scriptsize$\pm$0.007}$^\dagger$ & 0.439{\scriptsize$\pm$0.015}$^\dagger$ \\
+diabetes & clf. & 1.42{\scriptsize$\pm$0.19}$^\dagger$ & 3.48{\scriptsize$\pm$0.52}$^\dagger$ & 0.663{\scriptsize$\pm$0.040}$^\dagger$ & 0.525{\scriptsize$\pm$0.053}$^\dagger$ \\
+magic & clf. & 0.81{\scriptsize$\pm$0.11}$^\dagger$ & 0.88{\scriptsize$\pm$0.23}$^\dagger$ & 0.936{\scriptsize$\pm$0.003}$^\dagger$ & 0.818{\scriptsize$\pm$0.008}$^\dagger$ \\
+shoppers & clf. & 1.34{\scriptsize$\pm$0.10}$^\dagger$ & 1.87{\scriptsize$\pm$0.13}$^\dagger$ & 0.921{\scriptsize$\pm$0.004}$^\dagger$ & 0.617{\scriptsize$\pm$0.017}$^\dagger$ \\
+news & reg. & 2.41{\scriptsize$\pm$0.04}$^\dagger$ & 1.74{\scriptsize$\pm$0.07}$^\dagger$ & 0.015{\scriptsize$\pm$0.054}$^\dagger$ & 0.870{\scriptsize$\pm$0.024}$^\dagger$ \\
+\bottomrule
+\end{tabular}}
+\par\smallskip\footnotesize  ---: no value ($^{p}$ not reported, $^{n}$ not computed, $^{a}$ not applicable, $^{d}$ no run on disk); \emph{pending}: run in progress. $^\dagger$reported (paper or the authors' released evaluation files); unmarked: computed by us.
+\end{table}

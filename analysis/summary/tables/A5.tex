@@ -1,0 +1,18 @@
+% requires \usepackage{booktabs,graphicx}
+\begin{table}[t]
+\centering
+\caption{Summary: average rank per metric (first places / $n$), Wilcoxon vs.\ TabDDPM, parameter ratio.}
+\label{tab:summary_a5}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccccc}
+\toprule
+Method & MLE (F1 / R$^2$) ($n=12$) & Shape err ($n=13$) & Trend err ($n=13$) & DCR ($n=12$) & MIA: distance of AUC from 0.5 ($n=13$) & Wasserstein ($n=13$) & Wilcoxon MLE: med.\ $\Delta$, $p$ (Holm) & med.\ params ratio \\
+\midrule
+GNN-fixed & 2.25 (4/12) & 2.46 (3/13) & 2.27 (4/13) & 2.25 (4/12) & 2.31 (5/13) & 2.31 (2/13) & $-$0.0002, $p=$ 0.791 (0.939) & 0.354 \\
+GNN-jenks & 2.88 (2/12) & 1.73 (4/13) & 2.00 (4/13) & 2.04 (3/12) & 2.08 (6/13) & 1.85 (6/13) & $-$0.0023, $p=$ 0.266 (0.798) & 0.354 \\
+GNN-entmax15 & 2.67 (3/12) & 1.81 (6/13) & 1.73 (5/13) & 2.46 (4/12) & 1.62 (9/13) & 1.85 (5/13) & $-$0.0014, $p=$ 0.470 (0.939) & 0.354 \\
+TabDDPM & 2.21 (6/12) & ---$^{n}$ & ---$^{n}$ & 3.25 (3/12) & ---$^{n}$ & ---$^{n}$ & (reference) & 1 \\
+\bottomrule
+\end{tabular}}
+\par\smallskip\footnotesize MLE vs.\ the paper's TabDDPM values; \textit{default} excluded where TabDDPM is involved. DCR: larger ranked better. Wilcoxon: two-sided, $n=12$, Holm over the three rules. ---: no value ($^{p}$ not reported, $^{n}$ not computed, $^{a}$ not applicable, $^{d}$ no run on disk); \emph{pending}: run in progress. $^\dagger$reported (paper or the authors' released evaluation files); unmarked: computed by us.
+\end{table}

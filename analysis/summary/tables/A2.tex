@@ -1,0 +1,27 @@
+% requires \usepackage{booktabs,graphicx}
+\begin{table}[t]
+\centering
+\caption{GNN denoiser in the TabDDPM framework, adaptive\_jenks rule: main metrics.}
+\label{tab:summary_a2}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccccccc}
+\toprule
+Dataset & unit & MLE: $F_1$ / $R^2$ $\uparrow$ & Shape err.\ (\%) $\downarrow$ & Trend err.\ (\%) $\downarrow$ & DCR $\uparrow$ & DCR/holdout & MIA AUC ($\to0.5$) & Wasserstein $\downarrow$ & Params \\
+\midrule
+abalone$^{*}$ & $R^2$ & 0.5539{\scriptsize$\pm$0.0102} & 3.00{\scriptsize$\pm$0.33} & 3.31{\scriptsize$\pm$0.61} & 0.0496{\scriptsize$\pm$0.0002} & 1.012{\scriptsize$\pm$0.004} & 0.497{\scriptsize$\pm$0.004} & 0.0256{\scriptsize$\pm$0.0039} & 350{,}475 \\
+adult$^{*}$ & $F_1$ & 0.7930{\scriptsize$\pm$0.0012} & 0.82{\scriptsize$\pm$0.07} & 2.16{\scriptsize$\pm$0.10} & 0.1223{\scriptsize$\pm$0.0005} & 1.155{\scriptsize$\pm$0.005} & 0.503{\scriptsize$\pm$0.001} & 0.0106{\scriptsize$\pm$0.0007} & 723{,}308 \\
+buddy$^{*}$ & $F_1$ & 0.9081{\scriptsize$\pm$0.0029} & 1.52{\scriptsize$\pm$0.22} & 3.82{\scriptsize$\pm$0.09} & 0.1644{\scriptsize$\pm$0.0006} & 1.001{\scriptsize$\pm$0.004} & 0.507{\scriptsize$\pm$0.003} & 0.0063{\scriptsize$\pm$0.0005} & 2{,}733{,}536 \\
+california$^{*}$ & $R^2$ & 0.8223{\scriptsize$\pm$0.0016} & 1.62{\scriptsize$\pm$0.13} & 0.82{\scriptsize$\pm$0.19} & 0.0441{\scriptsize$\pm$0.0001} & 1.079{\scriptsize$\pm$0.001} & 0.505{\scriptsize$\pm$0.001} & 0.0140{\scriptsize$\pm$0.0013} & 2{,}688{,}137 \\
+cardio & $F_1$ & 0.7365{\scriptsize$\pm$0.0007} & 0.56{\scriptsize$\pm$0.08} & 0.77{\scriptsize$\pm$0.13} & 0.0116{\scriptsize$\pm$0.0000} & 1.020{\scriptsize$\pm$0.002} & 0.499{\scriptsize$\pm$0.003} & 0.0114{\scriptsize$\pm$0.0006} & 1{,}325{,}971 \\
+churn2$^{*}$ & $F_1$ & 0.7452{\scriptsize$\pm$0.0048} & 1.41{\scriptsize$\pm$0.13} & 2.50{\scriptsize$\pm$0.16} & 0.2151{\scriptsize$\pm$0.0006} & 1.002{\scriptsize$\pm$0.003} & 0.505{\scriptsize$\pm$0.004} & 0.0113{\scriptsize$\pm$0.0012} & 896{,}400 \\
+default$^\ddagger$ & $F_1$ & 0.6883{\scriptsize$\pm$0.0037} & 6.76{\scriptsize$\pm$0.15} & 2.13{\scriptsize$\pm$0.16} & 0.0815{\scriptsize$\pm$0.0003} & 1.097{\scriptsize$\pm$0.004} & 0.496{\scriptsize$\pm$0.001} & 0.2994{\scriptsize$\pm$0.2212} & 1{,}346{,}011 \\
+diabetes$^{*}$ & $F_1$ & 0.7374{\scriptsize$\pm$0.0242} & 7.34{\scriptsize$\pm$0.74} & 7.25{\scriptsize$\pm$1.06} & 0.1808{\scriptsize$\pm$0.0034} & 1.037{\scriptsize$\pm$0.020} & 0.540{\scriptsize$\pm$0.023} & 0.0944{\scriptsize$\pm$0.0147} & 76{,}268 \\
+gesture$^{*}$ & $F_1$ & 0.5525{\scriptsize$\pm$0.0058} & 2.55{\scriptsize$\pm$0.28} & 1.94{\scriptsize$\pm$0.11} & 0.0851{\scriptsize$\pm$0.0004} & 1.013{\scriptsize$\pm$0.005} & 0.501{\scriptsize$\pm$0.001} & 0.0606{\scriptsize$\pm$0.0006} & 1{,}136{,}544 \\
+house & $R^2$ & 0.6326{\scriptsize$\pm$0.0068} & 1.67{\scriptsize$\pm$0.06} & 0.85{\scriptsize$\pm$0.12} & 0.0951{\scriptsize$\pm$0.0001} & 1.004{\scriptsize$\pm$0.001} & 0.508{\scriptsize$\pm$0.002} & 0.0278{\scriptsize$\pm$0.0005} & 1{,}325{,}969 \\
+insurance$^{*}$ & $R^2$ & 0.8144{\scriptsize$\pm$0.0014} & 4.20{\scriptsize$\pm$0.85} & 7.50{\scriptsize$\pm$0.65} & 0.0886{\scriptsize$\pm$0.0014} & 0.873{\scriptsize$\pm$0.013} & 0.550{\scriptsize$\pm$0.020} & 0.0269{\scriptsize$\pm$0.0033} & 242{,}572 \\
+king & $R^2$ & 0.8497{\scriptsize$\pm$0.0124} & 1.73{\scriptsize$\pm$0.12} & 2.05{\scriptsize$\pm$0.08} & 0.1959{\scriptsize$\pm$0.0005} & 1.118{\scriptsize$\pm$0.003} & 0.504{\scriptsize$\pm$0.001} & 0.0260{\scriptsize$\pm$0.0013} & 1{,}329{,}822 \\
+wilt$^{*}$ & $F_1$ & 0.8966{\scriptsize$\pm$0.0100} & 2.55{\scriptsize$\pm$0.40} & 2.21{\scriptsize$\pm$0.86} & 0.0165{\scriptsize$\pm$0.0001} & 0.989{\scriptsize$\pm$0.005} & 0.531{\scriptsize$\pm$0.010} & 0.0237{\scriptsize$\pm$0.0020} & 241{,}669 \\
+\bottomrule
+\end{tabular}}
+\par\smallskip\footnotesize $^{*}$Development dataset (configuration selected on the test split); $^\ddagger$local \textit{default} data differ from the authors'. CatBoost metrics: mean$\pm$std over 50 runs (5 generation $\times$ 10 CatBoost seeds, ddof=0); all others mean$\pm$sd over 5 generation seeds (ddof=1). Shape/Trend: error $=100(1-\mathrm{score})$. ---: no value ($^{p}$ not reported, $^{n}$ not computed, $^{a}$ not applicable, $^{d}$ no run on disk); \emph{pending}: run in progress. $^\dagger$reported (paper or the authors' released evaluation files); unmarked: computed by us.
+\end{table}

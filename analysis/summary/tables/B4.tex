@@ -1,0 +1,19 @@
+% requires \usepackage{booktabs,graphicx}
+\begin{table}[t]
+\centering
+\caption{Ablation: dense graph ($k=N-1$) vs.\ the main fixed-$k$ run, beijing and magic.}
+\label{tab:summary_b4}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccccccccc}
+\toprule
+Dataset & task & Shape err.\ (\%) $\downarrow$ & Trend err.\ (\%) $\downarrow$ & MLE-1: AUC / $R^2$ $\uparrow$ & MLE-2: $F_1\uparrow$ / RMSE$\downarrow$ & $\alpha$-prec.\ (\%) $\uparrow$ & $\beta$-rec.\ (\%) $\uparrow$ & C2ST (LR) $\uparrow$ & wNMIS $\uparrow$ & C2ST (XGB) $\uparrow$ & Params \\
+\midrule
+beijing -- main fixed (k = 5) & reg. & 1.05{\scriptsize$\pm$0.06} & 3.24{\scriptsize$\pm$0.13} & 0.370{\scriptsize$\pm$0.050} & 0.814{\scriptsize$\pm$0.033} & 99.21{\scriptsize$\pm$0.20} & 50.08{\scriptsize$\pm$0.23} & 0.9901{\scriptsize$\pm$0.0033} & 0.9643{\scriptsize$\pm$0.0009} & 0.3241{\scriptsize$\pm$0.0036} & 5{,}226{,}705 \\
+beijing -- topk\_dense (k = N $-$ 1 = 11) & reg. & 0.91{\scriptsize$\pm$0.04} & 2.72{\scriptsize$\pm$0.07} & 0.590{\scriptsize$\pm$0.028} & 0.657{\scriptsize$\pm$0.022} & 99.41{\scriptsize$\pm$0.17} & 51.67{\scriptsize$\pm$0.27} & 0.9939{\scriptsize$\pm$0.0035} & 0.9867{\scriptsize$\pm$0.0007} & 0.5574{\scriptsize$\pm$0.0053} & 5{,}226{,}705 \\
+\midrule
+magic -- main fixed (k = 3) & clf. & 0.82{\scriptsize$\pm$0.10} & 0.95{\scriptsize$\pm$0.17} & 0.932{\scriptsize$\pm$0.003} & 0.806{\scriptsize$\pm$0.009} & 99.09{\scriptsize$\pm$0.29} & 45.08{\scriptsize$\pm$0.31} & 0.9960{\scriptsize$\pm$0.0035} & 0.9907{\scriptsize$\pm$0.0013} & 0.7242{\scriptsize$\pm$0.0067} & 3{,}478{,}403 \\
+magic -- topk\_dense (k = N $-$ 1 = 10) & clf. & 0.78{\scriptsize$\pm$0.11} & 0.83{\scriptsize$\pm$0.17} & 0.934{\scriptsize$\pm$0.003} & 0.818{\scriptsize$\pm$0.009} & 99.45{\scriptsize$\pm$0.24} & 46.60{\scriptsize$\pm$0.34} & 0.9976{\scriptsize$\pm$0.0030} & 0.9944{\scriptsize$\pm$0.0010} & 0.7702{\scriptsize$\pm$0.0074} & 3{,}478{,}403 \\
+\bottomrule
+\end{tabular}}
+\par\smallskip\footnotesize Mean$\pm$std (ddof=1) over 20 tables from one trained model (seed 0). MLE-1: AUROC/$R^2$; MLE-2: $F_1$/RMSE. wNMIS, C2ST (XGB): tabpc. beijing: $N-1=11$ (main $k=5$); magic: $N-1=10$ (main $k=3$). ---: no value ($^{p}$ not reported, $^{n}$ not computed, $^{a}$ not applicable, $^{d}$ no run on disk); \emph{pending}: run in progress. $^\dagger$reported (paper or the authors' released evaluation files); unmarked: computed by us.
+\end{table}

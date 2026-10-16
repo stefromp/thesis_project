@@ -1,0 +1,31 @@
+% requires \usepackage{booktabs,graphicx}
+\begin{table}[t]
+\centering
+\caption{Trainable denoiser parameters across frameworks.}
+\label{tab:summary_c}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccccc}
+\toprule
+Dataset & GNN (TabDDPM fw.) & TabDDPM & GNN in TabDiff ($d=256$) & TabDiff & GNN/TabDDPM & GNN/TabDiff & TabDiff (GATD) \\
+\midrule
+abalone & 350{,}475 & 167{,}691 & ---$^{a}$ & ---$^{a}$ & 2.090 & ---$^{a}$ & ---$^{a}$ \\
+adult & 723{,}308 & 3{,}782{,}380 & 2{,}746{,}353 & 10{,}622{,}989 & 0.191 & 0.259 & 10.6M$^\dagger$ \\
+buddy & 2{,}733{,}536 & 1{,}277{,}280 & ---$^{a}$ & ---$^{a}$ & 2.140 & ---$^{a}$ & ---$^{a}$ \\
+california & 2{,}688{,}137 & 463{,}113 & ---$^{a}$ & ---$^{a}$ & 5.804 & ---$^{a}$ & ---$^{a}$ \\
+cardio & 1{,}325{,}971 & 4{,}845{,}075 & ---$^{a}$ & ---$^{a}$ & 0.274 & ---$^{a}$ & ---$^{a}$ \\
+churn2 & 896{,}400 & 4{,}308{,}624 & ---$^{a}$ & ---$^{a}$ & 0.208 & ---$^{a}$ & ---$^{a}$ \\
+default & 1{,}346{,}011 & 4{,}061{,}531 & 5{,}237{,}465 & 10{,}696{,}637 & 0.331 & 0.490 & 10.7M$^\dagger$ \\
+diabetes $^\diamond$ & 76{,}268 & 121{,}096 & 3{,}843{,}133 & 10{,}822{,}529 & 0.630 & 0.355 & 10.8M$^\dagger$ \\
+gesture & 1{,}136{,}544 & 941{,}216 & ---$^{a}$ & ---$^{a}$ & 1.208 & ---$^{a}$ & ---$^{a}$ \\
+house & 1{,}325{,}969 & 1{,}041{,}553 & ---$^{a}$ & ---$^{a}$ & 1.273 & ---$^{a}$ & ---$^{a}$ \\
+insurance & 242{,}572 & 1{,}121{,}676 & ---$^{a}$ & ---$^{a}$ & 0.216 & ---$^{a}$ & ---$^{a}$ \\
+king & 1{,}329{,}822 & 3{,}752{,}094 & ---$^{a}$ & ---$^{a}$ & 0.354 & ---$^{a}$ & ---$^{a}$ \\
+wilt & 241{,}669 & 2{,}070{,}533 & ---$^{a}$ & ---$^{a}$ & 0.117 & ---$^{a}$ & ---$^{a}$ \\
+beijing & ---$^{a}$ & ---$^{a}$ & 5{,}226{,}705 & 10{,}598{,}109 & ---$^{a}$ & 0.493 & 10.6M$^\dagger$ \\
+magic & ---$^{a}$ & ---$^{a}$ & 3{,}478{,}403 & 10{,}589{,}231 & ---$^{a}$ & 0.328 & 10.6M$^\dagger$ \\
+shoppers & ---$^{a}$ & ---$^{a}$ & 2{,}729{,}675 & 10{,}647{,}279 & ---$^{a}$ & 0.256 & 10.6M$^\dagger$ \\
+news & ---$^{a}$ & ---$^{a}$ & 5{,}222{,}031 & 10{,}893{,}027 & ---$^{a}$ & 0.479 & 10.9M$^\dagger$ \\
+\bottomrule
+\end{tabular}}
+\par\smallskip\footnotesize Denoiser parameters on each dataset's shapes; rules add none. $^\diamond$Different datasets in the two frameworks (Pima vs.\ CDC). ---: no value ($^{p}$ not reported, $^{n}$ not computed, $^{a}$ not applicable, $^{d}$ no run on disk); \emph{pending}: run in progress. $^\dagger$reported (paper or the authors' released evaluation files); unmarked: computed by us.
+\end{table}

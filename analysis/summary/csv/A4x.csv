@@ -1,0 +1,144 @@
+table,dataset,model,metric,mean,std,n,std_kind,kind,status,source,source_commit,producer_commit,note
+A4,abalone,TabDDPM (MLP denoiser),accuracy,,,,,reported,not applicable,,,,
+A4,abalone,TabDDPM (MLP denoiser),rmse,2.0237,0.0233,50.0,authors' std over their runs,reported,ok,exp/abalone/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,abalone,TabDDPM (MLP denoiser),roc_auc,,,,,reported,not applicable,,,,
+A4,abalone,TabDDPM (MLP denoiser),macro_precision,,,,,computed,not applicable,,,,
+A4,abalone,TabDDPM (MLP denoiser),macro_recall,,,,,computed,not applicable,,,,
+A4,abalone,TabDDPM (MLP denoiser),weighted_f1,,,,,computed,not applicable,,,,
+A4,abalone,TabDDPM (MLP denoiser),weighted_precision,,,,,computed,not applicable,,,,
+A4,abalone,TabDDPM (MLP denoiser),weighted_recall,,,,,computed,not applicable,,,,
+A4,abalone,TabDDPM (MLP denoiser),dcr_mean_nolabel,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,abalone,TabDDPM (MLP denoiser),assoc_mean_abs,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,abalone,TabDDPM (MLP denoiser),assoc_frobenius,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,adult,TabDDPM (MLP denoiser),accuracy,0.8606,0.001,50.0,authors' std over their runs,reported,ok,exp/adult/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,adult,TabDDPM (MLP denoiser),rmse,,,,,reported,not applicable,,,,
+A4,adult,TabDDPM (MLP denoiser),roc_auc,0.9136,0.0005,50.0,authors' std over their runs,reported,ok,exp/adult/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,adult,TabDDPM (MLP denoiser),macro_precision,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,adult,TabDDPM (MLP denoiser),macro_recall,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,adult,TabDDPM (MLP denoiser),weighted_f1,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,adult,TabDDPM (MLP denoiser),weighted_precision,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,adult,TabDDPM (MLP denoiser),weighted_recall,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,adult,TabDDPM (MLP denoiser),dcr_mean_nolabel,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,adult,TabDDPM (MLP denoiser),assoc_mean_abs,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,adult,TabDDPM (MLP denoiser),assoc_frobenius,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,buddy,TabDDPM (MLP denoiser),accuracy,0.8944,0.002,50.0,authors' std over their runs,reported,ok,exp/buddy/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,buddy,TabDDPM (MLP denoiser),rmse,,,,,reported,not applicable,,,,
+A4,buddy,TabDDPM (MLP denoiser),roc_auc,,,,,reported,not reported,exp/buddy/ddpm_cb_best/eval_catboost.json,7f84875,,not in the authors' eval_catboost.json
+A4,buddy,TabDDPM (MLP denoiser),macro_precision,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,buddy,TabDDPM (MLP denoiser),macro_recall,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,buddy,TabDDPM (MLP denoiser),weighted_f1,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,buddy,TabDDPM (MLP denoiser),weighted_precision,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,buddy,TabDDPM (MLP denoiser),weighted_recall,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,buddy,TabDDPM (MLP denoiser),dcr_mean_nolabel,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,buddy,TabDDPM (MLP denoiser),assoc_mean_abs,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,buddy,TabDDPM (MLP denoiser),assoc_frobenius,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,california,TabDDPM (MLP denoiser),accuracy,,,,,reported,not applicable,,,,
+A4,california,TabDDPM (MLP denoiser),rmse,0.4621,0.0021,50.0,authors' std over their runs,reported,ok,exp/california/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,california,TabDDPM (MLP denoiser),roc_auc,,,,,reported,not applicable,,,,
+A4,california,TabDDPM (MLP denoiser),macro_precision,,,,,computed,not applicable,,,,
+A4,california,TabDDPM (MLP denoiser),macro_recall,,,,,computed,not applicable,,,,
+A4,california,TabDDPM (MLP denoiser),weighted_f1,,,,,computed,not applicable,,,,
+A4,california,TabDDPM (MLP denoiser),weighted_precision,,,,,computed,not applicable,,,,
+A4,california,TabDDPM (MLP denoiser),weighted_recall,,,,,computed,not applicable,,,,
+A4,california,TabDDPM (MLP denoiser),dcr_mean_nolabel,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,california,TabDDPM (MLP denoiser),assoc_mean_abs,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,california,TabDDPM (MLP denoiser),assoc_frobenius,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,cardio,TabDDPM (MLP denoiser),accuracy,0.7378,0.0011,50.0,authors' std over their runs,reported,ok,exp/cardio/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,cardio,TabDDPM (MLP denoiser),rmse,,,,,reported,not applicable,,,,
+A4,cardio,TabDDPM (MLP denoiser),roc_auc,0.8034,0.0008,50.0,authors' std over their runs,reported,ok,exp/cardio/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,cardio,TabDDPM (MLP denoiser),macro_precision,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,cardio,TabDDPM (MLP denoiser),macro_recall,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,cardio,TabDDPM (MLP denoiser),weighted_f1,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,cardio,TabDDPM (MLP denoiser),weighted_precision,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,cardio,TabDDPM (MLP denoiser),weighted_recall,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,cardio,TabDDPM (MLP denoiser),dcr_mean_nolabel,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,cardio,TabDDPM (MLP denoiser),assoc_mean_abs,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,cardio,TabDDPM (MLP denoiser),assoc_frobenius,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,churn2,TabDDPM (MLP denoiser),accuracy,0.8604,0.0028,50.0,authors' std over their runs,reported,ok,exp/churn2/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,churn2,TabDDPM (MLP denoiser),rmse,,,,,reported,not applicable,,,,
+A4,churn2,TabDDPM (MLP denoiser),roc_auc,0.8564,0.0033,50.0,authors' std over their runs,reported,ok,exp/churn2/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,churn2,TabDDPM (MLP denoiser),macro_precision,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,churn2,TabDDPM (MLP denoiser),macro_recall,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,churn2,TabDDPM (MLP denoiser),weighted_f1,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,churn2,TabDDPM (MLP denoiser),weighted_precision,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,churn2,TabDDPM (MLP denoiser),weighted_recall,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,churn2,TabDDPM (MLP denoiser),dcr_mean_nolabel,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,churn2,TabDDPM (MLP denoiser),assoc_mean_abs,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,churn2,TabDDPM (MLP denoiser),assoc_frobenius,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,default,TabDDPM (MLP denoiser),accuracy,0.8227,0.0018,50.0,authors' std over their runs,reported,ok,exp/default/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,default,TabDDPM (MLP denoiser),rmse,,,,,reported,not applicable,,,,
+A4,default,TabDDPM (MLP denoiser),roc_auc,0.7672,0.0053,50.0,authors' std over their runs,reported,ok,exp/default/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,default,TabDDPM (MLP denoiser),macro_precision,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,default,TabDDPM (MLP denoiser),macro_recall,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,default,TabDDPM (MLP denoiser),weighted_f1,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,default,TabDDPM (MLP denoiser),weighted_precision,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,default,TabDDPM (MLP denoiser),weighted_recall,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,default,TabDDPM (MLP denoiser),dcr_mean_nolabel,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,default,TabDDPM (MLP denoiser),assoc_mean_abs,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,default,TabDDPM (MLP denoiser),assoc_frobenius,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,diabetes,TabDDPM (MLP denoiser),accuracy,0.7755,0.0184,50.0,authors' std over their runs,reported,ok,exp/diabetes/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,diabetes,TabDDPM (MLP denoiser),rmse,,,,,reported,not applicable,,,,
+A4,diabetes,TabDDPM (MLP denoiser),roc_auc,0.8397,0.0257,50.0,authors' std over their runs,reported,ok,exp/diabetes/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,diabetes,TabDDPM (MLP denoiser),macro_precision,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,diabetes,TabDDPM (MLP denoiser),macro_recall,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,diabetes,TabDDPM (MLP denoiser),weighted_f1,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,diabetes,TabDDPM (MLP denoiser),weighted_precision,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,diabetes,TabDDPM (MLP denoiser),weighted_recall,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,diabetes,TabDDPM (MLP denoiser),dcr_mean_nolabel,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,diabetes,TabDDPM (MLP denoiser),assoc_mean_abs,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,diabetes,TabDDPM (MLP denoiser),assoc_frobenius,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,gesture,TabDDPM (MLP denoiser),accuracy,0.6467,0.0052,50.0,authors' std over their runs,reported,ok,exp/gesture/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,gesture,TabDDPM (MLP denoiser),rmse,,,,,reported,not applicable,,,,
+A4,gesture,TabDDPM (MLP denoiser),roc_auc,,,,,reported,not reported,exp/gesture/ddpm_cb_best/eval_catboost.json,7f84875,,not in the authors' eval_catboost.json
+A4,gesture,TabDDPM (MLP denoiser),macro_precision,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,gesture,TabDDPM (MLP denoiser),macro_recall,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,gesture,TabDDPM (MLP denoiser),weighted_f1,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,gesture,TabDDPM (MLP denoiser),weighted_precision,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,gesture,TabDDPM (MLP denoiser),weighted_recall,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,gesture,TabDDPM (MLP denoiser),dcr_mean_nolabel,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,gesture,TabDDPM (MLP denoiser),assoc_mean_abs,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,gesture,TabDDPM (MLP denoiser),assoc_frobenius,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,house,TabDDPM (MLP denoiser),accuracy,,,,,reported,not applicable,,,,
+A4,house,TabDDPM (MLP denoiser),rmse,30550.4301,455.2161,50.0,authors' std over their runs,reported,ok,exp/house/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,house,TabDDPM (MLP denoiser),roc_auc,,,,,reported,not applicable,,,,
+A4,house,TabDDPM (MLP denoiser),macro_precision,,,,,computed,not applicable,,,,
+A4,house,TabDDPM (MLP denoiser),macro_recall,,,,,computed,not applicable,,,,
+A4,house,TabDDPM (MLP denoiser),weighted_f1,,,,,computed,not applicable,,,,
+A4,house,TabDDPM (MLP denoiser),weighted_precision,,,,,computed,not applicable,,,,
+A4,house,TabDDPM (MLP denoiser),weighted_recall,,,,,computed,not applicable,,,,
+A4,house,TabDDPM (MLP denoiser),dcr_mean_nolabel,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,house,TabDDPM (MLP denoiser),assoc_mean_abs,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,house,TabDDPM (MLP denoiser),assoc_frobenius,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,insurance,TabDDPM (MLP denoiser),accuracy,,,,,reported,not applicable,,,,
+A4,insurance,TabDDPM (MLP denoiser),rmse,4811.8622,29.7722,50.0,authors' std over their runs,reported,ok,exp/insurance/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,insurance,TabDDPM (MLP denoiser),roc_auc,,,,,reported,not applicable,,,,
+A4,insurance,TabDDPM (MLP denoiser),macro_precision,,,,,computed,not applicable,,,,
+A4,insurance,TabDDPM (MLP denoiser),macro_recall,,,,,computed,not applicable,,,,
+A4,insurance,TabDDPM (MLP denoiser),weighted_f1,,,,,computed,not applicable,,,,
+A4,insurance,TabDDPM (MLP denoiser),weighted_precision,,,,,computed,not applicable,,,,
+A4,insurance,TabDDPM (MLP denoiser),weighted_recall,,,,,computed,not applicable,,,,
+A4,insurance,TabDDPM (MLP denoiser),dcr_mean_nolabel,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,insurance,TabDDPM (MLP denoiser),assoc_mean_abs,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,insurance,TabDDPM (MLP denoiser),assoc_frobenius,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,king,TabDDPM (MLP denoiser),accuracy,,,,,reported,not applicable,,,,
+A4,king,TabDDPM (MLP denoiser),rmse,143472.3284,6143.4332,50.0,authors' std over their runs,reported,ok,exp/king/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,king,TabDDPM (MLP denoiser),roc_auc,,,,,reported,not applicable,,,,
+A4,king,TabDDPM (MLP denoiser),macro_precision,,,,,computed,not applicable,,,,
+A4,king,TabDDPM (MLP denoiser),macro_recall,,,,,computed,not applicable,,,,
+A4,king,TabDDPM (MLP denoiser),weighted_f1,,,,,computed,not applicable,,,,
+A4,king,TabDDPM (MLP denoiser),weighted_precision,,,,,computed,not applicable,,,,
+A4,king,TabDDPM (MLP denoiser),weighted_recall,,,,,computed,not applicable,,,,
+A4,king,TabDDPM (MLP denoiser),dcr_mean_nolabel,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,king,TabDDPM (MLP denoiser),assoc_mean_abs,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,king,TabDDPM (MLP denoiser),assoc_frobenius,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,wilt,TabDDPM (MLP denoiser),accuracy,0.9805,0.0019,50.0,authors' std over their runs,reported,ok,exp/wilt/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,wilt,TabDDPM (MLP denoiser),rmse,,,,,reported,not applicable,,,,
+A4,wilt,TabDDPM (MLP denoiser),roc_auc,0.9923,0.0006,50.0,authors' std over their runs,reported,ok,exp/wilt/ddpm_cb_best/eval_catboost.json,7f84875,,"authors' released evaluation file, test split"
+A4,wilt,TabDDPM (MLP denoiser),macro_precision,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,wilt,TabDDPM (MLP denoiser),macro_recall,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,wilt,TabDDPM (MLP denoiser),weighted_f1,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,wilt,TabDDPM (MLP denoiser),weighted_precision,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,wilt,TabDDPM (MLP denoiser),weighted_recall,,,,,reported,not reported,,,,not in the paper or the authors' evaluation files
+A4,wilt,TabDDPM (MLP denoiser),dcr_mean_nolabel,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,wilt,TabDDPM (MLP denoiser),assoc_mean_abs,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)
+A4,wilt,TabDDPM (MLP denoiser),assoc_frobenius,,,,,computed,not computed,,,,TabDDPM's synthetic samples are not on disk (only its evaluation files are)

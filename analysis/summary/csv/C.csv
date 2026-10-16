@@ -1,0 +1,68 @@
+table,dataset,model,metric,mean,std,n,std_kind,kind,status,source,source_commit,producer_commit,note
+C,abalone,"GNN, TabDDPM framework (all rules)",params,350475.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,abalone,TabDDPM,params,167691.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,abalone,ratio GNN / TabDDPM,params_ratio,2.090004830312897,,,,computed,ok,,,,derived
+C,adult,"GNN, TabDDPM framework (all rules)",params,723308.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,adult,TabDDPM,params,3782380.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,adult,GNN in TabDiff d256 (all rules),params,2746353.0,,1.0,,computed,ok,transfer_runs/exp_tabdiff_gnn/tabdiff_adult/attngnn/v2_gcn_layers2_dim256_topk5_heads4_dimt128_noise-shared/seed0/run_meta.json,untracked sha256/16=d44fac10a355c68f,run_meta git_commit=7856cf540caee87cdbb64e80d03b3391c46d6c80 (UPLOAD_COMMIT),
+C,adult,TabDiff,params,10622989.0,,1.0,,computed,ok,hpc_transfer/jobs_tabdiff_gnn/params.csv,e28ae2c,,
+C,adult,ratio GNN / TabDDPM,params_ratio,0.19123091809918621,,,,computed,ok,,,,derived
+C,adult,ratio GNN / TabDiff,params_ratio,0.25852921432941334,,,,computed,ok,,,,derived
+C,adult,TabDiff (GATD Table 16),params,,,,,reported,ok,"GATD (Zagardo, ICML 2026, arXiv:2606.02607v1), Table 16 (transcribed in analysis/tabdiff/reported_gatd.py)",e28ae2c,,10.6M as printed
+C,buddy,"GNN, TabDDPM framework (all rules)",params,2733536.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,buddy,TabDDPM,params,1277280.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,buddy,ratio GNN / TabDDPM,params_ratio,2.140122760866842,,,,computed,ok,,,,derived
+C,california,"GNN, TabDDPM framework (all rules)",params,2688137.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,california,TabDDPM,params,463113.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,california,ratio GNN / TabDDPM,params_ratio,5.804494799325434,,,,computed,ok,,,,derived
+C,cardio,"GNN, TabDDPM framework (all rules)",params,1325971.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,cardio,TabDDPM,params,4845075.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,cardio,ratio GNN / TabDDPM,params_ratio,0.2736739885347492,,,,computed,ok,,,,derived
+C,churn2,"GNN, TabDDPM framework (all rules)",params,896400.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,churn2,TabDDPM,params,4308624.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,churn2,ratio GNN / TabDDPM,params_ratio,0.2080478593629892,,,,computed,ok,,,,derived
+C,default,"GNN, TabDDPM framework (all rules)",params,1346011.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,default,TabDDPM,params,4061531.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,default,GNN in TabDiff d256 (all rules),params,5237465.0,,1.0,,computed,ok,transfer_runs/exp_tabdiff_gnn/tabdiff_default/attngnn/v2_gatv2_layers3_dim256_topk5_heads8_dimt128_noise-shared/seed0/run_meta.json,untracked sha256/16=b9cdc655234e8f5a,run_meta git_commit=9f86515e6fd1115423a4050012061be581a2d7ef (UPLOAD_COMMIT),
+C,default,TabDiff,params,10696637.0,,1.0,,computed,ok,hpc_transfer/jobs_tabdiff_gnn/params.csv,e28ae2c,,
+C,default,ratio GNN / TabDDPM,params_ratio,0.33140483231569573,,,,computed,ok,,,,derived
+C,default,ratio GNN / TabDiff,params_ratio,0.4896366026069689,,,,computed,ok,,,,derived
+C,default,TabDiff (GATD Table 16),params,,,,,reported,ok,"GATD (Zagardo, ICML 2026, arXiv:2606.02607v1), Table 16 (transcribed in analysis/tabdiff/reported_gatd.py)",e28ae2c,,10.7M as printed
+C,diabetes,"GNN, TabDDPM framework (all rules)",params,76268.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,diabetes,TabDDPM,params,121096.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,diabetes,GNN in TabDiff d256 (all rules),params,3843133.0,,1.0,,computed,ok,transfer_runs/exp_tabdiff_gnn/tabdiff_diabetes/attngnn/v2_gcn_layers2_dim256_topk5_heads4_dimt128_noise-shared/seed0/run_meta.json,untracked sha256/16=f1271ea437eb1646,run_meta git_commit=9f86515e6fd1115423a4050012061be581a2d7ef (UPLOAD_COMMIT),
+C,diabetes,TabDiff,params,10822529.0,,1.0,,computed,ok,hpc_transfer/jobs_tabdiff_gnn/params.csv,e28ae2c,,
+C,diabetes,ratio GNN / TabDDPM,params_ratio,0.6298143621589483,,,,computed,ok,,,,derived
+C,diabetes,ratio GNN / TabDiff,params_ratio,0.35510489276582213,,,,computed,ok,,,,derived
+C,diabetes,TabDiff (GATD Table 16),params,,,,,reported,ok,"GATD (Zagardo, ICML 2026, arXiv:2606.02607v1), Table 16 (transcribed in analysis/tabdiff/reported_gatd.py)",e28ae2c,,10.8M as printed
+C,gesture,"GNN, TabDDPM framework (all rules)",params,1136544.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,gesture,TabDDPM,params,941216.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,gesture,ratio GNN / TabDDPM,params_ratio,1.207527283854078,,,,computed,ok,,,,derived
+C,house,"GNN, TabDDPM framework (all rules)",params,1325969.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,house,TabDDPM,params,1041553.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,house,ratio GNN / TabDDPM,params_ratio,1.2730691573064452,,,,computed,ok,,,,derived
+C,insurance,"GNN, TabDDPM framework (all rules)",params,242572.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,insurance,TabDDPM,params,1121676.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,insurance,ratio GNN / TabDDPM,params_ratio,0.21625852741789964,,,,computed,ok,,,,derived
+C,king,"GNN, TabDDPM framework (all rules)",params,1329822.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,king,TabDDPM,params,3752094.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,king,ratio GNN / TabDDPM,params_ratio,0.3544212911510213,,,,computed,ok,,,,derived
+C,wilt,"GNN, TabDDPM framework (all rules)",params,241669.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,wilt,TabDDPM,params,2070533.0,,1.0,,computed,ok,analysis/config_comparison/param_counts.csv,24855d0,,
+C,wilt,ratio GNN / TabDDPM,params_ratio,0.11671825563755805,,,,computed,ok,,,,derived
+C,beijing,GNN in TabDiff d256 (all rules),params,5226705.0,,1.0,,computed,ok,transfer_runs/exp_tabdiff_gnn/tabdiff_beijing/attngnn/v2_gatv2_layers3_dim256_topk5_heads8_dimt128_noise-shared/seed0/run_meta.json,untracked sha256/16=65465bb3c85a8c1f,run_meta git_commit=7856cf540caee87cdbb64e80d03b3391c46d6c80 (UPLOAD_COMMIT),
+C,beijing,TabDiff,params,10598109.0,,1.0,,computed,ok,hpc_transfer/jobs_tabdiff_gnn/params.csv,e28ae2c,,
+C,beijing,ratio GNN / TabDiff,params_ratio,0.49317335762445924,,,,computed,ok,,,,derived
+C,beijing,TabDiff (GATD Table 16),params,,,,,reported,ok,"GATD (Zagardo, ICML 2026, arXiv:2606.02607v1), Table 16 (transcribed in analysis/tabdiff/reported_gatd.py)",e28ae2c,,10.6M as printed
+C,magic,GNN in TabDiff d256 (all rules),params,3478403.0,,1.0,,computed,ok,transfer_runs/exp_tabdiff_gnn/tabdiff_magic/attngnn/v2_gatv2_layers2_dim256_topk3_heads8_dimt128_noise-shared/seed0/run_meta.json,untracked sha256/16=3a5e32844ebc8738,run_meta git_commit=7856cf540caee87cdbb64e80d03b3391c46d6c80 (UPLOAD_COMMIT),
+C,magic,TabDiff,params,10589231.0,,1.0,,computed,ok,hpc_transfer/jobs_tabdiff_gnn/params.csv,e28ae2c,,
+C,magic,ratio GNN / TabDiff,params_ratio,0.3284849485293125,,,,computed,ok,,,,derived
+C,magic,TabDiff (GATD Table 16),params,,,,,reported,ok,"GATD (Zagardo, ICML 2026, arXiv:2606.02607v1), Table 16 (transcribed in analysis/tabdiff/reported_gatd.py)",e28ae2c,,10.6M as printed
+C,shoppers,GNN in TabDiff d256 (all rules),params,2729675.0,,1.0,,computed,ok,transfer_runs/exp_tabdiff_gnn/tabdiff_shoppers/attngnn/v2_gcn_layers2_dim256_topk5_heads4_dimt128_noise-shared/seed0/run_meta.json,untracked sha256/16=e523217a9ca1c41b,run_meta git_commit=7856cf540caee87cdbb64e80d03b3391c46d6c80 (UPLOAD_COMMIT),
+C,shoppers,TabDiff,params,10647279.0,,1.0,,computed,ok,hpc_transfer/jobs_tabdiff_gnn/params.csv,e28ae2c,,
+C,shoppers,ratio GNN / TabDiff,params_ratio,0.2563730132365274,,,,computed,ok,,,,derived
+C,shoppers,TabDiff (GATD Table 16),params,,,,,reported,ok,"GATD (Zagardo, ICML 2026, arXiv:2606.02607v1), Table 16 (transcribed in analysis/tabdiff/reported_gatd.py)",e28ae2c,,10.6M as printed
+C,news,GNN in TabDiff d256 (all rules),params,5222031.0,,1.0,,computed,ok,hpc_transfer/jobs_tabdiff_gnn/params.csv,e28ae2c,,
+C,news,TabDiff,params,10893027.0,,1.0,,computed,ok,hpc_transfer/jobs_tabdiff_gnn/params.csv,e28ae2c,,
+C,news,ratio GNN / TabDiff,params_ratio,0.4793920918400367,,,,computed,ok,,,,derived
+C,news,TabDiff (GATD Table 16),params,,,,,reported,ok,"GATD (Zagardo, ICML 2026, arXiv:2606.02607v1), Table 16 (transcribed in analysis/tabdiff/reported_gatd.py)",e28ae2c,,10.9M as printed

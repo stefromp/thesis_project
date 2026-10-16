@@ -1,0 +1,27 @@
+% requires \usepackage{booktabs,graphicx}
+\begin{table}[t]
+\centering
+\caption{GNN denoiser in the TabDDPM framework, adaptive\_entmax15 rule: main metrics.}
+\label{tab:summary_a3}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccccccc}
+\toprule
+Dataset & unit & MLE: $F_1$ / $R^2$ $\uparrow$ & Shape err.\ (\%) $\downarrow$ & Trend err.\ (\%) $\downarrow$ & DCR $\uparrow$ & DCR/holdout & MIA AUC ($\to0.5$) & Wasserstein $\downarrow$ & Params \\
+\midrule
+abalone$^{*}$ & $R^2$ & 0.5485{\scriptsize$\pm$0.0119} & 2.85{\scriptsize$\pm$0.43} & 3.30{\scriptsize$\pm$0.54} & 0.0491{\scriptsize$\pm$0.0002} & 1.002{\scriptsize$\pm$0.004} & 0.496{\scriptsize$\pm$0.003} & 0.0330{\scriptsize$\pm$0.0054} & 350{,}475 \\
+adult$^{*}$ & $F_1$ & 0.7937{\scriptsize$\pm$0.0008} & 0.95{\scriptsize$\pm$0.04} & 2.48{\scriptsize$\pm$0.02} & 0.1317{\scriptsize$\pm$0.0004} & 1.243{\scriptsize$\pm$0.003} & 0.503{\scriptsize$\pm$0.001} & 0.0148{\scriptsize$\pm$0.0006} & 723{,}308 \\
+buddy$^{*}$ & $F_1$ & 0.9088{\scriptsize$\pm$0.0019} & 1.47{\scriptsize$\pm$0.33} & 3.81{\scriptsize$\pm$0.21} & 0.1652{\scriptsize$\pm$0.0005} & 1.006{\scriptsize$\pm$0.003} & 0.504{\scriptsize$\pm$0.003} & 0.0068{\scriptsize$\pm$0.0006} & 2{,}733{,}536 \\
+california$^{*}$ & $R^2$ & 0.8131{\scriptsize$\pm$0.0014} & 1.62{\scriptsize$\pm$0.16} & 0.77{\scriptsize$\pm$0.11} & 0.0445{\scriptsize$\pm$0.0001} & 1.091{\scriptsize$\pm$0.003} & 0.503{\scriptsize$\pm$0.004} & 0.0148{\scriptsize$\pm$0.0013} & 2{,}688{,}137 \\
+cardio & $F_1$ & 0.7371{\scriptsize$\pm$0.0006} & 0.57{\scriptsize$\pm$0.09} & 0.84{\scriptsize$\pm$0.20} & 0.0116{\scriptsize$\pm$0.0000} & 1.018{\scriptsize$\pm$0.002} & 0.500{\scriptsize$\pm$0.001} & 0.0094{\scriptsize$\pm$0.0005} & 1{,}325{,}971 \\
+churn2$^{*}$ & $F_1$ & 0.7423{\scriptsize$\pm$0.0070} & 1.46{\scriptsize$\pm$0.07} & 2.55{\scriptsize$\pm$0.08} & 0.2148{\scriptsize$\pm$0.0006} & 1.001{\scriptsize$\pm$0.003} & 0.505{\scriptsize$\pm$0.005} & 0.0121{\scriptsize$\pm$0.0014} & 896{,}400 \\
+default$^\ddagger$ & $F_1$ & 0.6854{\scriptsize$\pm$0.0042} & 6.68{\scriptsize$\pm$0.18} & 1.96{\scriptsize$\pm$0.25} & 0.0802{\scriptsize$\pm$0.0001} & 1.079{\scriptsize$\pm$0.002} & 0.497{\scriptsize$\pm$0.002} & 0.0972{\scriptsize$\pm$0.0538} & 1{,}346{,}011 \\
+diabetes$^{*}$ & $F_1$ & 0.7561{\scriptsize$\pm$0.0231} & 7.42{\scriptsize$\pm$0.56} & 5.88{\scriptsize$\pm$0.52} & 0.1799{\scriptsize$\pm$0.0045} & 1.032{\scriptsize$\pm$0.026} & 0.532{\scriptsize$\pm$0.020} & 0.0789{\scriptsize$\pm$0.0059} & 76{,}268 \\
+gesture$^{*}$ & $F_1$ & 0.5494{\scriptsize$\pm$0.0066} & 2.59{\scriptsize$\pm$0.21} & 2.07{\scriptsize$\pm$0.10} & 0.0884{\scriptsize$\pm$0.0007} & 1.052{\scriptsize$\pm$0.008} & 0.501{\scriptsize$\pm$0.001} & 0.0642{\scriptsize$\pm$0.0005} & 1{,}136{,}544 \\
+house & $R^2$ & 0.6393{\scriptsize$\pm$0.0071} & 1.51{\scriptsize$\pm$0.05} & 0.79{\scriptsize$\pm$0.11} & 0.0945{\scriptsize$\pm$0.0001} & 0.997{\scriptsize$\pm$0.001} & 0.508{\scriptsize$\pm$0.001} & 0.0233{\scriptsize$\pm$0.0007} & 1{,}325{,}969 \\
+insurance$^{*}$ & $R^2$ & 0.8114{\scriptsize$\pm$0.0022} & 4.14{\scriptsize$\pm$1.07} & 7.72{\scriptsize$\pm$0.39} & 0.0856{\scriptsize$\pm$0.0008} & 0.843{\scriptsize$\pm$0.008} & 0.564{\scriptsize$\pm$0.013} & 0.0310{\scriptsize$\pm$0.0031} & 242{,}572 \\
+king & $R^2$ & 0.8730{\scriptsize$\pm$0.0143} & 1.71{\scriptsize$\pm$0.13} & 1.68{\scriptsize$\pm$0.08} & 0.1944{\scriptsize$\pm$0.0006} & 1.110{\scriptsize$\pm$0.003} & 0.504{\scriptsize$\pm$0.001} & 0.0228{\scriptsize$\pm$0.0008} & 1{,}329{,}822 \\
+wilt$^{*}$ & $F_1$ & 0.8994{\scriptsize$\pm$0.0106} & 2.56{\scriptsize$\pm$0.44} & 2.03{\scriptsize$\pm$0.62} & 0.0164{\scriptsize$\pm$0.0001} & 0.987{\scriptsize$\pm$0.003} & 0.530{\scriptsize$\pm$0.008} & 0.0207{\scriptsize$\pm$0.0021} & 241{,}669 \\
+\bottomrule
+\end{tabular}}
+\par\smallskip\footnotesize $^{*}$Development dataset (configuration selected on the test split); $^\ddagger$local \textit{default} data differ from the authors'. CatBoost metrics: mean$\pm$std over 50 runs (5 generation $\times$ 10 CatBoost seeds, ddof=0); all others mean$\pm$sd over 5 generation seeds (ddof=1). Shape/Trend: error $=100(1-\mathrm{score})$. ---: no value ($^{p}$ not reported, $^{n}$ not computed, $^{a}$ not applicable, $^{d}$ no run on disk); \emph{pending}: run in progress. $^\dagger$reported (paper or the authors' released evaluation files); unmarked: computed by us.
+\end{table}

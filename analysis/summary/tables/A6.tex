@@ -1,0 +1,19 @@
+% requires \usepackage{booktabs,graphicx}
+\begin{table}[t]
+\centering
+\caption{Budget-matched experiment: GNN with its own vs.\ TabDDPM's training setup.}
+\label{tab:summary_a6}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lllcccccccc}
+\toprule
+Dataset & subset & unit & GNN (orig.) & GNN (TabDDPM setup) & TabDDPM (paper) & TabDDPM (release) & Real (paper) & Real (release) & ours: steps/lr/batch/$T$ & TabDDPM: steps/lr/batch/$T$ \\
+\midrule
+california & development $^{*}$ & $R^2$ & 0.8256{\scriptsize$\pm$0.0014} & ---$^{d}$ & 0.836{\scriptsize$\pm$0.002}$^\dagger$ & 0.8362{\scriptsize$\pm$0.0015}$^\dagger$ & 0.857{\scriptsize$\pm$0.001}$^\dagger$ & 0.8568{\scriptsize$\pm$0.0013}$^\dagger$ & 20000 / 0.0001 / 4096 / 1000 & 30000 / 0.00133 / 4096 / 1000 \\
+house & held-out & $R^2$ & 0.5971{\scriptsize$\pm$0.0067} & ---$^{d}$ & 0.677{\scriptsize$\pm$0.010}$^\dagger$ & 0.6766{\scriptsize$\pm$0.0096}$^\dagger$ & 0.662{\scriptsize$\pm$0.003}$^\dagger$ & 0.6616{\scriptsize$\pm$0.0027}$^\dagger$ & 20000 / 0.0001 / 4096 / 1000 & 30000 / 0.00139 / 4096 / 1000 \\
+king & held-out & $R^2$ & 0.8545{\scriptsize$\pm$0.0213} & ---$^{d}$ & 0.833{\scriptsize$\pm$0.014}$^\dagger$ & 0.8331{\scriptsize$\pm$0.0143}$^\dagger$ & 0.907{\scriptsize$\pm$0.002}$^\dagger$ & 0.9070{\scriptsize$\pm$0.0022}$^\dagger$ & 20000 / 0.0001 / 4096 / 1000 & 30000 / 0.000744 / 4096 / 100 \\
+gesture & development $^{*}$ & $F_1$ & 0.5489{\scriptsize$\pm$0.0070} & ---$^{d}$ & 0.597{\scriptsize$\pm$0.006}$^\dagger$ & 0.5967{\scriptsize$\pm$0.0062}$^\dagger$ & 0.636{\scriptsize$\pm$0.007}$^\dagger$ & 0.6365{\scriptsize$\pm$0.0073}$^\dagger$ & 20000 / 0.0001 / 4096 / 1000 & 30000 / 0.00281 / 4096 / 1000 \\
+cardio & held-out & $F_1$ & 0.7366{\scriptsize$\pm$0.0006} & ---$^{d}$ & 0.737{\scriptsize$\pm$0.001}$^\dagger$ & 0.7374{\scriptsize$\pm$0.0011}$^\dagger$ & 0.738{\scriptsize$\pm$0.001}$^\dagger$ & 0.7379{\scriptsize$\pm$0.0008}$^\dagger$ & 20000 / 0.0001 / 4096 / 1000 & 30000 / 0.000564 / 4096 / 1000 \\
+\bottomrule
+\end{tabular}}
+\par\smallskip\footnotesize Budget-matched runs prepared; no results on disk. ---: no value ($^{p}$ not reported, $^{n}$ not computed, $^{a}$ not applicable, $^{d}$ no run on disk); \emph{pending}: run in progress. $^\dagger$reported (paper or the authors' released evaluation files); unmarked: computed by us.
+\end{table}

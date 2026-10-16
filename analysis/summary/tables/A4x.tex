@@ -1,0 +1,27 @@
+% requires \usepackage{booktabs,graphicx}
+\begin{table}[t]
+\centering
+\caption{TabDDPM: the other recorded metrics.}
+\label{tab:summary_a4x}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccccccccc}
+\toprule
+Dataset & Acc.\ $\uparrow$ & RMSE $\downarrow$ & ROC AUC $\uparrow$ & macro-P $\uparrow$ & macro-R $\uparrow$ & w-$F_1$ $\uparrow$ & w-P $\uparrow$ & w-R $\uparrow$ & DCR mean-L2, no label & assoc.\ (mean abs) $\downarrow$ & assoc.\ (Frob.) $\downarrow$ \\
+\midrule
+abalone$^{*}$ & ---$^{a}$ & 2.0237{\scriptsize$\pm$0.0233}$^\dagger$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{n}$ & ---$^{n}$ & ---$^{n}$ \\
+adult$^{*}$ & 0.8606{\scriptsize$\pm$0.0010}$^\dagger$ & ---$^{a}$ & 0.9136{\scriptsize$\pm$0.0005}$^\dagger$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{n}$ & ---$^{n}$ & ---$^{n}$ \\
+buddy$^{*}$ & 0.8944{\scriptsize$\pm$0.0020}$^\dagger$ & ---$^{a}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{n}$ & ---$^{n}$ & ---$^{n}$ \\
+california$^{*}$ & ---$^{a}$ & 0.4621{\scriptsize$\pm$0.0021}$^\dagger$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{n}$ & ---$^{n}$ & ---$^{n}$ \\
+cardio & 0.7378{\scriptsize$\pm$0.0011}$^\dagger$ & ---$^{a}$ & 0.8034{\scriptsize$\pm$0.0008}$^\dagger$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{n}$ & ---$^{n}$ & ---$^{n}$ \\
+churn2$^{*}$ & 0.8604{\scriptsize$\pm$0.0028}$^\dagger$ & ---$^{a}$ & 0.8564{\scriptsize$\pm$0.0033}$^\dagger$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{n}$ & ---$^{n}$ & ---$^{n}$ \\
+default$^\ddagger$ & 0.8227{\scriptsize$\pm$0.0018}$^\dagger$ & ---$^{a}$ & 0.7672{\scriptsize$\pm$0.0053}$^\dagger$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{n}$ & ---$^{n}$ & ---$^{n}$ \\
+diabetes$^{*}$ & 0.7755{\scriptsize$\pm$0.0184}$^\dagger$ & ---$^{a}$ & 0.8397{\scriptsize$\pm$0.0257}$^\dagger$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{n}$ & ---$^{n}$ & ---$^{n}$ \\
+gesture$^{*}$ & 0.6467{\scriptsize$\pm$0.0052}$^\dagger$ & ---$^{a}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{n}$ & ---$^{n}$ & ---$^{n}$ \\
+house & ---$^{a}$ & 30550.4{\scriptsize$\pm$455.2}$^\dagger$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{n}$ & ---$^{n}$ & ---$^{n}$ \\
+insurance$^{*}$ & ---$^{a}$ & 4811.9{\scriptsize$\pm$29.8}$^\dagger$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{n}$ & ---$^{n}$ & ---$^{n}$ \\
+king & ---$^{a}$ & 143472.3{\scriptsize$\pm$6143.4}$^\dagger$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{a}$ & ---$^{n}$ & ---$^{n}$ & ---$^{n}$ \\
+wilt$^{*}$ & 0.9805{\scriptsize$\pm$0.0019}$^\dagger$ & ---$^{a}$ & 0.9923{\scriptsize$\pm$0.0006}$^\dagger$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{p}$ & ---$^{n}$ & ---$^{n}$ & ---$^{n}$ \\
+\bottomrule
+\end{tabular}}
+\par\smallskip\footnotesize  ---: no value ($^{p}$ not reported, $^{n}$ not computed, $^{a}$ not applicable, $^{d}$ no run on disk); \emph{pending}: run in progress. $^\dagger$reported (paper or the authors' released evaluation files); unmarked: computed by us.
+\end{table}
