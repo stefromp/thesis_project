@@ -42,6 +42,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
+if __name__ == "__main__":
+    sys.modules.setdefault("build_summary", sys.modules["__main__"])
 OUT, TAB, CSV, FIG = HERE, HERE / "tables", HERE / "csv", HERE / "figures"
 
 # compare_topk reads these at import time
@@ -49,16 +51,17 @@ A_EXCLUDED = ["higgs-small", "miniboone", "fb-comments"]
 os.environ["COMPARE_TOPK_EXCLUDE"] = ",".join(A_EXCLUDED)
 os.environ.pop("COMPARE_TOPK_VARIANT", None)
 os.environ.pop("COMPARE_TOPK_RESULTS_ROOT", None)
-for p in ("analysis/topk_comparison", "analysis/tabdiff", "tabdiff_gnn"):
+for p in ("analysis/topk_comparison", "analysis/tabdiff", "tabdiff_gnn", "analysis/summary"):
     sys.path.insert(0, str(REPO / p))
 
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from scipy import stats  # noqa: E402
 
+import thesis_style as TS  # noqa: E402  (analysis/summary/thesis_style.py: house style of the figures)
 import matplotlib  # noqa: E402
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.ticker  # noqa: E402,F401
+plt = TS.plt
 
 import compare_topk as ct  # noqa: E402
 import paper_comparison as pc  # noqa: E402
@@ -933,15 +936,24 @@ def _b_table(tid, title, how, vals, tags, label_of, caption, note="", note_tex="
          (lambda x: x["table"] == "B4" or (x["table"] == "B1" and x["dataset"] in (datasets or B_DS))))
 
 
+def b_coverage(bv, tag: str) -> str:
+    """Which datasets have results for a rule, read from the run statuses (never hand-written)."""
+    st = {d: bv[(d, tag, "shape")]["status"] for d in B_DS}
+    ok = [d for d in B_DS if st[d] == "ok"]
+    pend = [d for d in B_DS if st[d] == "pending"]
+    none = [d for d in B_DS if st[d] == "no run on disk"]
+    return ("Results on disk for " + (", ".join(ok) or "no dataset")
+            + (f"; still running (pending): {', '.join(pend)}" if pend else "")
+            + (f"; no run on disk: {', '.join(none)}" if none else "") + ".")
+
+
 def table_b(bv, tdv):
     how_rule = ("Rows = the seven TabDiff benchmark datasets, one trained model each, rule **{r}**. "
                 "Shape / Trend: TabDiff's error rates (lower better); MLE-1 / MLE-2, α, β, C2ST, wNMIS: higher "
                 "better (except RMSE). Compare with B5 (TabDiff as reported) only on the paper's metrics.")
     for tag, mode in B_ARMS:
         tid = {"fixed": "B1", "jenks": "B2", "entmax15": "B3"}[tag]
-        note = {"fixed": "news: no fixed-rule run on disk.",
-                "jenks": "adaptive_jenks was run on adult, beijing, magic, shoppers only.",
-                "entmax15": "news: still running (pending)."}[tag]
+        note = b_coverage(bv, tag)
         _b_table(tid, f"GNN in TabDiff, {mode} (Route A, d_model 256)", how_rule.format(r=mode), bv, [tag],
                  {}, f"AttnGNN (d\\_model 256) as TabDiff's denoiser, {tex_escape(mode)} rule.",
                  note, tex_escape(note))
@@ -1123,89 +1135,134 @@ def table_b7(bv):
           r"$\bar k$, all $t$", r"frac.\ of $N-1$"], rows_tex,
          r"Sampling phase, mean over nodes (count-weighted).", "Mean selected $k$ per block at low and high noise.",
          colspec="llcccccc")
-    fig_k_vs_t(recs)
-    fig_k_vs_t(recs, normalise=True)
     return K
 
 
-C_RULE = {"adaptive_jenks": ct.C_RULE["jenks"], "adaptive_entmax15": ct.C_RULE["entmax15"]}
-BLOCK_STYLE = [("-", "o"), ("--", "s"), (":", "^")]
+RULE_TAG = {"adaptive_jenks": "jenks", "adaptive_entmax15": "entmax15"}
 
 
-def style_ax(ax, grid: str = "y"):
-    """The thesis figure style: no top/right spines, muted axes, light grid behind the data."""
-    for s in ("top", "right"):
-        ax.spines[s].set_visible(False)
-    for s in ("left", "bottom"):
-        ax.spines[s].set_color(ct.C_TEXT2)
-    ax.tick_params(colors=ct.C_TEXT2, labelcolor=ct.C_TEXT, labelsize=8)
-    if grid:
-        ax.grid(axis=grid, color=ct.C_GRID, lw=0.8)
-    ax.set_axisbelow(True)
+def k_vs_t_caption(R: pd.DataFrame, normalise: bool) -> str:
+    """Figure caption (LaTeX); which rule has k statistics on which dataset is read from the records."""
+    have = {m: [TS.ds_label(d) for d in B_DS if ((R.dataset == d) & (R.rule == m)).any()] for m in RULE_TAG}
+    none = [TS.ds_label(d) for d in B_DS if not (R.dataset == d).any()]
+    what = (r"fraction of the $N-1$ candidate neighbours that a node keeps, $k/(N-1)$" if normalise
+            else r"number of neighbours $k$ that a node keeps")
+    avail = "; ".join(f"{TS.rule_label(RULE_TAG[m])}: {', '.join(have[m]) or 'none'}" for m in RULE_TAG)
+    return (rf"Mean {what}, during sampling, as a function of the diffusion time $t$ ($t=0$: clean data, "
+            r"$t=1$: pure noise), for the two adaptive rules (colour) in each GNN block (line style). Each "
+            r"point averages the selected $k$ over all nodes and all denoiser calls whose $t$ falls in a bin "
+            r"of width 0.1 (weighted by count), over the 20 sampled tables. The dotted grey line is the "
+            r"fixed top-$k$ rule's constant " + ("$k/(N-1)$" if normalise else "$k$") +
+            r"; $N-1$ is the number of other columns. Route A, training seed 0, 20 sampled tables. "
+            rf"Runs with $k$ statistics: {avail}."
+            + (f" No adaptive-rule run of {', '.join(none)} has $k$ statistics yet." if none else ""))
 
 
-def savefig(fig, name: str):
-    for ext in ("pdf", "png"):
-        fig.savefig(FIG / f"{name}.{ext}", dpi=200, bbox_inches="tight")
-    plt.close(fig)
+def _place_fixed_label(ax, curves, y, text, **kw):
+    """Put the fixed-k label next to its reference line at y without touching any plotted curve:
+    try the right end then the left end, just above / below the line, then step away from it
+    (a thin leader then joins label and line). Extents are measured, not estimated."""
+    fig = ax.figure
+    fig.canvas.draw()
+    r = fig.canvas.get_renderer()
+    tt = np.linspace(0, 1, 400)
+    pts = (ax.transData.transform(np.concatenate([np.c_[tt, np.interp(tt, cx, cy)] for cx, cy in curves]))
+           if curves else np.empty((0, 2)))
+    t = ax.text(0, y, text, transform=ax.get_yaxis_transform(), **kw)
+    ybox = ax.get_window_extent(r)
+    line_px = ax.transData.transform((0, y))[1]
+    gap = 1.5 * fig.dpi / 72
+    pad = 2 * fig.dpi / 72
 
+    def hits(x0, x1, y0, y1):
+        return bool(((pts[:, 0] >= x0 - pad) & (pts[:, 0] <= x1 + pad) & (pts[:, 1] >= y0 - pad)
+                     & (pts[:, 1] <= y1 + pad)).any())
 
-def k_vs_t_caption(R: pd.DataFrame) -> str:
-    """Which rule has k statistics on which dataset, read from the records (never hand-written)."""
-    have = {m: [d for d in B_DS if ((R.dataset == d) & (R.rule == m)).any()] for m in C_RULE}
-    parts = [f"{m.replace('adaptive_', '')}: {', '.join(have[m]) if have[m] else 'none'}" for m in C_RULE]
-    none = [d for d in B_DS if not (R.dataset == d).any()]
-    return ("Route A, training seed 0, sampling phase (20 tables); mean over nodes per t-bin of width 0.1. "
-            "k statistics on disk — " + "; ".join(parts) + "."
-            + (f" No adaptive-rule k statistics on disk for {', '.join(none)}." if none else ""))
+    for step in range(0, 14):
+        for ha, x in (("right", 0.985), ("left", 0.015), ("center", 0.5)):
+            for va in ("bottom", "top"):
+                off = (gap + step * 3 * fig.dpi / 72) * (1 if va == "bottom" else -1)
+                ty = ax.transData.inverted().transform((0, line_px + off))[1]
+                t.set_position((x, ty))
+                t.set_ha(ha)
+                t.set_va(va)
+                bb = t.get_window_extent(r)
+                if hits(bb.x0, bb.x1, bb.y0, bb.y1) or bb.y0 < ybox.y0 or bb.y1 > ybox.y1:
+                    continue
+                if step:                       # leader from the label to its line, only if it crosses no data
+                    xl = bb.x1 - 4 if ha == "right" else bb.x0 + 4 if ha == "left" else (bb.x0 + bb.x1) / 2
+                    ye = bb.y0 if va == "bottom" else bb.y1
+                    if not hits(xl, xl, min(line_px, ye), max(line_px, ye)):
+                        xa = ax.transAxes.inverted().transform((xl, 0))[0]
+                        ya = ax.transData.inverted().transform((0, ye))[1]
+                        ax.plot([xa, xa], [y, ya], transform=ax.get_yaxis_transform(), color=kw.get("color"),
+                                lw=0.5, zorder=1)
+                return t
+    t.set_position((0.985, y))
+    t.set_ha("right")
+    t.set_va("bottom")
+    return t
 
 
 def fig_k_vs_t(R: pd.DataFrame, normalise: bool = False):
-    """Mean selected k vs t per dataset and block (topk_k_vs_t); normalise=True divides by
-    N − 1, the number of candidate neighbours (topk_frac_vs_t)."""
+    """Mean selected k vs t per dataset and block (topk_k_vs_t, appendix); normalise=True divides by
+    N - 1, the number of candidate neighbours (topk_frac_vs_t, main text)."""
     dss = [d for d in B_DS if (R.dataset == d).any()]
     ncol = 3
     nrow = int(np.ceil(len(dss) / ncol))
-    fig, axes = plt.subplots(nrow, ncol, figsize=(12, 3.3 * nrow), squeeze=False)
-    for ax, ds in zip(axes.flat, dss):
-        style_ax(ax)
+    fig = TS.figure(TS.FULL, 2.1 * nrow)
+    axes = fig.subplots(nrow, ncol, squeeze=False, sharex=True, sharey=normalise)
+    fixed_labels = []
+    for i, (ax, ds) in enumerate(zip(axes.flat, dss)):
+        TS.style_axes(ax)
         sub = R[R.dataset == ds]
         n1 = int(sub["N-1"].iloc[0])
         div = n1 if normalise else 1
-        for mode in ("adaptive_jenks", "adaptive_entmax15"):
+        curves = []
+        for mode, tag in RULE_TAG.items():
             for b, gb in sub[sub.rule == mode].groupby("block"):
-                ls, mk = BLOCK_STYLE[int(b) % 3]
-                ax.plot(gb.t_mid, gb.k_mean / div, ls=ls, marker=mk, ms=5, lw=2, color=C_RULE[mode],
-                        mec="white", mew=1)
-        fixed_k = jload(ra_run(ds, "fixed") / "run_meta.json")["gnn"]["top_k"] \
-            if (ra_run(ds, "fixed") / "run_meta.json").exists() else None
-        if fixed_k:
-            y = fixed_k / div
-            ax.axhline(y, color=ct.C_TEXT2, lw=1, ls=(0, (2, 2)))
-            lab = f" fixed k/(N−1) = {fixed_k}/{n1}" if normalise else f" fixed k = {fixed_k}"
-            ax.text(1.0, y, lab, va="center", ha="left", fontsize=7, color=ct.C_TEXT2,
-                    transform=ax.get_yaxis_transform())
-        ax.set_title(f"{ds}  (N − 1 = {n1})", loc="left", fontsize=10, color=ct.C_TEXT)
+                y = (gb.k_mean / div).to_numpy()
+                ax.plot(gb.t_mid, y, ls=TS.BLOCK_LS[int(b) % 3], color=TS.RULE_COLOR[tag], lw=TS.LW_DATA,
+                        marker=TS.RULE_MARKER[tag], ms=3, mew=0.4)
+                curves.append((gb.t_mid.to_numpy(), y))
         ax.set_xlim(0, 1)
+        ax.set_xticks([0, 0.25, 0.5, 0.75, 1], ["0", "0.25", "0.5", "0.75", "1"])
         if normalise:
             ax.set_ylim(0, 1)
         else:
-            ax.set_ylim(bottom=0)
-        ax.set_xlabel("diffusion time t (0 = clean, 1 = noise)", fontsize=8, color=ct.C_TEXT2)
-        ax.set_ylabel("mean k / (N − 1)" if normalise else "mean selected k", fontsize=8, color=ct.C_TEXT2)
+            top = max(max(c[1].max() for c in curves), 0)
+        fixed_k = jload(ra_run(ds, "fixed") / "run_meta.json")["gnn"]["top_k"] \
+            if (ra_run(ds, "fixed") / "run_meta.json").exists() else None
+        if not normalise:
+            ax.set_ylim(0, 1.12 * max(top, fixed_k or 0))
+            ax.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(nbins=5, integer=True))
+        if fixed_k:
+            yf = fixed_k / div
+            ax.axhline(yf, color=TS.RULE_COLOR["fixed"], lw=0.9, ls=(0, (1.2, 1.6)), zorder=1)
+            lab = (rf"Fixed $k/(N-1) = {fixed_k}/{n1}$" if normalise else rf"Fixed $k = {fixed_k}$")
+            fixed_labels.append((ax, curves, yf, lab))
+        TS.title2(ax, rf"{TS.ds_label(ds)} ($N-1 = {n1}$)")
+        TS.panel_label(ax, "abcdefgh"[i])
+        if i % ncol == 0:
+            ax.set_ylabel(r"Mean $k/(N-1)$" if normalise else r"Mean selected $k$")
+        if i // ncol == nrow - 1 or i + ncol >= len(dss):
+            ax.set_xlabel(r"Diffusion time $t$")
+            ax.xaxis.set_tick_params(labelbottom=True)
     for ax in list(axes.flat)[len(dss):]:
         ax.axis("off")
-    handles = [plt.Line2D([], [], color=C_RULE[m], lw=2, label=m) for m in C_RULE] + \
-              [plt.Line2D([], [], color=ct.C_TEXT2, lw=2, ls=ls, marker=mk, ms=5, label=f"block {i}")
-               for i, (ls, mk) in enumerate(BLOCK_STYLE)] + \
-              [plt.Line2D([], [], color=ct.C_TEXT2, lw=1, ls=(0, (2, 2)),
-                          label="fixed rule's k/(N−1)" if normalise else "fixed rule's k")]
-    fig.legend(handles=handles, loc="upper center", ncol=6, frameon=False, fontsize=9, bbox_to_anchor=(0.5, 1.02))
-    fig.text(0.01, -0.005, k_vs_t_caption(R) + (" y = mean k divided by N − 1 (fraction of candidate neighbours "
-                                                "kept)." if normalise else ""),
-             fontsize=8, color=ct.C_TEXT2, wrap=True, va="top")
-    fig.tight_layout(rect=(0, 0, 1, 0.96))
-    savefig(fig, "topk_frac_vs_t" if normalise else "topk_k_vs_t")
+    blank = plt.Line2D([], [], lw=0, alpha=0)
+    handles = ([blank] + [plt.Line2D([], [], color=TS.RULE_COLOR[t], lw=TS.LW_DATA, marker=TS.RULE_MARKER[t], ms=3,
+                                     mew=0.4, mec="white") for t in ("jenks", "entmax15")]
+               + [plt.Line2D([], [], color=TS.RULE_COLOR["fixed"], lw=0.9, ls=(0, (1.2, 1.6)))]
+               + [blank] + [plt.Line2D([], [], color=TS.INK2, lw=TS.LW_DATA, ls=ls) for ls in TS.BLOCK_LS])
+    labels = (["Rule:", TS.rule_label("jenks"), TS.rule_label("entmax15"), TS.rule_label("fixed")]
+              + ["Block:"] + [f"Block {i}" for i in range(3)])
+    fig.legend(handles, labels, loc="outside upper center", ncol=len(labels), handlelength=2.2,
+               columnspacing=1.0, handletextpad=0.4)
+    for ax, curves, yf, lab in fixed_labels:          # after the layout is final: measured placement
+        _place_fixed_label(ax, curves, yf, lab, fontsize=TS.FS_CELL + 0.5, color=TS.RULE_COLOR["fixed"])
+    name = "topk_frac_vs_t" if normalise else "topk_k_vs_t"
+    TS.save(fig, name, k_vs_t_caption(R, normalise))
 
 
 # ===========================================================================
@@ -1424,7 +1481,7 @@ PROTO_B = ("Route A: TabDiff's framework (EDM + masked diffusion, learnable sche
            "0–19); wNMIS and C2ST (XGBoost) from tabpc @b821a47.")
 
 
-def caveats() -> str:
+def caveats(bv) -> str:
     dev = ", ".join(sorted(DEV))
     return "\n".join([
         f"- **Configuration selection on test (A, 9 development datasets: {dev}).** Their GNN configuration "
@@ -1459,15 +1516,18 @@ def caveats() -> str:
         "(beijing) / 9f86515 (magic); the fixed-arm denoiser is pinned bit-identical across these commits by "
         "tests/test_tabdiff_gnn.py.",
         "- **B6 best-arm line** is selected on the test tables and is optimistic by construction.",
-        "- **news** (B): the entmax15 run is still training; no fixed or Jenks run is on disk.",
+        "- **news** (B): " + "; ".join(f"{m}: {bv[('news', t, 'shape')]['status']}" for t, m in B_ARMS) + ".",
         "- **diabetes** is Pima in A and the CDC dataset in B: two different datasets under one name.",
-        "- **Figure colours** reuse slots 1–2 of the validated reference palette (blue = Jenks, orange = "
-        "entmax-1.5, the same as the other thesis figures); the palette validator itself was not re-run here "
-        "(no Node.js on this machine).",
+        "- **Figure style** (analysis/summary/thesis_style.py): one palette in every figure — Fixed top-k grey "
+        "#6b6b6b (square), Jenks blue #1f6fd1 (circle), entmax-1.5 orange #e8662e (triangle), Dense black "
+        "#111111 (diamond); datasets (Figure 3 only) Okabe–Ito without black and yellow; sequential maps "
+        "Purples, diverging RdBu (blue = better). Text in Computer Modern (CMU Serif converted to TrueType, "
+        "analysis/summary/fonts/, OFL) because no LaTeX engine is installed here; with a `latex` binary on the "
+        "PATH the figures switch to text.usetex. The palette validator was not run (no Node.js here).",
     ])
 
 
-def write_summary(xcheck, a5, b6, files):
+def write_summary(xcheck, a5, b6, files, bv):
     head = _git("rev-parse", "--short", "HEAD")
     dirty = bool(_git("status", "--porcelain", "--", "analysis", "tests"))
     secs = {tid: md for tid, md in SECTIONS if tid}
@@ -1499,11 +1559,17 @@ def write_summary(xcheck, a5, b6, files):
           "(B6) and the selected-neighbour statistics (B7).", ""]
     for t in ("B1", "B2", "B3", "B4", "B5", "B6", "B7"):
         L.append(secs[t])
-    L += ["![mean selected k vs t per dataset and block](figures/topk_k_vs_t.png)", "",
-          "![mean selected k / (N − 1) vs t per dataset and block](figures/topk_frac_vs_t.png)", "",
+    L += ["Figures of the selected k: Figure 4 (`topk_frac_vs_t`) and appendix `topk_k_vs_t`, see "
+          "*Thesis figures* below.", "",
           "## C. Model size across frameworks", "", secs["C"], secs["C2"],
           "## D. Differentiability of the selection rules", "", section_d(), "",
-          "## Appendix", "", secs["GATD"], "## Caveats", "", caveats(), "",
+          "## Thesis figures (Route A)", "", "All figures are drawn at their final size for an A4 thesis "
+          "(text width 6.27 in; `\\includegraphics[width=\\textwidth]` is 1:1) in the house style of "
+          "analysis/summary/thesis_style.py; each has a LaTeX caption in figures/<name>.caption.tex (shown here "
+          "as plain text). One command rebuilds them all: `python3 analysis/summary/build_summary.py "
+          "--figures-only`. Contact sheet: figures/_contact_sheet.pdf; LaTeX preview: figures/_preview.tex.", "",
+          figures_section(), "",
+          "## Appendix", "", secs["GATD"], "## Caveats", "", caveats(bv), "",
           "## Files", "", *[f"- `{f}`" for f in files], ""]
     (OUT / "summary.md").write_text("\n".join(L) + "\n")
 
@@ -1511,19 +1577,95 @@ def write_summary(xcheck, a5, b6, files):
 DEV: set = set()
 
 
-def figures_only():
-    """Only the B7 figures (topk_k_vs_t, topk_frac_vs_t), from the same records; no table,
-    csv or summary.md is rewritten."""
-    FIG.mkdir(parents=True, exist_ok=True)
-    recs = k_vs_t_records(b_values())
+# ===========================================================================
+# Thesis figures (all of them; analysis/summary/thesis_style.py is the house style)
+# ===========================================================================
+THESIS_FIGURES = [  # name, place in the thesis, script
+    ("selection_example", "Figure 2", "fig_selection_example.py"),
+    ("density_vs_fidelity", "Figure 3", "fig_density_vs_fidelity.py"),
+    ("topk_frac_vs_t", "Figure 4", "build_summary.py"),
+    ("vs_tabdiff_reldiff", "Figure 5", "fig_vs_tabdiff_heatmap.py"),
+    ("pair_trend_error_beijing", "Figure 6", "fig_pairs_marginals.py"),
+    ("marginals", "Figure 7", "fig_pairs_marginals.py"),
+    ("topk_k_vs_t", "Appendix", "build_summary.py"),
+    ("pair_trend_error_default", "Appendix", "fig_pairs_marginals.py"),
+    ("pair_trend_error_magic", "Appendix", "fig_pairs_marginals.py"),
+    ("marginals_appendix", "Appendix", "fig_pairs_marginals.py"),
+]
+FIG_STATUS: dict[str, str] = {}
+
+
+def build_figures(bv, tdv) -> dict[str, str]:
+    """Every thesis figure + figures/_contact_sheet.pdf + figures/_preview.tex. A figure whose
+    inputs are missing here (entmax for Figure 2, <run>/analysis/ for Figures 6-7) is left as it is
+    on disk and reported as not rebuilt."""
+    import route_a_figs as RF
+    RF._BV, RF._TDV = bv, tdv
+    recs = k_vs_t_records(bv)
     fig_k_vs_t(recs)
     fig_k_vs_t(recs, normalise=True)
-    print(f"wrote {rel(FIG)}/topk_k_vs_t.{{pdf,png}}, topk_frac_vs_t.{{pdf,png}}")
+    FIG_STATUS.update({"topk_k_vs_t": "rebuilt", "topk_frac_vs_t": "rebuilt"})
+    try:
+        import entmax  # noqa: F401
+        import fig_selection_example as FSE
+        FSE.main()
+        FIG_STATUS["selection_example"] = "rebuilt"
+    except ImportError as e:
+        FIG_STATUS["selection_example"] = f"NOT rebuilt ({e}; needs entmax==1.3, as the model)"
+    import fig_density_vs_fidelity as FDV
+    FDV.main()
+    FIG_STATUS["density_vs_fidelity"] = "rebuilt"
+    import fig_vs_tabdiff_heatmap as FVT
+    FVT.main([])
+    FIG_STATUS["vs_tabdiff_reldiff"] = "rebuilt"
+    import fig_pairs_marginals as FPM
+    pm = [n for n, _, scr in THESIS_FIGURES if scr == "fig_pairs_marginals.py"]
+    try:
+        FPM.main()
+        FIG_STATUS.update({n: "rebuilt" for n in pm})
+    except SystemExit as e:
+        FIG_STATUS.update({n: f"NOT rebuilt ({e})" for n in pm})
+    names = [n for n, *_ in THESIS_FIGURES]
+    TS.contact_sheet(names)
+    TS.latex_preview(names)
+    for n, where, _ in THESIS_FIGURES:
+        size = TS.SAVED.get(n)
+        print(f"  {where:9s} {n:26s} {FIG_STATUS.get(n, '?'):10s} "
+              + (f"{size[0]:.2f} x {size[1]:.2f} in" if size else ""))
+    return FIG_STATUS
+
+
+def figures_section() -> str:
+    """summary.md: every thesis figure with its caption (from figures/<name>.caption.tex)."""
+    L = []
+    for n, where, scr in THESIS_FIGURES:
+        cap = (FIG / f"{n}.caption.tex")
+        text = TS._caption_plain(cap.read_text()) if cap.exists() else "(no caption file)"
+        size = TS.SAVED.get(n)
+        L += [f"### {where}: `{n}`", "",
+              f"![{n}](figures/{n}.png)", "",
+              text, "",
+              f"_Script: analysis/summary/{scr}; files: figures/{n}.pdf / .png / .caption.tex"
+              + (f"; {size[0]:.2f} × {size[1]:.2f} in" if size else "")
+              + (f"; {FIG_STATUS[n]}" if n in FIG_STATUS and FIG_STATUS[n] != "rebuilt" else "") + "._", ""]
+    return "\n".join(L)
+
+
+def figures_only():
+    """Every thesis figure, from the same records as the tables; no table, csv or summary.md is
+    rewritten."""
+    FIG.mkdir(parents=True, exist_ok=True)
+    bv = b_values()
+    tdv = b_tabdiff_values()
+    st = build_figures(bv, tdv)
+    bad = [n for n, v in st.items() if v != "rebuilt"]
+    print(f"wrote {rel(FIG)}/: {len(st) - len(bad)} figures rebuilt" + (f"; NOT rebuilt: {', '.join(bad)}" if bad else ""))
+    return 1 if bad else 0
 
 
 def main():
     if "--figures-only" in sys.argv[1:]:
-        return figures_only()
+        sys.exit(figures_only())
     for d in (TAB, CSV, FIG):
         d.mkdir(parents=True, exist_ok=True)
     global DEV
@@ -1551,13 +1693,16 @@ def main():
     allv = pd.DataFrame(ROWS)
     allv.to_csv(CSV / "all_values.csv", index=False)
     pd.DataFrame(list(_PROV.values())).sort_values("path").to_csv(OUT / "provenance.csv", index=False)
+    build_figures(bv, tdv)
     files = (["analysis/summary/build_summary.py", "analysis/summary/summary.md", "analysis/summary/provenance.csv"]
              + [f"analysis/summary/tables/{f}" for f in TEX_FILES]
              + sorted(f"analysis/summary/csv/{p.name}" for p in CSV.glob("*.csv"))
-             + [f"analysis/summary/figures/{n}.{e}" for n in ("topk_k_vs_t", "topk_frac_vs_t")
-                for e in ("pdf", "png")]
+             + [f"analysis/summary/figures/{n}.{e}" for n, *_ in THESIS_FIGURES for e in ("pdf", "png", "caption.tex")]
+             + ["analysis/summary/figures/_contact_sheet.pdf", "analysis/summary/figures/_preview.tex",
+                "analysis/summary/thesis_style.py", "analysis/summary/route_a_figs.py"]
+             + [f"analysis/summary/{scr}" for scr in sorted({s_ for *_, s_ in THESIS_FIGURES} - {"build_summary.py"})]
              + ["tests/test_selection_differentiability.py"])
-    write_summary(xcheck, a5, b6, files)
+    write_summary(xcheck, a5, b6, files, bv)
     print(f"wrote {rel(OUT / 'summary.md')}: {len(TEX_FILES)} tables, {len(allv)} values, "
           f"{len(_PROV)} source files; A cross-check max |diff| {max(xcheck):.1e}")
 

@@ -22,16 +22,19 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import numpy as np
+
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-import route_a_figs as F  # noqa: E402
+import thesis_style as S  # noqa: E402
 
-np, plt, ct = F.np, F.plt, F.ct
-sys.path.insert(0, str(F.BS.REPO))
+plt = S.plt
+sys.path.insert(0, str(HERE.parents[1]))         # repo root: tab_ddpm/, adaptive_adjacency.py
 
 S0 = [2.1, 1.9, 1.8, 0.3, 0.1, -0.2, -0.5]
 NAMES = list("ABCDEFG")
 K_MIN = 1                                   # tabdiff_gnn/config.RULE_SETTINGS["k_min"]
+DROPPED = "#d9d9d9"
 
 
 def _module_mask(phi, mode: str):
@@ -83,38 +86,6 @@ def compute(scores) -> dict:
             "tau": tau, "p": p}
 
 
-def panel(ax, r: dict, title: str):
-    F.style_ax(ax)
-    x = np.arange(len(r["s"]))
-    w = 0.38
-    grey = ct.C_GRID
-    for i, v in enumerate(r["s"]):
-        ax.bar(i - w / 2, v, w, color=F.C_ARM["jenks"] if r["keep_jenks"][i] else grey, ec="white", lw=1)
-        ax.bar(i + w / 2, v, w, color=F.C_ARM["entmax15"] if r["keep_entmax"][i] else grey, ec="white", lw=1)
-        if r["p"][i] > 0:
-            ax.text(i + w / 2, v + (0.03 if v >= 0 else -0.03) * np.ptp(r["s"]), f"{r['p'][i]:.3f}",
-                    ha="center", va="bottom" if v >= 0 else "top", fontsize=6.5, color=ct.C_TEXT2)
-    ax.axhline(0, color=ct.C_TEXT2, lw=0.8)
-    xs = r["k_jenks"] - 0.5
-    ax.axvline(xs, color=F.C_ARM["jenks"], lw=1.5, ls="--")
-    thr = 2 * r["tau"]
-    ax.axhline(thr, color=F.C_ARM["entmax15"], lw=1.5, ls=":")
-    lo = min(r["s"].min(), thr, 0)
-    hi = max(r["s"].max(), 0)
-    pad = 0.12 * (hi - lo)
-    ax.set_ylim(lo - pad, hi + 2.2 * pad)
-    ax.text(xs + 0.08, hi + 1.9 * pad, "Jenks split", color=F.C_ARM["jenks"], fontsize=7.5, va="top")
-    ax.text(len(x) - 0.55, thr, f"entmax-1.5 threshold 2τ = {thr:.3f}", color=F.C_ARM["entmax15"], fontsize=7.5,
-            ha="right", va="bottom")
-    ax.text(0.98, 0.97, f"k_Jenks = {r['k_jenks']}\nk_entmax = {r['k_entmax']}\nτ = {r['tau']:.4f}",
-            transform=ax.transAxes, ha="right", va="top", fontsize=8, color=ct.C_TEXT,
-            bbox=dict(fc="white", ec=ct.C_GRID, lw=0.8))
-    ax.set_xticks(x, NAMES)
-    ax.set_xlabel("candidate neighbour (sorted by score)", fontsize=8, color=ct.C_TEXT2)
-    ax.set_ylabel("raw score φ", fontsize=8, color=ct.C_TEXT2)
-    ax.set_title(title, loc="left", fontsize=10, color=ct.C_TEXT)
-
-
 # What the figure must show (checked before drawing; a disagreement stops the script)
 EXPECTED = {"a": {"k_jenks": 3, "k_entmax": 3, "tau": 0.3927, "p_kept": (0.432, 0.311, 0.257)},
             "b": {"k_jenks": 3, "k_entmax": 7, "tau": -0.3352}}
@@ -129,29 +100,72 @@ def check_expected(r: dict, e: dict, name: str):
         assert np.allclose(p, e["p_kept"], atol=5e-4), f"panel {name}: p {p} != {e['p_kept']}"
 
 
+def panel(ax, r: dict, title: str, letter: str):
+    S.style_axes(ax)
+    s, n = r["s"], len(r["s"])
+    x = np.arange(n)
+    w = 0.38
+    cj, ce = S.RULE_COLOR["jenks"], S.RULE_COLOR["entmax15"]
+    ax.bar(x - w / 2, s, w, color=[cj if k else DROPPED for k in r["keep_jenks"]], lw=0)
+    ax.bar(x + w / 2, s, w, color=[ce if k else DROPPED for k in r["keep_entmax"]], lw=0)
+    ax.axhline(0, color=S.INK2, lw=S.LW_AXIS)
+    thr = 2 * r["tau"]
+    lo, hi = min(s.min(), thr, 0.0), max(s.max(), 0.0)
+    span = hi - lo
+    ax.set_ylim(lo - 0.04 * span, hi + 0.13 * span)
+    for i in np.flatnonzero(r["keep_entmax"]):           # p_j on the bars entmax-1.5 keeps
+        v = s[i]
+        ax.annotate(S.tnum(r["p"][i], 2), (i + w / 2, v), xytext=(0, 1.5 if v >= 0 else -1.5),
+                    textcoords="offset points", ha="center", va="bottom" if v >= 0 else "top",
+                    fontsize=S.FS_CELL, color=S.INK2)
+    xs = r["k_jenks"] - 0.5
+    ax.axvline(xs, color=cj, lw=0.9, ls="--")
+    ax.annotate("Jenks split", (xs, 1), xycoords=("data", "axes fraction"), xytext=(2, -1),
+                textcoords="offset points", ha="left", va="top", fontsize=S.FS_CELL + 0.5, color=cj)
+    ax.axhline(thr, color=ce, lw=0.9, ls=(0, (1.5, 1.5)))
+    ax.annotate(rf"$2\tau = {S.mnum(thr, 3)}$", (n - 0.5, thr), xytext=(0, 1.5), textcoords="offset points",
+                ha="right", va="bottom", fontsize=S.FS_CELL + 0.5, color=ce)
+    ax.set_xlim(-0.6, n - 0.4)
+    ax.set_xticks(x, NAMES)
+    ax.tick_params(axis="x", length=0)
+    ax.set_xlabel("Candidate neighbour (sorted by score)")
+    ax.set_ylabel(r"Raw score $\varphi$")
+    S.title2(ax, title, rf"$k_{{\mathrm{{Jenks}}}} = {r['k_jenks']}$,  $k_{{\mathrm{{entmax}}}} = {r['k_entmax']}$,"
+                        rf"  $\tau = {S.mnum(r['tau'], 3)}$")
+    S.panel_label(ax, letter)
+
+
+CAPTION = (
+    r"Neighbour selection of the two adaptive rules on one node with seven candidate neighbours A--G, raw "
+    r"scores $s = (2.1, 1.9, 1.8, 0.3, 0.1, -0.2, -0.5)$ in (a) and the same scores divided by 10 in (b). "
+    r"For each candidate, the left bar is coloured if the Jenks rule keeps it and the right bar if "
+    r"entmax-1.5 keeps it (grey: dropped). Jenks splits the sorted scores into two natural-breaks classes "
+    r"(dashed line) and keeps the upper class; entmax-1.5 assigns $p_j = [s_j/2 - \tau]_+^2$ with "
+    r"$\sum_j p_j = 1$ and keeps every candidate with $p_j > 0$, i.e.\ $s_j > 2\tau$ (dotted line); the "
+    r"numbers above the bars are $p_j$. The Jenks split depends only on the shape of the score row, so it "
+    r"keeps three neighbours in both panels, whereas entmax-1.5 keeps three in (a) and all seven once the "
+    r"scores are flatter (b). The kept sets were computed by the model's own adjacency module on these "
+    r"scores (no training involved).")
+
+
 def main():
     a = compute(S0)
     b = compute([v / 10 for v in S0])
     check_expected(a, EXPECTED["a"], "a")
     check_expected(b, EXPECTED["b"], "b")
-    fig, axes = plt.subplots(1, 2, figsize=(11, 3.9))
-    panel(axes[0], a, "(a) scores s")
-    panel(axes[1], b, "(b) scores s / 10 (same order, flatter)")
-    handles = [plt.Rectangle((0, 0), 1, 1, color=F.C_ARM["jenks"], label="kept by Jenks"),
-               plt.Rectangle((0, 0), 1, 1, color=F.C_ARM["entmax15"], label="kept by entmax-1.5"),
-               plt.Rectangle((0, 0), 1, 1, color=ct.C_GRID, label="dropped")]
-    fig.legend(handles=handles, loc="upper center", ncol=3, frameon=False, fontsize=9, bbox_to_anchor=(0.5, 1.04))
-    F.caption(fig, "One node, 7 candidate neighbours; left bar of each pair = Jenks, right bar = entmax-1.5. "
-                   "Kept sets computed by the model's DynamicAdjacency (eval mode) on these scores. Jenks: 2-class "
-                   "natural-breaks split of the sorted scores (dashed line). entmax-1.5: p_j = [s_j/2 − τ]₊², kept iff "
-                   "s_j > 2τ (dotted line); numbers above the bars = p_j. Dividing every score by 10 keeps the Jenks "
-                   "split (it depends only on the shape of the row) but entmax keeps all 7.")
-    fig.tight_layout(rect=(0, 0, 1, 0.95))
-    F.savefig(fig, "selection_example")
+    fig = S.figure(S.FULL, 2.4)
+    axes = fig.subplots(1, 2)
+    panel(axes[0], a, r"Scores $s$", "a")
+    panel(axes[1], b, r"Scores $s/10$", "b")
+    handles = [plt.Rectangle((0, 0), 1, 1, color=S.RULE_COLOR["jenks"], label="Kept by Jenks"),
+               plt.Rectangle((0, 0), 1, 1, color=S.RULE_COLOR["entmax15"], label="Kept by entmax-1.5"),
+               plt.Rectangle((0, 0), 1, 1, color=DROPPED, label="Dropped")]
+    fig.legend(handles=handles, loc="outside upper center", ncol=3, handlelength=1.0)
+    size = S.save(fig, "selection_example", CAPTION)
     for nm, r in (("a", a), ("b", b)):
         print(f"({nm}) k_Jenks {r['k_jenks']}, k_entmax {r['k_entmax']}, tau {r['tau']:.4f}, "
               f"p {np.round(r['p'], 4).tolist()}")
-    print(f"wrote {F.BS.rel(F.FIG)}/selection_example.{{pdf,png}}")
+    print(f"wrote selection_example ({size[0]} x {size[1]} in)")
 
 
 if __name__ == "__main__":

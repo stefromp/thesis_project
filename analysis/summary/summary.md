@@ -1,6 +1,6 @@
 # Comparison tables (supervisor summary)
 
-_Generated 2026-10-16 13:36 by `analysis/summary/build_summary.py` at commit `9f86515` (+ uncommitted changes). Rerun it to refresh; nothing is trained or sampled._
+_Generated 2026-10-20 15:34 by `analysis/summary/build_summary.py` at commit `662727b` (+ uncommitted changes). Rerun it to refresh; nothing is trained or sampled._
 
 ## How values are marked
 
@@ -257,7 +257,7 @@ MLE: TabDDPM = the paper's Table 5 value; default (‡) excluded from every colu
 | gesture | development \* | F1 | 0.5489 ± 0.0070 | —ᵈ | 0.597 ± 0.006† | 0.5967 ± 0.0062† | 0.636 ± 0.007† | 0.6365 ± 0.0073† | 20000 / 0.0001 / 4096 / 1000 | 30000 / 0.00281 / 4096 / 1000 |
 | cardio | held-out | F1 | 0.7366 ± 0.0006 | —ᵈ | 0.737 ± 0.001† | 0.7374 ± 0.0011† | 0.738 ± 0.001† | 0.7379 ± 0.0008† | 20000 / 0.0001 / 4096 / 1000 | 30000 / 0.000564 / 4096 / 1000 |
 
-Metric: macro-F1 / R², the same rule as A1. The budget-matched runs are prepared (hpc_transfer/jobs_tddpm_setup/) but no results are on disk: no *_tddpm_setup tree exists under transfer_runs/exp/ or exp/ (none found), so column 2 is —ᵈ (whether the jobs ran on the cluster cannot be seen from here). Setup columns from analysis/config_comparison/config_comparison.csv. — = no value: ᵖ not reported, ⁿ not computed, ᵃ not applicable, ᵈ no run on disk; **pending** = run still in progress. † = reported (paper, or the authors' released evaluation files); unmarked values are computed by us.
+Metric: macro-F1 / R², the same rule as A1. The budget-matched runs are prepared (hpc_transfer/jobs_tddpm_setup/) but no results are on disk: no *_tddpm_setup tree exists under transfer_runs/exp/ or exp/ (found: transfer_runs/exp/california/ablation_tddpm_setup, transfer_runs/exp/cardio/ablation_tddpm_setup_catfix, transfer_runs/exp/gesture/ablation_tddpm_setup, transfer_runs/exp/house/ablation_tddpm_setup, transfer_runs/exp/king/ablation_tddpm_setup_catfix), so column 2 is —ᵈ (whether the jobs ran on the cluster cannot be seen from here). Setup columns from analysis/config_comparison/config_comparison.csv. — = no value: ᵖ not reported, ⁿ not computed, ᵃ not applicable, ᵈ no run on disk; **pending** = run still in progress. † = reported (paper, or the authors' released evaluation files); unmarked values are computed by us.
 
 ## B. TabDiff framework (Route A, seed 0 = 1 trained model × 20 tables)
 
@@ -279,7 +279,7 @@ Datasets: adult, beijing, default, diabetes, magic, shoppers; news pending. GNN 
 | shoppers | clf. | 1.24 ± 0.12 | 1.73 ± 0.09 | 0.924 ± 0.003 | 0.623 ± 0.019 | 99.00 ± 0.28 | 52.48 ± 0.52 | 0.9860 ± 0.0085 | 0.9876 ± 0.0011 | 0.7972 ± 0.0116 | 2,729,675 |
 | news | reg. | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ |
 
-Mean ± std (ddof=1, TabDiff's aggregation) over the 20 tables sampled from ONE trained model (training seed 0). MLE-1 = AUROC (classification) or R² (regression); MLE-2 = F1 or RMSE, from the same MLE call. C2ST (LR) = TabDiff's detection score as a fraction; wNMIS and C2ST (XGBoost) from tabpc. Params = denoiser parameters. news: no fixed-rule run on disk. — = no value: ᵖ not reported, ⁿ not computed, ᵃ not applicable, ᵈ no run on disk; **pending** = run still in progress. † = reported (paper, or the authors' released evaluation files); unmarked values are computed by us.
+Mean ± std (ddof=1, TabDiff's aggregation) over the 20 tables sampled from ONE trained model (training seed 0). MLE-1 = AUROC (classification) or R² (regression); MLE-2 = F1 or RMSE, from the same MLE call. C2ST (LR) = TabDiff's detection score as a fraction; wNMIS and C2ST (XGBoost) from tabpc. Params = denoiser parameters. Results on disk for adult, beijing, default, diabetes, magic, shoppers; no run on disk: news. — = no value: ᵖ not reported, ⁿ not computed, ᵃ not applicable, ᵈ no run on disk; **pending** = run still in progress. † = reported (paper, or the authors' released evaluation files); unmarked values are computed by us.
 
 ### B2. GNN in TabDiff, adaptive_jenks (Route A, d_model 256)
 
@@ -291,13 +291,13 @@ Mean ± std (ddof=1, TabDiff's aggregation) over the 20 tables sampled from ONE 
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | adult | clf. | 0.65 ± 0.05 | 1.27 ± 0.07 | 0.914 ± 0.002 | 0.669 ± 0.008 | 98.62 ± 0.28 | 53.79 ± 0.21 | 0.9877 ± 0.0042 | 0.9907 ± 0.0006 | 0.9007 ± 0.0074 | 2,746,353 |
 | beijing | reg. | 1.04 ± 0.05 | 2.92 ± 0.14 | 0.529 ± 0.035 | 0.704 ± 0.026 | 99.55 ± 0.10 | 50.16 ± 0.30 | 0.9929 ± 0.0042 | 0.9669 ± 0.0008 | 0.4107 ± 0.0049 | 5,226,705 |
-| default | clf. | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ |
-| diabetes | clf. | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ |
+| default | clf. | 0.86 ± 0.08 | 3.00 ± 0.73 | 0.763 ± 0.004 | 0.453 ± 0.009 | 98.84 ± 0.19 | 50.22 ± 0.29 | 0.9812 ± 0.0055 | 0.9895 ± 0.0011 | 0.7279 ± 0.0113 | 5,237,465 |
+| diabetes | clf. | 0.74 ± 0.02 | 1.80 ± 0.18 | 0.695 ± 0.001 | 0.575 ± 0.003 | 97.04 ± 0.24 | 52.43 ± 0.22 | 0.9797 ± 0.0029 | 0.9918 ± 0.0004 | 0.9516 ± 0.0067 | 3,843,133 |
 | magic | clf. | 0.81 ± 0.10 | 0.94 ± 0.17 | 0.934 ± 0.002 | 0.814 ± 0.007 | 99.34 ± 0.27 | 45.40 ± 0.39 | 0.9960 ± 0.0034 | 0.9913 ± 0.0014 | 0.7407 ± 0.0056 | 3,478,403 |
 | shoppers | clf. | 1.28 ± 0.12 | 1.67 ± 0.10 | 0.922 ± 0.003 | 0.584 ± 0.019 | 98.47 ± 0.42 | 51.67 ± 0.48 | 0.9792 ± 0.0087 | 0.9865 ± 0.0012 | 0.7846 ± 0.0151 | 2,729,675 |
 | news | reg. | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ |
 
-Mean ± std (ddof=1, TabDiff's aggregation) over the 20 tables sampled from ONE trained model (training seed 0). MLE-1 = AUROC (classification) or R² (regression); MLE-2 = F1 or RMSE, from the same MLE call. C2ST (LR) = TabDiff's detection score as a fraction; wNMIS and C2ST (XGBoost) from tabpc. Params = denoiser parameters. adaptive_jenks was run on adult, beijing, magic, shoppers only. — = no value: ᵖ not reported, ⁿ not computed, ᵃ not applicable, ᵈ no run on disk; **pending** = run still in progress. † = reported (paper, or the authors' released evaluation files); unmarked values are computed by us.
+Mean ± std (ddof=1, TabDiff's aggregation) over the 20 tables sampled from ONE trained model (training seed 0). MLE-1 = AUROC (classification) or R² (regression); MLE-2 = F1 or RMSE, from the same MLE call. C2ST (LR) = TabDiff's detection score as a fraction; wNMIS and C2ST (XGBoost) from tabpc. Params = denoiser parameters. Results on disk for adult, beijing, default, diabetes, magic, shoppers; no run on disk: news. — = no value: ᵖ not reported, ⁿ not computed, ᵃ not applicable, ᵈ no run on disk; **pending** = run still in progress. † = reported (paper, or the authors' released evaluation files); unmarked values are computed by us.
 
 ### B3. GNN in TabDiff, adaptive_entmax15 (Route A, d_model 256)
 
@@ -315,7 +315,7 @@ Mean ± std (ddof=1, TabDiff's aggregation) over the 20 tables sampled from ONE 
 | shoppers | clf. | 1.33 ± 0.13 | 1.77 ± 0.10 | 0.924 ± 0.004 | 0.616 ± 0.020 | 98.13 ± 0.36 | 53.28 ± 0.51 | 0.9843 ± 0.0080 | 0.9817 ± 0.0012 | 0.7775 ± 0.0130 | 2,729,675 |
 | news | reg. | **pending** | **pending** | **pending** | **pending** | **pending** | **pending** | **pending** | **pending** | **pending** | 5,222,031 |
 
-Mean ± std (ddof=1, TabDiff's aggregation) over the 20 tables sampled from ONE trained model (training seed 0). MLE-1 = AUROC (classification) or R² (regression); MLE-2 = F1 or RMSE, from the same MLE call. C2ST (LR) = TabDiff's detection score as a fraction; wNMIS and C2ST (XGBoost) from tabpc. Params = denoiser parameters. news: still running (pending). — = no value: ᵖ not reported, ⁿ not computed, ᵃ not applicable, ᵈ no run on disk; **pending** = run still in progress. † = reported (paper, or the authors' released evaluation files); unmarked values are computed by us.
+Mean ± std (ddof=1, TabDiff's aggregation) over the 20 tables sampled from ONE trained model (training seed 0). MLE-1 = AUROC (classification) or R² (regression); MLE-2 = F1 or RMSE, from the same MLE call. C2ST (LR) = TabDiff's detection score as a fraction; wNMIS and C2ST (XGBoost) from tabpc. Params = denoiser parameters. Results on disk for adult, beijing, default, diabetes, magic, shoppers; still running (pending): news. — = no value: ᵖ not reported, ⁿ not computed, ᵃ not applicable, ᵈ no run on disk; **pending** = run still in progress. † = reported (paper, or the authors' released evaluation files); unmarked values are computed by us.
 
 ### B4. ABLATION: topk_dense (top_k = N − 1) on beijing and magic
 
@@ -359,11 +359,11 @@ Tables 1, 2 (Shape, Trend), 3 (MLE), 7, 8 (α, β), 9 (C2ST; no std printed) of 
 | GNN arm vs TabDiff (paper) | datasets | Shape err | Trend err | MLE (AUC / RMSE) | α-precision | β-recall | C2ST (LR) | all six |
 |---|---|---|---|---|---|---|---|---|
 | GNN fixed | 6 | 2 / 3 / 1 | 2 / 2 / 2 | 2 / 2 / 2 | 3 / 1 / 2 | 3 / 0 / 3 | 2 / 2 / 2 | 14 / 10 / 12 |
-| GNN adaptive_jenks | 4 | 0 / 4 / 0 | 1 / 1 / 2 | 1 / 2 / 1 | 1 / 1 / 2 | 2 / 0 / 2 | 1 / 2 / 1 | 6 / 10 / 8 |
+| GNN adaptive_jenks | 6 | 2 / 4 / 0 | 2 / 2 / 2 | 2 / 3 / 1 | 3 / 1 / 2 | 3 / 0 / 3 | 1 / 3 / 2 | 13 / 13 / 10 |
 | GNN adaptive_entmax15 | 6 | 4 / 2 / 0 | 3 / 2 / 1 | 2 / 2 / 2 | 4 / 1 / 1 | 2 / 0 / 4 | 2 / 4 / 0 | 17 / 11 / 8 |
 | best arm per dataset (selected on test, optimistic) | 6 | 4 / 2 / 0 | 3 / 2 / 1 | 2 / 3 / 1 | 4 / 2 / 0 | 2 / 0 / 4 | 3 / 3 / 0 | 18 / 12 / 6 |
 
-Tie rule: |ours − TabDiff| ≤ our std over the 20 tables; otherwise W/L by the metric's direction (Shape, Trend, RMSE lower is better; AUC, α, β, C2ST higher). MLE = AUC on adult, default, diabetes, magic, shoppers and RMSE on beijing (news pending). Per-dataset outcomes: csv/B6_detail.csv. **The last row is not a fair comparison**: for each dataset it keeps whichever of our arms has the best (W − L) against TabDiff on these same test tables (adult: entmax15, beijing: entmax15, default: entmax15, diabetes: fixed, magic: jenks, shoppers: fixed). Choosing among three arms after seeing their test scores rewards noise (the maximum of several noisy estimates is biased upward), while TabDiff contributes one pre-specified model; it is an optimistic upper bound, not a result. — = no value: ᵖ not reported, ⁿ not computed, ᵃ not applicable, ᵈ no run on disk; **pending** = run still in progress. † = reported (paper, or the authors' released evaluation files); unmarked values are computed by us.
+Tie rule: |ours − TabDiff| ≤ our std over the 20 tables; otherwise W/L by the metric's direction (Shape, Trend, RMSE lower is better; AUC, α, β, C2ST higher). MLE = AUC on adult, default, diabetes, magic, shoppers and RMSE on beijing (news pending). Per-dataset outcomes: csv/B6_detail.csv. **The last row is not a fair comparison**: for each dataset it keeps whichever of our arms has the best (W − L) against TabDiff on these same test tables (adult: entmax15, beijing: entmax15, default: jenks, diabetes: fixed, magic: jenks, shoppers: fixed). Choosing among three arms after seeing their test scores rewards noise (the maximum of several noisy estimates is biased upward), while TabDiff contributes one pre-specified model; it is an optimistic upper bound, not a result. — = no value: ᵖ not reported, ⁿ not computed, ᵃ not applicable, ᵈ no run on disk; **pending** = run still in progress. † = reported (paper, or the authors' released evaluation files); unmarked values are computed by us.
 
 ### B7. Selected neighbours per node at sampling (adaptive rules)
 
@@ -383,9 +383,14 @@ Tie rule: |ours − TabDiff| ≤ our std over the 20 tables; otherwise W/L by th
 | beijing | adaptive_entmax15 | 0 | 11 | 1.39 | 1.17 | 1.25 | 0.13 → 0.11 |
 | beijing | adaptive_entmax15 | 1 | 11 | 1.07 | 1.08 | 1.06 | 0.10 → 0.10 |
 | beijing | adaptive_entmax15 | 2 | 11 | 1.09 | 1.51 | 1.23 | 0.10 → 0.14 |
+| default | adaptive_jenks | 0 | 23 | 3.08 | 2.01 | 2.50 | 0.13 → 0.09 |
+| default | adaptive_jenks | 1 | 23 | 8.65 | 9.31 | 9.24 | 0.38 → 0.40 |
+| default | adaptive_jenks | 2 | 23 | 10.59 | 15.45 | 13.42 | 0.46 → 0.67 |
 | default | adaptive_entmax15 | 0 | 23 | 2.49 | 2.06 | 2.29 | 0.11 → 0.09 |
 | default | adaptive_entmax15 | 1 | 23 | 1.69 | 1.56 | 1.59 | 0.07 → 0.07 |
 | default | adaptive_entmax15 | 2 | 23 | 1.75 | 7.52 | 3.17 | 0.08 → 0.33 |
+| diabetes | adaptive_jenks | 0 | 36 | 17.14 | 8.66 | 13.18 | 0.48 → 0.24 |
+| diabetes | adaptive_jenks | 1 | 36 | 16.32 | 4.88 | 11.48 | 0.45 → 0.14 |
 | diabetes | adaptive_entmax15 | 0 | 36 | 3.30 | 3.15 | 3.13 | 0.09 → 0.09 |
 | diabetes | adaptive_entmax15 | 1 | 36 | 1.89 | 1.37 | 1.77 | 0.05 → 0.04 |
 | magic | adaptive_jenks | 0 | 10 | 3.24 | 4.41 | 3.74 | 0.32 → 0.44 |
@@ -397,9 +402,9 @@ Tie rule: |ours − TabDiff| ≤ our std over the 20 tables; otherwise W/L by th
 | shoppers | adaptive_entmax15 | 0 | 17 | 3.90 | 4.72 | 4.05 | 0.23 → 0.28 |
 | shoppers | adaptive_entmax15 | 1 | 17 | 2.75 | 5.84 | 3.29 | 0.16 → 0.34 |
 
-Source: each run's topk_k_stats.csv (phase = sample). Per t-bin values behind the figure: csv/B7_k_vs_t.csv. Figure: figures/topk_k_vs_t.png. — = no value: ᵖ not reported, ⁿ not computed, ᵃ not applicable, ᵈ no run on disk; **pending** = run still in progress. † = reported (paper, or the authors' released evaluation files); unmarked values are computed by us.
+Source: each run's topk_k_stats.csv (phase = sample). Per t-bin values behind the figure: csv/B7_k_vs_t.csv. Figures: figures/topk_k_vs_t.png, normalised by N − 1: figures/topk_frac_vs_t.png. — = no value: ᵖ not reported, ⁿ not computed, ᵃ not applicable, ᵈ no run on disk; **pending** = run still in progress. † = reported (paper, or the authors' released evaluation files); unmarked values are computed by us.
 
-![mean selected k vs t per dataset and block](figures/topk_k_vs_t.png)
+Figures of the selected k: Figure 4 (`topk_frac_vs_t`) and appendix `topk_k_vs_t`, see *Thesis figures* below.
 
 ## C. Model size across frameworks
 
@@ -441,8 +446,8 @@ The three rules have identical parameter counts in both frameworks (checked here
 |---|---|---|---|---|---|
 | adult | 3.0 | 3.2 | 3.1 | —ᵃ | 3.62† |
 | beijing | 7.0 | 7.1 | 7.2 | 6.9 | 4.21† |
-| default | 14.3 | —ᵈ | 14.5 | —ᵃ | 3.74† |
-| diabetes | 12.6 | —ᵈ | 13.3 | —ᵃ | 13.51† |
+| default | 14.3 | 14.4 | 14.5 | —ᵃ | 3.74† |
+| diabetes | 12.6 | 13.2 | 13.3 | —ᵃ | 13.51† |
 | magic | 2.4 | 2.6 | 2.5 | 2.5 | 2.24† |
 | shoppers | 1.6 | 1.8 | 1.9 | —ᵃ | 2.19† |
 | news | —ᵈ | —ᵈ | **pending** | —ᵃ | 5.34† |
@@ -469,7 +474,102 @@ The TabDDPM-framework denoiser (`GraphAwareDenoiser`) uses the same `AttnGNNBloc
 
 **Wording to fix in the code's own docs.** `DynamicAdjacency`'s docstring says the top-k result is "differentiable via a straight-through mask". It is not straight-through: dropped edges get exactly zero gradient (no surrogate gradient is passed through the selection); kept edges are differentiable through the sigmoid. The selection itself is not differentiated in any of the three rules.
 
-**Test outcome:** `11 passed in 2.54s (exit code 0); entmax 1.3 available; run 2026-10-16 13:36 on CPU, torch 2.5.1`.
+**Test outcome:** `11 passed in 2.39s (exit code 0); entmax 1.3 available; run 2026-10-20 15:34 on CPU, torch 2.5.1`.
+
+## Thesis figures (Route A)
+
+All figures are drawn at their final size for an A4 thesis (text width 6.27 in; `\includegraphics[width=\textwidth]` is 1:1) in the house style of analysis/summary/thesis_style.py; each has a LaTeX caption in figures/<name>.caption.tex (shown here as plain text). One command rebuilds them all: `python3 analysis/summary/build_summary.py --figures-only`. Contact sheet: figures/_contact_sheet.pdf; LaTeX preview: figures/_preview.tex.
+
+### Figure 2: `selection_example`
+
+![selection_example](figures/selection_example.png)
+
+Neighbour selection of the two adaptive rules on one node with seven candidate neighbours A–G, raw scores s = (2.1, 1.9, 1.8, 0.3, 0.1, -0.2, -0.5) in (a) and the same scores divided by 10 in (b). For each candidate, the left bar is coloured if the Jenks rule keeps it and the right bar if entmax-1.5 keeps it (grey: dropped). Jenks splits the sorted scores into two natural-breaks classes (dashed line) and keeps the upper class; entmax-1.5 assigns p_j = [s_j/2 - τ]₊² with _j p_j = 1 and keeps every candidate with p_j > 0, i.e.\ s_j > 2τ (dotted line); the numbers above the bars are p_j. The Jenks split depends only on the shape of the score row, so it keeps three neighbours in both panels, whereas entmax-1.5 keeps three in (a) and all seven once the scores are flatter (b). The kept sets were computed by the model's own adjacency module on these scores (no training involved).
+
+
+_Script: analysis/summary/fig_selection_example.py; files: figures/selection_example.pdf / .png / .caption.tex; 6.27 × 2.39 in._
+
+### Figure 3: `density_vs_fidelity`
+
+![density_vs_fidelity](figures/density_vs_fidelity.png)
+
+Joint-distribution fidelity against the density of the learned graph. The horizontal axis is the mean percentage of the N-1 candidate neighbours that a node keeps during sampling: for the adaptive rules the count-weighted mean of the logged k over all blocks, diffusion times and nodes, divided by N-1; for the fixed rule k/(N-1); for the dense ablation 100%. (a) C2ST with an XGBoost discriminator and (b) wNMIS (both from tabpc; higher is better), mean ± std over the 20 tables. Colour = dataset (lines join the runs of one dataset in order of density), marker = rule. Route A, training seed 0, 20 sampled tables. The adaptive rules' logged k counts edges with a non-zero weight, so a kept edge whose weight underflows to zero counts as dropped (at most 2.6× 10^-4 of node evaluations). News not shown (no evaluated run yet).
+
+
+_Script: analysis/summary/fig_density_vs_fidelity.py; files: figures/density_vs_fidelity.pdf / .png / .caption.tex; 6.27 × 2.99 in._
+
+### Figure 4: `topk_frac_vs_t`
+
+![topk_frac_vs_t](figures/topk_frac_vs_t.png)
+
+Mean fraction of the N-1 candidate neighbours that a node keeps, k/(N-1), during sampling, as a function of the diffusion time t (t=0: clean data, t=1: pure noise), for the two adaptive rules (colour) in each GNN block (line style). Each point averages the selected k over all nodes and all denoiser calls whose t falls in a bin of width 0.1 (weighted by count), over the 20 sampled tables. The dotted grey line is the fixed top-k rule's constant k/(N-1); N-1 is the number of other columns. Route A, training seed 0, 20 sampled tables. Runs with k statistics: Jenks: Adult, Beijing, Default, Diabetes, Magic, Shoppers; entmax-1.5: Adult, Beijing, Default, Diabetes, Magic, Shoppers. No adaptive-rule run of News has k statistics yet.
+
+
+_Script: analysis/summary/build_summary.py; files: figures/topk_frac_vs_t.pdf / .png / .caption.tex; 6.27 × 4.19 in._
+
+### Figure 5: `vs_tabdiff_reldiff`
+
+![vs_tabdiff_reldiff](figures/vs_tabdiff_reldiff.png)
+
+Relative difference between our AttnGNN denoiser inside TabDiff and TabDiff as reported in its paper, for (a) the fixed top-k rule, (b) Jenks and (c) entmax-1.5, on the six metrics the TabDiff paper reports (MLE: AUC, or RMSE on Beijing). Each cell is the signed difference in percent of TabDiff's value, oriented so that positive (blue) means ours is better: (TabDiff - ours)/TabDiff for Shape and Trend errors and RMSE, (ours - TabDiff)/TabDiff for AUC, α-precision, β-recall and C2ST-LR. Values are rounded to one decimal below 10% and to integers above. Hatched, paler cells marked ≈ in the corner are ties: the difference is within our standard deviation over the 20 tables (the rule of the win/tie/loss table); the panel subtitles count wins / ties / losses. Shared colour scale ±47% (largest magnitude 46.7%). In panel (a) the Magic column (MA*) is the dense run (k = N-1 = 10), as in the result tables; with the sparse fixed run (k=3) its Trend, MLE and α-precision cells would be losses instead of ties. Datasets: AD = Adult, BE = Beijing, DE = Default, DI = Diabetes, MA = Magic, SH = Shoppers. Route A, training seed 0, 20 sampled tables; News is not shown (no evaluated run yet).
+
+
+_Script: analysis/summary/fig_vs_tabdiff_heatmap.py; files: figures/vs_tabdiff_reldiff.pdf / .png / .caption.tex; 6.27 × 2.60 in._
+
+### Figure 6: `pair_trend_error_beijing`
+
+![pair_trend_error_beijing](figures/pair_trend_error_beijing.png)
+
+Pair-wise Trend error on Beijing: for every pair of columns, 100 (1-score) of the Column Pair Trends metric that TabDiff's evaluation computes (correlation similarity for two numerical columns, contingency similarity otherwise), averaged over the 20 sampled tables; lower is better. Panels: (a) Fixed top-k, (b) Jenks, (c) entmax-1.5, (d) Dense (k = N-1), and (e) the difference entmax-1.5 - Fixed top-k in percentage points (blue: the adaptive rule is better). Each panel's subtitle gives the mean over all pairs, which equals the run's Trend error. Columns are in TabDiff's evaluation order, numerical first, categorical columns marked (c). Values ≥q 10 are rounded to integers. Route A, training seed 0, 20 sampled tables.
+
+
+_Script: analysis/summary/fig_pairs_marginals.py; files: figures/pair_trend_error_beijing.pdf / .png / .caption.tex; 6.27 × 5.70 in._
+
+### Figure 7: `marginals`
+
+![marginals](figures/marginals.png)
+
+Marginal distributions of two numerical columns of Beijing (pm2.5, DEWP) under each rule. Top: density of the real training data (grey) and of the synthetic data, pooled over the 20 sampled tables (lines); bottom: synthetic minus real density per bin, where the differences behind the Shape error become visible. Bins: 50 equal-width bins between the real 0.5% and 99.5% quantiles; both densities are counts divided by (all rows × bin width), so mass outside the window lowers the curve instead of being renormalised. The percentage after each rule in the legend is that rule's Shape error of the column (100 (1-KS complement), mean over the 20 tables). The x axis of pm2.5 is logarithmic (heavy right tail). Route A, training seed 0, 20 sampled tables.
+
+
+_Script: analysis/summary/fig_pairs_marginals.py; files: figures/marginals.pdf / .png / .caption.tex; 6.27 × 3.75 in._
+
+### Appendix: `topk_k_vs_t`
+
+![topk_k_vs_t](figures/topk_k_vs_t.png)
+
+Mean number of neighbours k that a node keeps, during sampling, as a function of the diffusion time t (t=0: clean data, t=1: pure noise), for the two adaptive rules (colour) in each GNN block (line style). Each point averages the selected k over all nodes and all denoiser calls whose t falls in a bin of width 0.1 (weighted by count), over the 20 sampled tables. The dotted grey line is the fixed top-k rule's constant k; N-1 is the number of other columns. Route A, training seed 0, 20 sampled tables. Runs with k statistics: Jenks: Adult, Beijing, Default, Diabetes, Magic, Shoppers; entmax-1.5: Adult, Beijing, Default, Diabetes, Magic, Shoppers. No adaptive-rule run of News has k statistics yet.
+
+
+_Script: analysis/summary/build_summary.py; files: figures/topk_k_vs_t.pdf / .png / .caption.tex; 6.27 × 4.19 in._
+
+### Appendix: `pair_trend_error_default`
+
+![pair_trend_error_default](figures/pair_trend_error_default.png)
+
+Pair-wise Trend error on Default: for every pair of columns, 100 (1-score) of the Column Pair Trends metric that TabDiff's evaluation computes (correlation similarity for two numerical columns, contingency similarity otherwise), averaged over the 20 sampled tables; lower is better. Panels: (a) Fixed top-k, (b) Jenks, (c) entmax-1.5, and (d) the difference Jenks - Fixed top-k in percentage points (blue: the adaptive rule is better). Each panel's subtitle gives the mean over all pairs, which equals the run's Trend error. Columns are in TabDiff's evaluation order, numerical first, categorical columns marked (c); ``target'' = default payment next month. Route A, training seed 0, 20 sampled tables.
+
+
+_Script: analysis/summary/fig_pairs_marginals.py; files: figures/pair_trend_error_default.pdf / .png / .caption.tex; 6.27 × 6.49 in._
+
+### Appendix: `pair_trend_error_magic`
+
+![pair_trend_error_magic](figures/pair_trend_error_magic.png)
+
+Pair-wise Trend error on Magic: for every pair of columns, 100 (1-score) of the Column Pair Trends metric that TabDiff's evaluation computes (correlation similarity for two numerical columns, contingency similarity otherwise), averaged over the 20 sampled tables; lower is better. Panels: (a) Fixed top-k, (b) Jenks, (c) entmax-1.5, (d) Dense (k = N-1), and (e) the difference entmax-1.5 - Fixed top-k in percentage points (blue: the adaptive rule is better). Each panel's subtitle gives the mean over all pairs, which equals the run's Trend error. Columns are in TabDiff's evaluation order, numerical first, categorical columns marked (c). Values ≥q 10 are rounded to integers. Route A, training seed 0, 20 sampled tables.
+
+
+_Script: analysis/summary/fig_pairs_marginals.py; files: figures/pair_trend_error_magic.pdf / .png / .caption.tex; 6.27 × 5.35 in._
+
+### Appendix: `marginals_appendix`
+
+![marginals_appendix](figures/marginals_appendix.png)
+
+Marginals of automatically chosen columns (Beijing: pm2.5, DEWP, hour, day; Default: BILL_AMT6, BILL_AMT5, LIMIT_BAL, BILL_AMT4). Per dataset: the two numerical columns whose Shape error differs most between the adaptive rule and the fixed rule (entmax-1.5 on Beijing, Jenks on Default), then the two other columns with the largest Shape error under the best rule (lowest mean Shape error: Beijing entmax-1.5, Default entmax-1.5). Numerical columns: real density (grey) and each rule's synthetic density pooled over the 20 tables, 50 bins between the real 0.5% and 99.5% quantiles, counts divided by (all rows × bin width). Categorical columns: real frequency (grey bars) and each rule's mean frequency over the 20 tables (ticks). Subtitles: Shape error of the column per rule. Route A, training seed 0, 20 sampled tables.
+
+
+_Script: analysis/summary/fig_pairs_marginals.py; files: figures/marginals_appendix.pdf / .png / .caption.tex; 6.27 × 7.99 in._
+
 
 ## Appendix
 
@@ -504,9 +604,9 @@ Transcribed in analysis/tabdiff/reported_gatd.py. — = no value: ᵖ not report
 - **B is compared with TabDiff as reported, not reproduced.** The paper's model is the best-validated one; ours is the best-EMA-loss checkpoint of a single run. The paper prints one MLE number per dataset (AUC / RMSE). wNMIS and C2ST (XGBoost) are never compared with TabDiff.
 - **B code versions.** The fixed-arm runs of adult, beijing, magic and shoppers were made at 7856cf5, those of default and diabetes at 9f86515, the rule arms at de83865, the dense ablation at 008ffe0 (beijing) / 9f86515 (magic); the fixed-arm denoiser is pinned bit-identical across these commits by tests/test_tabdiff_gnn.py.
 - **B6 best-arm line** is selected on the test tables and is optimistic by construction.
-- **news** (B): the entmax15 run is still training; no fixed or Jenks run is on disk.
+- **news** (B): fixed: no run on disk; adaptive_jenks: no run on disk; adaptive_entmax15: pending.
 - **diabetes** is Pima in A and the CDC dataset in B: two different datasets under one name.
-- **Figure colours** reuse slots 1–2 of the validated reference palette (blue = Jenks, orange = entmax-1.5, the same as the other thesis figures); the palette validator itself was not re-run here (no Node.js on this machine).
+- **Figure style** (analysis/summary/thesis_style.py): one palette in every figure — Fixed top-k grey #6b6b6b (square), Jenks blue #1f6fd1 (circle), entmax-1.5 orange #e8662e (triangle), Dense black #111111 (diamond); datasets (Figure 3 only) Okabe–Ito without black and yellow; sequential maps Purples, diverging RdBu (blue = better). Text in Computer Modern (CMU Serif converted to TrueType, analysis/summary/fonts/, OFL) because no LaTeX engine is installed here; with a `latex` binary on the PATH the figures switch to text.usetex. The palette validator was not run (no Node.js here).
 
 ## Files
 
@@ -559,7 +659,46 @@ Transcribed in analysis/tabdiff/reported_gatd.py. — = no value: ᵖ not report
 - `analysis/summary/csv/C2.csv`
 - `analysis/summary/csv/GATD.csv`
 - `analysis/summary/csv/all_values.csv`
+- `analysis/summary/csv/density_vs_fidelity.csv`
+- `analysis/summary/csv/marginals_selected_columns.csv`
+- `analysis/summary/csv/vs_tabdiff_reldiff.csv`
+- `analysis/summary/figures/selection_example.pdf`
+- `analysis/summary/figures/selection_example.png`
+- `analysis/summary/figures/selection_example.caption.tex`
+- `analysis/summary/figures/density_vs_fidelity.pdf`
+- `analysis/summary/figures/density_vs_fidelity.png`
+- `analysis/summary/figures/density_vs_fidelity.caption.tex`
+- `analysis/summary/figures/topk_frac_vs_t.pdf`
+- `analysis/summary/figures/topk_frac_vs_t.png`
+- `analysis/summary/figures/topk_frac_vs_t.caption.tex`
+- `analysis/summary/figures/vs_tabdiff_reldiff.pdf`
+- `analysis/summary/figures/vs_tabdiff_reldiff.png`
+- `analysis/summary/figures/vs_tabdiff_reldiff.caption.tex`
+- `analysis/summary/figures/pair_trend_error_beijing.pdf`
+- `analysis/summary/figures/pair_trend_error_beijing.png`
+- `analysis/summary/figures/pair_trend_error_beijing.caption.tex`
+- `analysis/summary/figures/marginals.pdf`
+- `analysis/summary/figures/marginals.png`
+- `analysis/summary/figures/marginals.caption.tex`
 - `analysis/summary/figures/topk_k_vs_t.pdf`
 - `analysis/summary/figures/topk_k_vs_t.png`
+- `analysis/summary/figures/topk_k_vs_t.caption.tex`
+- `analysis/summary/figures/pair_trend_error_default.pdf`
+- `analysis/summary/figures/pair_trend_error_default.png`
+- `analysis/summary/figures/pair_trend_error_default.caption.tex`
+- `analysis/summary/figures/pair_trend_error_magic.pdf`
+- `analysis/summary/figures/pair_trend_error_magic.png`
+- `analysis/summary/figures/pair_trend_error_magic.caption.tex`
+- `analysis/summary/figures/marginals_appendix.pdf`
+- `analysis/summary/figures/marginals_appendix.png`
+- `analysis/summary/figures/marginals_appendix.caption.tex`
+- `analysis/summary/figures/_contact_sheet.pdf`
+- `analysis/summary/figures/_preview.tex`
+- `analysis/summary/thesis_style.py`
+- `analysis/summary/route_a_figs.py`
+- `analysis/summary/fig_density_vs_fidelity.py`
+- `analysis/summary/fig_pairs_marginals.py`
+- `analysis/summary/fig_selection_example.py`
+- `analysis/summary/fig_vs_tabdiff_heatmap.py`
 - `tests/test_selection_differentiability.py`
 

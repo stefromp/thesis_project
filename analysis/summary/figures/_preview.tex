@@ -1,0 +1,79 @@
+% Preview of the thesis figures at their final size (A4, 11pt, text width 15.9 cm = 6.27 in).
+% Compile in analysis/summary/figures/: pdflatex _preview.tex
+\documentclass[11pt,a4paper]{report}
+\usepackage[a4paper,textwidth=15.9cm,vmargin=2.5cm]{geometry}
+\usepackage{graphicx,amsmath,lmodern}
+\usepackage[T1]{fontenc}
+\begin{document}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{selection_example.pdf}
+  \caption[selection example]{\input{selection_example.caption.tex}}
+  \label{fig:selection_example}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{density_vs_fidelity.pdf}
+  \caption[density vs fidelity]{\input{density_vs_fidelity.caption.tex}}
+  \label{fig:density_vs_fidelity}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{topk_frac_vs_t.pdf}
+  \caption[topk frac vs t]{\input{topk_frac_vs_t.caption.tex}}
+  \label{fig:topk_frac_vs_t}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{vs_tabdiff_reldiff.pdf}
+  \caption[vs tabdiff reldiff]{\input{vs_tabdiff_reldiff.caption.tex}}
+  \label{fig:vs_tabdiff_reldiff}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{pair_trend_error_beijing.pdf}
+  \caption[pair trend error beijing]{\input{pair_trend_error_beijing.caption.tex}}
+  \label{fig:pair_trend_error_beijing}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{marginals.pdf}
+  \caption[marginals]{\input{marginals.caption.tex}}
+  \label{fig:marginals}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{topk_k_vs_t.pdf}
+  \caption[topk k vs t]{\input{topk_k_vs_t.caption.tex}}
+  \label{fig:topk_k_vs_t}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{pair_trend_error_default.pdf}
+  \caption[pair trend error default]{\input{pair_trend_error_default.caption.tex}}
+  \label{fig:pair_trend_error_default}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{pair_trend_error_magic.pdf}
+  \caption[pair trend error magic]{\input{pair_trend_error_magic.caption.tex}}
+  \label{fig:pair_trend_error_magic}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{marginals_appendix.pdf}
+  \caption[marginals appendix]{\input{marginals_appendix.caption.tex}}
+  \label{fig:marginals_appendix}
+\end{figure}
+
+\end{document}
