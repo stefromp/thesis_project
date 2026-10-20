@@ -11,7 +11,9 @@ Writes analysis/summary/:
   csv/all_values.csv    all of the above in one file
   provenance.csv        every file read: path, last git commit touching it (or
                         "untracked" + sha256/16 for gitignored run outputs)
-  figures/topk_k_vs_t.{pdf,png}   B7 figure
+  figures/topk_k_vs_t.{pdf,png}   B7 figure (topk_frac_vs_t: the same, y = k / (N − 1))
+
+    python3 analysis/summary/build_summary.py --figures-only   rewrites only the two B7 figures
 
 Nothing is trained or sampled and nothing is imputed: each number is read from a
 results file (or derived from such numbers: ranks, ratios, win/tie/loss counts,
@@ -1060,8 +1062,9 @@ def table_b6(bv, tdv):
     return D, B
 
 
-def table_b7(bv):
-    rows, recs = [], []
+def k_vs_t_groups(bv):
+    """(dataset, rule, N-1, kstats path, per-(block, t_bin) sums) of every adaptive run with
+    k statistics on disk; sampling phase only."""
     for ds in B_DS:
         n_minus_1 = RC.n_nodes(ds) - 1
         for tag, mode in B_ARMS[1:]:
@@ -1070,24 +1073,38 @@ def table_b7(bv):
                 continue
             t = pd.read_csv(p)
             t = t[t.phase == "sample"]
-            s = src(p)
             # weighted mean over nodes = sum(k_sum) / sum(n): aggregate sums, then divide (no groupby.apply)
             g = t.groupby(["block", "t_bin"], as_index=False)[["n", "k_sum"]].sum()
             g["k_mean"] = g.k_sum / g.n
-            for block, gb in g.groupby("block"):
-                lo = gb.loc[gb.t_bin == 0, "k_mean"].iloc[0]
-                hi = gb.loc[gb.t_bin == 9, "k_mean"].iloc[0]
-                allt = gb.k_sum.sum() / gb.n.sum()
-                rows.append({"dataset": ds, "rule": mode, "block": int(block), "N-1": n_minus_1,
-                             "k_low": lo, "k_high": hi, "k_all": allt})
-                for name, val in (("mean_k_t0.0-0.1", lo), ("mean_k_t0.9-1.0", hi), ("mean_k_all_t", allt)):
-                    V("B7", ds, f"GNN in TabDiff ({mode}), block {int(block)}", name, val, n=int(gb.n.sum()),
-                      note=f"sampling phase; N-1 = {n_minus_1}", **s)
-                for _, x in gb.iterrows():
-                    recs.append({"dataset": ds, "rule": mode, "block": int(block), "t_bin": int(x.t_bin),
-                                 "t_mid": (x.t_bin + 0.5) / 10, "k_mean": x.k_mean, "n": x.n, "N-1": n_minus_1})
+            yield ds, mode, n_minus_1, p, g
+
+
+def k_vs_t_records(bv) -> pd.DataFrame:
+    """Per (dataset, rule, block, t_bin): the values behind csv/B7_k_vs_t.csv and the figures."""
+    recs = []
+    for ds, mode, n_minus_1, _, g in k_vs_t_groups(bv):
+        for _, x in g.iterrows():
+            recs.append({"dataset": ds, "rule": mode, "block": int(x.block), "t_bin": int(x.t_bin),
+                         "t_mid": (x.t_bin + 0.5) / 10, "k_mean": x.k_mean, "n": x.n, "N-1": n_minus_1})
+    return pd.DataFrame(recs)
+
+
+def table_b7(bv):
+    rows = []
+    for ds, mode, n_minus_1, p, g in k_vs_t_groups(bv):
+        s = src(p)
+        for block, gb in g.groupby("block"):
+            lo = gb.loc[gb.t_bin == 0, "k_mean"].iloc[0]
+            hi = gb.loc[gb.t_bin == 9, "k_mean"].iloc[0]
+            allt = gb.k_sum.sum() / gb.n.sum()
+            rows.append({"dataset": ds, "rule": mode, "block": int(block), "N-1": n_minus_1,
+                         "k_low": lo, "k_high": hi, "k_all": allt})
+            for name, val in (("mean_k_t0.0-0.1", lo), ("mean_k_t0.9-1.0", hi), ("mean_k_all_t", allt)):
+                V("B7", ds, f"GNN in TabDiff ({mode}), block {int(block)}", name, val, n=int(gb.n.sum()),
+                  note=f"sampling phase; N-1 = {n_minus_1}", **s)
+    recs = k_vs_t_records(bv)
     K = pd.DataFrame(rows)
-    pd.DataFrame(recs).to_csv(CSV / "B7_k_vs_t.csv", index=False)
+    recs.to_csv(CSV / "B7_k_vs_t.csv", index=False)
     rows_md = [[r.dataset, r.rule, str(r.block), str(r["N-1"]), f"{r.k_low:.2f}", f"{r.k_high:.2f}",
                 f"{r.k_all:.2f}", f"{r.k_low / r['N-1']:.2f} → {r.k_high / r['N-1']:.2f}"] for _, r in K.iterrows()]
     rows_tex = [[x[0], tex_escape(x[1]), *x[2:7], x[7].replace("→", r"$\to$")] for x in rows_md]
@@ -1100,12 +1117,14 @@ def table_b7(bv):
          ["Dataset", "rule", "block", "N − 1", "mean k, t ∈ [0, 0.1]", "mean k, t ∈ [0.9, 1]", "mean k, all t",
           "fraction of N − 1 (low → high t)"], rows_md,
          "Source: each run's topk_k_stats.csv (phase = sample). Per t-bin values behind the figure: "
-         "csv/B7_k_vs_t.csv. Figure: figures/topk_k_vs_t.png.",
+         "csv/B7_k_vs_t.csv. Figures: figures/topk_k_vs_t.png, normalised by N − 1: "
+         "figures/topk_frac_vs_t.png.",
          ["Dataset", "rule", "block", "$N-1$", r"$\bar k$, $t\in[0,.1]$", r"$\bar k$, $t\in[.9,1]$",
           r"$\bar k$, all $t$", r"frac.\ of $N-1$"], rows_tex,
          r"Sampling phase, mean over nodes (count-weighted).", "Mean selected $k$ per block at low and high noise.",
          colspec="llcccccc")
-    fig_k_vs_t(pd.DataFrame(recs), bv)
+    fig_k_vs_t(recs)
+    fig_k_vs_t(recs, normalise=True)
     return K
 
 
@@ -1113,50 +1132,80 @@ C_RULE = {"adaptive_jenks": ct.C_RULE["jenks"], "adaptive_entmax15": ct.C_RULE["
 BLOCK_STYLE = [("-", "o"), ("--", "s"), (":", "^")]
 
 
-def fig_k_vs_t(R: pd.DataFrame, bv):
+def style_ax(ax, grid: str = "y"):
+    """The thesis figure style: no top/right spines, muted axes, light grid behind the data."""
+    for s in ("top", "right"):
+        ax.spines[s].set_visible(False)
+    for s in ("left", "bottom"):
+        ax.spines[s].set_color(ct.C_TEXT2)
+    ax.tick_params(colors=ct.C_TEXT2, labelcolor=ct.C_TEXT, labelsize=8)
+    if grid:
+        ax.grid(axis=grid, color=ct.C_GRID, lw=0.8)
+    ax.set_axisbelow(True)
+
+
+def savefig(fig, name: str):
+    for ext in ("pdf", "png"):
+        fig.savefig(FIG / f"{name}.{ext}", dpi=200, bbox_inches="tight")
+    plt.close(fig)
+
+
+def k_vs_t_caption(R: pd.DataFrame) -> str:
+    """Which rule has k statistics on which dataset, read from the records (never hand-written)."""
+    have = {m: [d for d in B_DS if ((R.dataset == d) & (R.rule == m)).any()] for m in C_RULE}
+    parts = [f"{m.replace('adaptive_', '')}: {', '.join(have[m]) if have[m] else 'none'}" for m in C_RULE]
+    none = [d for d in B_DS if not (R.dataset == d).any()]
+    return ("Route A, training seed 0, sampling phase (20 tables); mean over nodes per t-bin of width 0.1. "
+            "k statistics on disk — " + "; ".join(parts) + "."
+            + (f" No adaptive-rule k statistics on disk for {', '.join(none)}." if none else ""))
+
+
+def fig_k_vs_t(R: pd.DataFrame, normalise: bool = False):
+    """Mean selected k vs t per dataset and block (topk_k_vs_t); normalise=True divides by
+    N − 1, the number of candidate neighbours (topk_frac_vs_t)."""
     dss = [d for d in B_DS if (R.dataset == d).any()]
     ncol = 3
     nrow = int(np.ceil(len(dss) / ncol))
     fig, axes = plt.subplots(nrow, ncol, figsize=(12, 3.3 * nrow), squeeze=False)
     for ax, ds in zip(axes.flat, dss):
-        for s in ("top", "right"):
-            ax.spines[s].set_visible(False)
-        for s in ("left", "bottom"):
-            ax.spines[s].set_color(ct.C_TEXT2)
-        ax.tick_params(colors=ct.C_TEXT2, labelcolor=ct.C_TEXT, labelsize=8)
-        ax.grid(axis="y", color=ct.C_GRID, lw=0.8)
-        ax.set_axisbelow(True)
+        style_ax(ax)
         sub = R[R.dataset == ds]
+        n1 = int(sub["N-1"].iloc[0])
+        div = n1 if normalise else 1
         for mode in ("adaptive_jenks", "adaptive_entmax15"):
             for b, gb in sub[sub.rule == mode].groupby("block"):
                 ls, mk = BLOCK_STYLE[int(b) % 3]
-                ax.plot(gb.t_mid, gb.k_mean, ls=ls, marker=mk, ms=5, lw=2, color=C_RULE[mode],
+                ax.plot(gb.t_mid, gb.k_mean / div, ls=ls, marker=mk, ms=5, lw=2, color=C_RULE[mode],
                         mec="white", mew=1)
         fixed_k = jload(ra_run(ds, "fixed") / "run_meta.json")["gnn"]["top_k"] \
             if (ra_run(ds, "fixed") / "run_meta.json").exists() else None
         if fixed_k:
-            ax.axhline(fixed_k, color=ct.C_TEXT2, lw=1, ls=(0, (2, 2)))
-            ax.text(1.0, fixed_k, f" fixed k = {fixed_k}", va="center", ha="left", fontsize=7, color=ct.C_TEXT2,
+            y = fixed_k / div
+            ax.axhline(y, color=ct.C_TEXT2, lw=1, ls=(0, (2, 2)))
+            lab = f" fixed k/(N−1) = {fixed_k}/{n1}" if normalise else f" fixed k = {fixed_k}"
+            ax.text(1.0, y, lab, va="center", ha="left", fontsize=7, color=ct.C_TEXT2,
                     transform=ax.get_yaxis_transform())
-        ax.set_title(f"{ds}  (N − 1 = {int(sub['N-1'].iloc[0])})", loc="left", fontsize=10, color=ct.C_TEXT)
+        ax.set_title(f"{ds}  (N − 1 = {n1})", loc="left", fontsize=10, color=ct.C_TEXT)
         ax.set_xlim(0, 1)
-        ax.set_ylim(bottom=0)
+        if normalise:
+            ax.set_ylim(0, 1)
+        else:
+            ax.set_ylim(bottom=0)
         ax.set_xlabel("diffusion time t (0 = clean, 1 = noise)", fontsize=8, color=ct.C_TEXT2)
-        ax.set_ylabel("mean selected k", fontsize=8, color=ct.C_TEXT2)
+        ax.set_ylabel("mean k / (N − 1)" if normalise else "mean selected k", fontsize=8, color=ct.C_TEXT2)
     for ax in list(axes.flat)[len(dss):]:
         ax.axis("off")
     handles = [plt.Line2D([], [], color=C_RULE[m], lw=2, label=m) for m in C_RULE] + \
               [plt.Line2D([], [], color=ct.C_TEXT2, lw=2, ls=ls, marker=mk, ms=5, label=f"block {i}")
                for i, (ls, mk) in enumerate(BLOCK_STYLE)] + \
-              [plt.Line2D([], [], color=ct.C_TEXT2, lw=1, ls=(0, (2, 2)), label="fixed rule's k")]
+              [plt.Line2D([], [], color=ct.C_TEXT2, lw=1, ls=(0, (2, 2)),
+                          label="fixed rule's k/(N−1)" if normalise else "fixed rule's k")]
     fig.legend(handles=handles, loc="upper center", ncol=6, frameon=False, fontsize=9, bbox_to_anchor=(0.5, 1.02))
-    fig.text(0.01, -0.01, "Route A, training seed 0, sampling phase (20 tables); mean over nodes per t-bin of width "
-             "0.1. jenks exists for adult, beijing, magic, shoppers only; news pending.", fontsize=8,
-             color=ct.C_TEXT2)
+    fig.text(0.01, -0.005, k_vs_t_caption(R) + (" y = mean k divided by N − 1 (fraction of candidate neighbours "
+                                                "kept)." if normalise else ""),
+             fontsize=8, color=ct.C_TEXT2, wrap=True, va="top")
     fig.tight_layout(rect=(0, 0, 1, 0.96))
-    for ext in ("pdf", "png"):
-        fig.savefig(FIG / f"topk_k_vs_t.{ext}", dpi=200, bbox_inches="tight")
-    plt.close(fig)
+    savefig(fig, "topk_frac_vs_t" if normalise else "topk_k_vs_t")
 
 
 # ===========================================================================
@@ -1451,6 +1500,7 @@ def write_summary(xcheck, a5, b6, files):
     for t in ("B1", "B2", "B3", "B4", "B5", "B6", "B7"):
         L.append(secs[t])
     L += ["![mean selected k vs t per dataset and block](figures/topk_k_vs_t.png)", "",
+          "![mean selected k / (N − 1) vs t per dataset and block](figures/topk_frac_vs_t.png)", "",
           "## C. Model size across frameworks", "", secs["C"], secs["C2"],
           "## D. Differentiability of the selection rules", "", section_d(), "",
           "## Appendix", "", secs["GATD"], "## Caveats", "", caveats(), "",
@@ -1461,7 +1511,19 @@ def write_summary(xcheck, a5, b6, files):
 DEV: set = set()
 
 
+def figures_only():
+    """Only the B7 figures (topk_k_vs_t, topk_frac_vs_t), from the same records; no table,
+    csv or summary.md is rewritten."""
+    FIG.mkdir(parents=True, exist_ok=True)
+    recs = k_vs_t_records(b_values())
+    fig_k_vs_t(recs)
+    fig_k_vs_t(recs, normalise=True)
+    print(f"wrote {rel(FIG)}/topk_k_vs_t.{{pdf,png}}, topk_frac_vs_t.{{pdf,png}}")
+
+
 def main():
+    if "--figures-only" in sys.argv[1:]:
+        return figures_only()
     for d in (TAB, CSV, FIG):
         d.mkdir(parents=True, exist_ok=True)
     global DEV
@@ -1492,8 +1554,9 @@ def main():
     files = (["analysis/summary/build_summary.py", "analysis/summary/summary.md", "analysis/summary/provenance.csv"]
              + [f"analysis/summary/tables/{f}" for f in TEX_FILES]
              + sorted(f"analysis/summary/csv/{p.name}" for p in CSV.glob("*.csv"))
-             + ["analysis/summary/figures/topk_k_vs_t.pdf", "analysis/summary/figures/topk_k_vs_t.png",
-                "tests/test_selection_differentiability.py"])
+             + [f"analysis/summary/figures/{n}.{e}" for n in ("topk_k_vs_t", "topk_frac_vs_t")
+                for e in ("pdf", "png")]
+             + ["tests/test_selection_differentiability.py"])
     write_summary(xcheck, a5, b6, files)
     print(f"wrote {rel(OUT / 'summary.md')}: {len(TEX_FILES)} tables, {len(allv)} values, "
           f"{len(_PROV)} source files; A cross-check max |diff| {max(xcheck):.1e}")

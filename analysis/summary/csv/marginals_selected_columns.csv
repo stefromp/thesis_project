@@ -1,0 +1,9 @@
+dataset,column,type,why,best_rule,shape_err_fixed,shape_err_jenks,shape_err_entmax15,shape_err_dense
+beijing,pm2.5,numerical,|Δ err| entmax-1.5 − fixed = 1.21 pp,entmax15,1.7735025677869098,1.06303717303956,0.5637157074053301,0.69569729384529
+beijing,DEWP,numerical,|Δ err| entmax-1.5 − fixed = 1.08 pp,entmax15,1.7776269923631598,0.72097602511907,0.6951651100289999,0.86599611505814
+beijing,hour,categorical,largest error under entmax-1.5: 1.92 %,entmax15,1.27098799925494,1.30970437189005,1.92105053085335,1.6283494318937701
+beijing,day,categorical,largest error under entmax-1.5: 1.76 %,entmax15,1.13714376945797,1.2221601341103199,1.76232670764482,1.10228572949096
+default,BILL_AMT6,numerical,|Δ err| Jenks − fixed = 0.62 pp,entmax15,1.8516666666666601,1.23518518518518,1.5581481481481398,
+default,BILL_AMT5,numerical,|Δ err| Jenks − fixed = 0.52 pp,entmax15,1.67296296296296,1.1572222222222202,1.5974074074074003,
+default,LIMIT_BAL,numerical,largest error under entmax-1.5: 1.76 %,entmax15,1.33574074074074,1.4694444444444401,1.7618518518518498,
+default,BILL_AMT4,numerical,largest error under entmax-1.5: 1.41 %,entmax15,1.50185185185185,1.03277777777777,1.4137037037037,
