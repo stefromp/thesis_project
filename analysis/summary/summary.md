@@ -1,6 +1,6 @@
 # Comparison tables (supervisor summary)
 
-_Generated 2026-10-22 12:08 by `analysis/summary/build_summary.py` at commit `b496eef` (+ uncommitted changes). Rerun it to refresh; nothing is trained or sampled._
+_Generated 2026-10-22 12:28 by `analysis/summary/build_summary.py` at commit `f991dbb` (+ uncommitted changes). Rerun it to refresh; nothing is trained or sampled._
 
 ## How values are marked
 
@@ -474,7 +474,7 @@ The TabDDPM-framework denoiser (`GraphAwareDenoiser`) uses the same `AttnGNNBloc
 
 **Wording to fix in the code's own docs.** `DynamicAdjacency`'s docstring says the top-k result is "differentiable via a straight-through mask". It is not straight-through: dropped edges get exactly zero gradient (no surrogate gradient is passed through the selection); kept edges are differentiable through the sigmoid. The selection itself is not differentiated in any of the three rules.
 
-**Test outcome:** `11 passed in 2.39s (exit code 0); entmax 1.3 available; run 2026-10-22 12:08 on CPU, torch 2.5.1`.
+**Test outcome:** `11 passed in 2.43s (exit code 0); entmax 1.3 available; run 2026-10-22 12:28 on CPU, torch 2.5.1`.
 
 ## Thesis figures (Route A)
 
@@ -538,7 +538,7 @@ _Script: analysis/summary/fig_pairs_marginals.py; files: figures/marginals.pdf /
 
 ![paper_style_marginals](figures/paper_style_marginals.png)
 
-Marginal distributions of the columns shown in Figure 3 of the TabDiff paper, for each of our neighbour-selection rules. (a)–(g): kernel density estimates of two numerical columns (Beijing DEWP, Shoppers BounceRates), real data in grey and each rule's synthetic data in its colour; real and synthetic densities in a panel use the same bandwidth (Scott's rule on the real data), and the synthetic estimate pools the 20 sampled tables (subsampled to 200,000 rows with a fixed seed); the axis spans the real 0.5–99.5% quantiles extended by 10%, and the panels of a row share their y-axis. (h)–(k): category counts of four categorical columns (Adult marital.status, Beijing month, Magic class, Shoppers OperatingSystems), real table (grey) and each rule's mean over the 20 tables (synthetic tables have the real table's size). Layout and columns follow the TabDiff paper so that the rules can be set beside its Figure 3, but the paper's panels show other models on other samples: the comparison is visual and qualitative only. Fixed top-k on Magic is the k=3 run; the dense ablation (k=N-1) exists for Beijing and Magic only. Real data: the training table TabDiff's evaluation compares against. Route A, training seed 0, 20 sampled tables.
+Marginal distributions of the columns shown in Figure 3 of the TabDiff paper, for each of our neighbour-selection rules (Fixed top-k, Jenks, entmax-1.5). (a)–(f): kernel density estimates of two numerical columns (Beijing DEWP, Shoppers BounceRates), real data in grey and each rule's synthetic data in its colour; real and synthetic densities in a panel use the same bandwidth (Scott's rule on the real data), and the synthetic estimate pools the 20 sampled tables (subsampled to 200,000 rows with a fixed seed); the axis spans the real 0.5–99.5% quantiles extended by 10%, and the panels of a row share their y-axis. (g)–(j): category counts of four categorical columns (bd), real table (grey) and each rule's mean over the 20 tables (synthetic tables have the real table's size). Layout and columns follow the TabDiff paper so that the rules can be set beside its Figure 3, but the paper's panels show other models on other samples: the comparison is visual and qualitative only. Fixed top-k on Magic is the k=3 run. Real data: the training table TabDiff's evaluation compares against. Route A, training seed 0, 20 sampled tables.
 
 
 _Script: analysis/summary/fig_paper_style.py; files: figures/paper_style_marginals.pdf / .png / .caption.tex; 6.27 × 5.19 in._

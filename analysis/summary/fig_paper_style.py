@@ -16,7 +16,8 @@ paper_style_pair_heatmaps  Adult, Beijing, Magic, Shoppers x rules: the full sym
                            TabDiff's own evaluate_density, self-checked against all_results.csv);
                            Blues, 0 to 0.10 as in the paper.
 Real data = data/tabdiff_gnn/tabdiff_<ds>/real.csv, the table TabDiff's evaluation compares against
-(the one pair_and_marginals.py uses). Fixed = the main fixed run (Magic: k = 3, not the dense run).
+(the one pair_and_marginals.py uses). Rules: Fixed top-k (the main fixed run; Magic: k = 3), Jenks,
+entmax-1.5 -- the dense ablation is not shown.
 """
 from __future__ import annotations
 
@@ -73,7 +74,8 @@ def resolve_column(ds: str, name: str, typ: str) -> dict:
 
 
 def arms_of(ds: str) -> list[str]:
-    return [a for a in F.ARMS if F.run_dir(ds, a) is not None]
+    """The rules shown (Fixed top-k, Jenks, entmax-1.5; no dense ablation) that have a run for ds."""
+    return [a for a in HEAT_RULES if F.run_dir(ds, a) is not None]
 
 
 def real_column(ds: str, col: str) -> pd.Series:
@@ -159,7 +161,9 @@ def figure_marginals() -> dict:
     kde_cols = [(ds, resolve_column(ds, c, t)["name"]) for ds, c, t in KDE_COLS]
     bar_cols = [(ds, resolve_column(ds, c, t)["name"]) for ds, c, t in BAR_COLS]
     fig = S.figure(S.FULL, 5.2)
-    gs = fig.add_gridspec(3, 4, height_ratios=[1, 1, 1.25])
+    gs = fig.add_gridspec(3, 1, height_ratios=[1, 1, 1.25])
+    kde_gs = [gs[r, 0].subgridspec(1, len(HEAT_RULES)) for r in range(len(KDE_COLS))]   # one panel per rule
+    bar_gs = gs[2, 0].subgridspec(1, len(BAR_COLS))                                    # one per column
     info, letter = {"kde": {}, "bars": {}}, iter("abcdefghijklmn")
     for r, (ds, col) in enumerate(kde_cols):
         real = real_column(ds, col).to_numpy(float)
@@ -176,7 +180,7 @@ def figure_marginals() -> dict:
             info["kde"][(ds, col, a)] = {"bandwidth": bw, "n_syn": len(syn), "n_syn_kde": n_used}
         axes = []
         for c, (a, dr, dsyn) in enumerate(panels):
-            ax = fig.add_subplot(gs[r, c], sharey=axes[0] if axes else None)
+            ax = fig.add_subplot(kde_gs[r][0, c], sharey=axes[0] if axes else None)
             S.style_axes(ax)
             ax.fill_between(grid, dr, color=REAL_FILL, lw=0)
             ax.plot(grid, dr, color=REAL_EDGE, lw=0.6)
@@ -200,7 +204,7 @@ def figure_marginals() -> dict:
             S.panel_label(ax, next(letter))
             axes.append(ax)
     for c, (ds, col) in enumerate(bar_cols):
-        ax = fig.add_subplot(gs[2, c])
+        ax = fig.add_subplot(bar_gs[0, c])
         S.style_axes(ax)
         arms = arms_of(ds)
         syns = {a: synthetic_columns(ds, a, col) for a in arms}
@@ -249,19 +253,23 @@ def marginals_caption(kde_cols, bar_cols, notes, info) -> str:
     kd = ", ".join(f"{S.ds_label(d)} {esc(c)}" for d, c in kde_cols)
     bd = ", ".join(f"{S.ds_label(d)} {esc(c)}" for d, c in bar_cols)
     sub = any(v["n_syn_kde"] < v["n_syn"] for v in info["kde"].values())
+    L = "abcdefghijklmn"
+    nk = len(info["kde"])                                  # density panels come first, then the bar panels
+    kde_span, bar_span = f"({L[0]})--({L[nk - 1]})", f"({L[nk]})--({L[nk + len(bar_cols) - 1]})"
     return (r"Marginal distributions of the columns shown in Figure~3 of the TabDiff paper, for each of our "
-            r"neighbour-selection rules. (a)--(g): kernel density estimates of two numerical columns "
+            r"neighbour-selection rules (Fixed top-$k$, Jenks, entmax-1.5). " + kde_span
+            + r": kernel density estimates of two numerical columns "
             rf"({kd}), real data in grey and each rule's synthetic data in its colour; real and synthetic "
             r"densities in a panel use the same bandwidth (Scott's rule on the real data), and the "
             r"synthetic estimate pools the 20 sampled tables"
             + (rf" (subsampled to {MAX_KDE_ROWS:,} rows with a fixed seed)".replace(",", "{,}") if sub else "")
             + r"; the axis spans the real 0.5--99.5\% quantiles extended by 10\%, and the panels of a row "
-            rf"share their $y$-axis. (h)--(k): category counts of four categorical columns ({bd}), real "
+            rf"share their $y$-axis. " + bar_span + r": category counts of four categorical columns ({bd}), real "
             r"table (grey) and each rule's mean over the 20 tables (" + "; ".join(sorted(notes)) + r"). "
             r"Layout and columns follow the TabDiff paper so that the rules can be set beside its "
             r"Figure~3, but the paper's panels show other models on other samples: the comparison is "
-            r"visual and qualitative only. Fixed top-$k$ on Magic is the $k=3$ run; the dense ablation "
-            r"($k=N-1$) exists for Beijing and Magic only. Real data: the training table TabDiff's "
+            r"visual and qualitative only. Fixed top-$k$ on Magic is the $k=3$ run. Real data: the training "
+            r"table TabDiff's "
             r"evaluation compares against. Route A, training seed 0, 20 sampled tables.")
 
 
