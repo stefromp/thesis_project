@@ -31,6 +31,7 @@ import route_a_figs as F  # noqa: E402
 import thesis_style as S  # noqa: E402
 
 np, pd, plt = F.np, F.pd, F.plt
+import matplotlib.patheffects as pe  # noqa: E402
 from matplotlib.colors import Normalize  # noqa: E402
 from matplotlib.transforms import blended_transform_factory  # noqa: E402
 from scipy.stats import gaussian_kde  # noqa: E402
@@ -38,7 +39,9 @@ from scipy.stats import gaussian_kde  # noqa: E402
 sys.path.insert(0, str(F.BS.REPO / "analysis" / "tabdiff"))
 import pair_and_marginals as PM  # noqa: E402
 
-PAPER_DS = ["adult", "beijing", "magic", "shoppers"]
+PAPER_FIG4_DS = ["adult", "beijing", "magic", "shoppers"]           # the TabDiff paper's Figure 4
+HEAT_DS = ["adult", "beijing", "default", "diabetes", "magic", "shoppers"]
+HEAT_RULES = ["fixed", "jenks", "entmax15"]
 # the TabDiff paper's Figure 3 columns: (dataset, name as printed, expected type)
 KDE_COLS = [("beijing", "DEWP", "numerical"), ("shoppers", "BounceRates", "numerical")]
 BAR_COLS = [("adult", "marital.status", "categorical"), ("beijing", "month", "categorical"),
@@ -265,30 +268,62 @@ def marginals_caption(kde_cols, bar_cols, notes, info) -> str:
 # ---------------------------------------------------------------------------
 # Figure: pair-wise correlation error heatmaps (TabDiff Fig. 4)
 # ---------------------------------------------------------------------------
-def figure_heatmaps() -> dict:
-    fig = S.figure(S.FULL, 6.3)
-    gs = fig.add_gridspec(len(PAPER_DS), len(F.ARMS) + 1, width_ratios=[1] * len(F.ARMS) + [0.06],
-                          wspace=0.02, hspace=0.02)
+def _separators(ax, n_num: int, n: int):
+    """Red Num | Cat separators with a thin white halo, so they stay red over dark cells."""
+    if 0 < n_num < n:
+        halo = [pe.Stroke(linewidth=1.5, foreground="white"), pe.Normal()]
+        for f in (ax.axhline, ax.axvline):
+            f(n_num - 0.5, color=SPLIT, lw=0.7, path_effects=halo, zorder=3)
+
+
+def _brackets(ax, n_num: int, n: int, side: str = "left"):
+    """Red brackets with 'Num' / 'Cat' along the matrix rows (side='left') or columns (side='top')."""
+    if side == "left":
+        tr = blended_transform_factory(ax.transAxes, ax.transData)
+    else:
+        tr = blended_transform_factory(ax.transData, ax.transAxes)
+    for (a0, a1), lab in (((-0.5, n_num - 0.5), "Num"), ((n_num - 0.5, n - 0.5), "Cat")):
+        if a1 - a0 <= 0:
+            continue
+        pad = 0.15
+        s0, s1 = a0 + pad, a1 - pad
+        if side == "left":
+            x = -0.045
+            ax.plot([x, x], [s0, s1], transform=tr, color=SPLIT, lw=0.7, clip_on=False)
+            for yy in (s0, s1):
+                ax.plot([x, x + 0.025], [yy, yy], transform=tr, color=SPLIT, lw=0.7, clip_on=False)
+            ax.text(x - 0.025, (a0 + a1) / 2, lab, transform=tr, rotation=90, ha="right", va="center",
+                    fontsize=S.FS_MIN, color=SPLIT, clip_on=False)
+        else:
+            y = 1.045
+            ax.plot([s0, s1], [y, y], transform=tr, color=SPLIT, lw=0.7, clip_on=False)
+            for xx in (s0, s1):
+                ax.plot([xx, xx], [y, y - 0.025], transform=tr, color=SPLIT, lw=0.7, clip_on=False)
+            if a1 - a0 >= 3:                       # a one-column block is too narrow for its label
+                ax.text((a0 + a1) / 2, y + 0.02, lab, transform=tr, ha="center", va="bottom",
+                        fontsize=S.FS_MIN, color=SPLIT, clip_on=False)
+
+
+def figure_heatmaps(datasets: list[str], name: str, rules_as_rows: bool, height: float) -> dict:
+    """Grid of full pair-error matrices. rules_as_rows: rows = rules, columns = datasets (Num/Cat
+    brackets above each dataset column); else rows = datasets, columns = rules (brackets on the left)."""
+    rows, cols = (HEAT_RULES, datasets) if rules_as_rows else (datasets, HEAT_RULES)
+    fig = S.figure(S.FULL, height)
+    gs = fig.add_gridspec(len(rows), len(cols) + 1, width_ratios=[1] * len(cols) + [0.06], wspace=0.02,
+                          hspace=0.02)
     cmap = plt.get_cmap("Blues").copy()
     cmap.set_bad("white")
     norm = Normalize(0, VMAX)
-    out = {"clipped": {}, "trend": {}}
-    for r, ds in enumerate(PAPER_DS):
-        for c, arm in enumerate(F.ARMS):
+    out = {"clipped": {}, "trend": {}, "n_cols": {}}
+    for r, rv in enumerate(rows):
+        for c, cv in enumerate(cols):
+            arm, ds = (rv, cv) if rules_as_rows else (cv, rv)
             ax = fig.add_subplot(gs[r, c])
             ax.set_xticks([])
             ax.set_yticks([])
             ax.grid(False)
             for sp in ax.spines.values():
                 sp.set_visible(False)
-            if r == 0:
-                ax.set_title(S.rule_label(arm), loc="center", fontsize=S.FS_LABEL)
-            if F.run_dir(ds, arm) is None:
-                ax.set_xlim(0, 1)
-                ax.set_ylim(0, 1)
-                ax.set_aspect("equal")
-                ax.text(0.5, 0.5, "—", ha="center", va="center", fontsize=S.FS_LABEL, color=S.INK2)
-                continue
             M, n_num = full_pair_matrix(ds, arm)
             n = len(M)
             off = ~np.eye(n, dtype=bool)
@@ -296,69 +331,87 @@ def figure_heatmaps() -> dict:
             assert abs(M[off].mean() - tm) < 1e-9, (ds, arm, M[off].mean(), tm)   # mean = Trend / 100
             out["trend"][(ds, arm)] = tm
             out["clipped"][(ds, arm)] = float((M[np.triu_indices(n, 1)] > VMAX).mean())
+            out["n_cols"][ds] = n
             ax.imshow(np.ma.masked_invalid(M), cmap=cmap, norm=norm, interpolation="nearest", aspect="equal")
-            for v in (n_num - 0.5,):
-                if 0 < n_num < n:
-                    ax.axhline(v, color=SPLIT, lw=0.6)
-                    ax.axvline(v, color=SPLIT, lw=0.6)
+            _separators(ax, n_num, n)
             ax.set_xlim(-0.5, n - 0.5)
             ax.set_ylim(n - 0.5, -0.5)
+            if r == 0:
+                title = S.ds_label(ds) if rules_as_rows else S.rule_label(arm)
+                ax.set_title(title, loc="center", fontsize=S.FS_LABEL, pad=11 if rules_as_rows else 4)
+                if rules_as_rows:
+                    _brackets(ax, n_num, n, side="top")
             if c == 0:
-                _brackets(ax, n_num, n)
-                ax.annotate(S.ds_label(ds), xy=(0, 0.5), xycoords="axes fraction", xytext=(-26, 0),
+                lab = S.rule_label(arm) if rules_as_rows else S.ds_label(ds)
+                if not rules_as_rows:
+                    _brackets(ax, n_num, n, side="left")
+                ax.annotate(lab, xy=(0, 0.5), xycoords="axes fraction", xytext=(-6 if rules_as_rows else -26, 0),
                             textcoords="offset points", rotation=90, ha="right", va="center",
                             fontsize=S.FS_LABEL, fontweight="bold", annotation_clip=False)
-    cb = fig.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), cax=fig.add_subplot(gs[:, -1]), extend="max")
-    cb.set_label("Pair-wise correlation error (lighter = better)", fontsize=S.FS_TICK)
+    holder = fig.add_subplot(gs[:, -1])               # invisible full-height slot; the bar is an inset of it
+    holder.axis("off")
+    rest, mid, _ = _bar_ratios(len(rows))
+    cax = holder.inset_axes([0, rest / len(rows), 1, mid / len(rows)])
+    cb = fig.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cax, extend="max")
+    cb.set_label("Pair-wise correlation error\n(lighter = better)", fontsize=S.FS_TICK)
     cb.ax.tick_params(labelsize=S.FS_TICK, length=2, width=S.LW_AXIS)
     cb.outline.set_linewidth(S.LW_AXIS)
-    out["size"] = S.save(fig, "paper_style_pair_heatmaps", heatmaps_caption(out))
+    out["datasets"] = datasets
+    out["size"] = S.save(fig, name, heatmaps_caption(out), allow={S.rule_label(a) for a in HEAT_RULES})
     return out
 
 
-def _brackets(ax, n_num: int, n: int):
-    """Red brackets with 'Num' / 'Cat' to the left of the matrix (data y, axes-fraction x)."""
-    tr = blended_transform_factory(ax.transAxes, ax.transData)
-    for (y0, y1), lab in (((-0.5, n_num - 0.5), "Num"), ((n_num - 0.5, n - 0.5), "Cat")):
-        if y1 - y0 <= 0:
-            continue
-        pad = 0.15
-        x = -0.045
-        ax.plot([x, x], [y0 + pad, y1 - pad], transform=tr, color=SPLIT, lw=0.7, clip_on=False)
-        for yy in (y0 + pad, y1 - pad):
-            ax.plot([x, x + 0.02], [yy, yy], transform=tr, color=SPLIT, lw=0.7, clip_on=False)
-        ax.text(x - 0.02, (y0 + y1) / 2, lab, transform=tr, rotation=90, ha="right", va="center",
-                fontsize=S.FS_CELL, color=SPLIT, clip_on=False)
+def _bar_ratios(n_rows: int) -> list[float]:
+    """Colour bar about two rows high (at most 70 % of the column), vertically centred."""
+    mid = min(2.0, 0.7 * n_rows)
+    rest = (n_rows - mid) / 2
+    return [rest, mid, rest]
 
 
 def heatmaps_caption(out) -> str:
-    def tr(ds):
-        return " / ".join(f"{out['trend'][(ds, a)]:.3f}" if (ds, a) in out["trend"] else "--" for a in F.ARMS)
+    dss = out["datasets"]
+    stats = "; ".join(
+        f"{S.ds_label(d)}: " + " / ".join(f"{out['trend'][(d, a)]:.3f}" for a in HEAT_RULES)
+        + " (" + " / ".join(f"{100 * out['clipped'][(d, a)]:.1f}\\%" for a in HEAT_RULES) + ")"
+        for d in dss)
+    extra = [S.ds_label(d) for d in dss if d not in PAPER_FIG4_DS]
+    names = ", ".join(S.ds_label(d) for d in dss[:-1]) + f" and {S.ds_label(dss[-1])}"
+    return (r"Pair-wise correlation error of every pair of columns, with the colour scale of Figure~4 of the "
+            r"TabDiff paper, for our three neighbour-selection rules (Fixed top-$k$, Jenks, entmax-1.5) on "
+            rf"{names}. Each cell of a matrix is $1-\text{{score}}$ of the Column Pair Trends metric of "
+            r"sdmetrics~0.18.0 as computed inside TabDiff's evaluation (correlation similarity for two "
+            r"numerical columns, contingency similarity otherwise), averaged over the 20 sampled tables; the "
+            r"matrix is symmetric, its diagonal is left white, and the columns are ordered numerical first, then "
+            r"categorical (red lines and brackets). Colour scale 0 to "
+            rf"{VMAX:.2f} as in the paper (lighter is better); values above {VMAX:.2f} are drawn at the maximum "
+            r"colour. Per dataset, the mean of each matrix, which equals the run's Trend error divided by 100, "
+            rf"and in brackets the percentage of pairs above {VMAX:.2f} (Fixed top-$k$ / Jenks / entmax-1.5): "
+            rf"{stats}. Fixed top-$k$ on Magic is the $k=3$ run"
+            + (r"; Magic's only categorical column is its target, a block too narrow for a label" if "magic" in dss
+               else "") + r". The layout follows the TabDiff paper so that the "
+            r"rules can be set beside its Figure~4, but the paper's panels show other models on other samples: "
+            r"the comparison is visual and qualitative only"
+            + (rf"; {' and '.join(extra)} are not in the paper's Figure~4, so for "
+               rf"{'them' if len(extra) > 1 else 'it'} there is no counterpart to compare with" if extra else "")
+            + r". Route A, training seed 0, 20 sampled tables.")
 
-    def cl(ds):
-        return " / ".join(f"{100 * out['clipped'][(ds, a)]:.1f}" if (ds, a) in out["clipped"] else "--"
-                          for a in F.ARMS)
-    trends = "; ".join(f"{S.ds_label(d)}: {tr(d)}" for d in PAPER_DS)
-    clips = "; ".join(f"{S.ds_label(d)}: {cl(d)}" for d in PAPER_DS)
-    return (r"Pair-wise correlation error of every pair of columns, for the datasets and with the colour "
-            r"scale of Figure~4 of the TabDiff paper, for each of our neighbour-selection rules (columns) "
-            r"on Adult, Beijing, Magic and Shoppers (rows). Each cell of a matrix is $1-\text{score}$ of the "
-            r"Column Pair Trends metric of sdmetrics~0.18.0 as computed inside TabDiff's evaluation "
-            r"(correlation similarity for two numerical columns, contingency similarity otherwise), averaged "
-            r"over the 20 sampled tables; the matrix is symmetric, its diagonal is left white, and the "
-            r"columns are ordered numerical first, then categorical (red lines and brackets). Colour scale "
-            rf"0 to {VMAX:.2f} as in the paper (lighter is better); values above {VMAX:.2f} are drawn at the "
-            rf"maximum colour; percentage of pairs above {VMAX:.2f} (Fixed top-$k$ / Jenks / entmax-1.5 / "
-            rf"Dense): {clips}. The mean of each matrix equals the run's Trend error divided by 100: "
-            rf"{trends}. The dense ablation ($k=N-1$) exists for Beijing and Magic only (--); Fixed top-$k$ on "
-            r"Magic is the $k=3$ run. The layout follows the TabDiff paper so that the rules can be set "
-            r"beside its Figure~4, but the paper's panels show other models on other samples: the comparison "
-            r"is visual and qualitative only. Route A, training seed 0, 20 sampled tables.")
+
+# Layout: "transposed" (chosen) = one figure, rows = rules, columns = the six datasets, ~0.95 in panels
+# as in the paper -- all six datasets side by side for each rule, and Diabetes' 37 x 37 matrix stays
+# readable at that size. "split" (kept as an option) = rows = datasets, columns = rules, the paper's four
+# datasets in paper_style_pair_heatmaps and Default / Diabetes in paper_style_pair_heatmaps_extra.
+HEAT_LAYOUT = "transposed"
+HEAT_FIGURES = {
+    "split": [("paper_style_pair_heatmaps", PAPER_FIG4_DS, False, 5.6),
+              ("paper_style_pair_heatmaps_extra", [d for d in HEAT_DS if d not in PAPER_FIG4_DS], False, 3.2)],
+    "transposed": [("paper_style_pair_heatmaps", HEAT_DS, True, 3.3)],
+}
 
 
-def main() -> dict:
-    missing = [f"{ds}/{a}" for ds in PAPER_DS for a in arms_of(ds)
-               if not (F.run_dir(ds, a) / PM.OUT_DIR / "pair_trend_error.csv").exists()]
+def main(layout: str = HEAT_LAYOUT) -> dict:
+    need = sorted({ds for ds, *_ in KDE_COLS + BAR_COLS} | set(HEAT_DS))
+    missing = [f"{ds}/{a}" for ds in need for a in arms_of(ds) if (ds in HEAT_DS and a in HEAT_RULES) and
+               not (F.run_dir(ds, a) / PM.OUT_DIR / "pair_trend_error.csv").exists()]
     if missing:
         sys.exit("no pair-trend outputs for " + ", ".join(missing) + ": run analysis/tabdiff/pair_and_marginals.py")
     m = figure_marginals()
@@ -368,11 +421,13 @@ def main() -> dict:
         print(f"  KDE {ds}/{col}/{a}: bandwidth {v['bandwidth']:.4g}, synthetic rows {v['n_syn']} "
               f"(KDE on {v['n_syn_kde']})")
     print(f"wrote paper_style_marginals {m['size']}")
-    h = figure_heatmaps()
-    for (ds, a), v in h["clipped"].items():
-        print(f"  heatmap {ds}/{a}: mean {h['trend'][(ds, a)]:.4f} = trend/100, pairs > {VMAX}: {100 * v:.1f} %")
-    print(f"wrote paper_style_pair_heatmaps {h['size']}")
-    return {"marginals": m, "heatmaps": h}
+    heat = {}
+    for name, dss, rules_as_rows, height in HEAT_FIGURES[layout]:
+        h = heat[name] = figure_heatmaps(dss, name, rules_as_rows, height)
+        for (ds, a), v in h["clipped"].items():
+            print(f"  {name} {ds}/{a}: mean {h['trend'][(ds, a)]:.4f} = trend/100, pairs > {VMAX}: {100 * v:.1f} %")
+        print(f"wrote {name} {h['size']}")
+    return {"marginals": m, "heatmaps": heat}
 
 
 if __name__ == "__main__":

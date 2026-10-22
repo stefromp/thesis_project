@@ -55,7 +55,23 @@ def test_paper_column_lists():
     assert [(d, c) for d, c, _ in P.KDE_COLS] == [("beijing", "DEWP"), ("shoppers", "BounceRates")]
     assert [(d, c) for d, c, _ in P.BAR_COLS] == [("adult", "marital.status"), ("beijing", "month"),
                                                   ("magic", "class"), ("shoppers", "OperatingSystems")]
-    assert P.VMAX == 0.10 and P.PAPER_DS == ["adult", "beijing", "magic", "shoppers"]
+    assert P.VMAX == 0.10 and P.PAPER_FIG4_DS == ["adult", "beijing", "magic", "shoppers"]
+    assert P.HEAT_DS == ["adult", "beijing", "default", "diabetes", "magic", "shoppers"]
+    assert P.HEAT_RULES == ["fixed", "jenks", "entmax15"]                         # no dense column
+
+
+def test_heatmap_figures_cover_all_six_datasets_once():
+    for layout, figs in P.HEAT_FIGURES.items():
+        shown = [d for _, dss, *_ in figs for d in dss]
+        assert sorted(shown) == sorted(P.HEAT_DS) and len(shown) == len(set(shown)), layout
+    assert P.HEAT_LAYOUT in P.HEAT_FIGURES
+    assert P.HEAT_FIGURES[P.HEAT_LAYOUT][0][0] == "paper_style_pair_heatmaps"
+
+
+def test_colour_bar_is_about_two_rows_and_centred():
+    for n in (2, 3, 4, 6):
+        a, mid, b = P._bar_ratios(n)
+        assert a == pytest.approx(b) and a + mid + b == pytest.approx(n) and mid <= min(2.0, 0.7 * n) + 1e-12
 
 
 # ---------------------------------------------------------------------------
@@ -89,7 +105,7 @@ def _have(ds, arm):
     return run is not None and (run / P.PM.OUT_DIR / "pair_trend_error.csv").exists()
 
 
-@pytest.mark.parametrize("ds,arm", [(d, a) for d in P.PAPER_DS for a in F.ARMS if F.RA.has_arm(d, a)])
+@pytest.mark.parametrize("ds,arm", [(d, a) for d in P.HEAT_DS for a in P.HEAT_RULES])
 def test_heatmap_matrix_symmetric_white_diagonal_mean_is_trend(ds, arm):
     if not _have(ds, arm):
         pytest.skip(f"{ds}/{arm}: no pair-trend outputs on disk")
