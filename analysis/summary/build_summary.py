@@ -1587,6 +1587,8 @@ THESIS_FIGURES = [  # name, place in the thesis, script
     ("vs_tabdiff_reldiff", "Figure 5", "fig_vs_tabdiff_heatmap.py"),
     ("pair_trend_error_beijing", "Figure 6", "fig_pairs_marginals.py"),
     ("marginals", "Figure 7", "fig_pairs_marginals.py"),
+    ("paper_style_marginals", "Paper-style (TabDiff Fig. 3)", "fig_paper_style.py"),
+    ("paper_style_pair_heatmaps", "Paper-style (TabDiff Fig. 4)", "fig_paper_style.py"),
     ("topk_k_vs_t", "Appendix", "build_summary.py"),
     ("pair_trend_error_default", "Appendix", "fig_pairs_marginals.py"),
     ("pair_trend_error_magic", "Appendix", "fig_pairs_marginals.py"),
@@ -1625,12 +1627,19 @@ def build_figures(bv, tdv) -> dict[str, str]:
         FIG_STATUS.update({n: "rebuilt" for n in pm})
     except SystemExit as e:
         FIG_STATUS.update({n: f"NOT rebuilt ({e})" for n in pm})
+    import fig_paper_style as FPS
+    ps = [n for n, _, scr in THESIS_FIGURES if scr == "fig_paper_style.py"]
+    try:
+        FPS.main()
+        FIG_STATUS.update({n: "rebuilt" for n in ps})
+    except SystemExit as e:
+        FIG_STATUS.update({n: f"NOT rebuilt ({e})" for n in ps})
     names = [n for n, *_ in THESIS_FIGURES]
     TS.contact_sheet(names)
     TS.latex_preview(names)
     for n, where, _ in THESIS_FIGURES:
         size = TS.SAVED.get(n)
-        print(f"  {where:9s} {n:26s} {FIG_STATUS.get(n, '?'):10s} "
+        print(f"  {where:28s} {n:26s} {FIG_STATUS.get(n, '?'):10s} "
               + (f"{size[0]:.2f} x {size[1]:.2f} in" if size else ""))
     return FIG_STATUS
 

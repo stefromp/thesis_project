@@ -1,6 +1,6 @@
 # Comparison tables (supervisor summary)
 
-_Generated 2026-10-20 15:34 by `analysis/summary/build_summary.py` at commit `662727b` (+ uncommitted changes). Rerun it to refresh; nothing is trained or sampled._
+_Generated 2026-10-22 11:34 by `analysis/summary/build_summary.py` at commit `1fd3b2e` (+ uncommitted changes). Rerun it to refresh; nothing is trained or sampled._
 
 ## How values are marked
 
@@ -474,7 +474,7 @@ The TabDDPM-framework denoiser (`GraphAwareDenoiser`) uses the same `AttnGNNBloc
 
 **Wording to fix in the code's own docs.** `DynamicAdjacency`'s docstring says the top-k result is "differentiable via a straight-through mask". It is not straight-through: dropped edges get exactly zero gradient (no surrogate gradient is passed through the selection); kept edges are differentiable through the sigmoid. The selection itself is not differentiated in any of the three rules.
 
-**Test outcome:** `11 passed in 2.39s (exit code 0); entmax 1.3 available; run 2026-10-20 15:34 on CPU, torch 2.5.1`.
+**Test outcome:** `11 passed in 2.34s (exit code 0); entmax 1.3 available; run 2026-10-22 11:34 on CPU, torch 2.5.1`.
 
 ## Thesis figures (Route A)
 
@@ -533,6 +533,24 @@ Marginal distributions of two numerical columns of Beijing (pm2.5, DEWP) under e
 
 
 _Script: analysis/summary/fig_pairs_marginals.py; files: figures/marginals.pdf / .png / .caption.tex; 6.27 × 3.75 in._
+
+### Paper-style (TabDiff Fig. 3): `paper_style_marginals`
+
+![paper_style_marginals](figures/paper_style_marginals.png)
+
+Marginal distributions of the columns shown in Figure 3 of the TabDiff paper, for each of our neighbour-selection rules. (a)–(g): kernel density estimates of two numerical columns (Beijing DEWP, Shoppers BounceRates), real data in grey and each rule's synthetic data in its colour; real and synthetic densities in a panel use the same bandwidth (Scott's rule on the real data), and the synthetic estimate pools the 20 sampled tables (subsampled to 200,000 rows with a fixed seed); the axis spans the real 0.5–99.5% quantiles extended by 10%, and the panels of a row share their y-axis. (h)–(k): category counts of four categorical columns (Adult marital.status, Beijing month, Magic class, Shoppers OperatingSystems), real table (grey) and each rule's mean over the 20 tables (synthetic tables have the real table's size). Layout and columns follow the TabDiff paper so that the rules can be set beside its Figure 3, but the paper's panels show other models on other samples: the comparison is visual and qualitative only. Fixed top-k on Magic is the k=3 run; the dense ablation (k=N-1) exists for Beijing and Magic only. Real data: the training table TabDiff's evaluation compares against. Route A, training seed 0, 20 sampled tables.
+
+
+_Script: analysis/summary/fig_paper_style.py; files: figures/paper_style_marginals.pdf / .png / .caption.tex; 6.27 × 5.19 in._
+
+### Paper-style (TabDiff Fig. 4): `paper_style_pair_heatmaps`
+
+![paper_style_pair_heatmaps](figures/paper_style_pair_heatmaps.png)
+
+Pair-wise correlation error of every pair of columns, for the datasets and with the colour scale of Figure 4 of the TabDiff paper, for each of our neighbour-selection rules (columns) on Adult, Beijing, Magic and Shoppers (rows). Each cell of a matrix is 1-score of the Column Pair Trends metric of sdmetrics 0.18.0 as computed inside TabDiff's evaluation (correlation similarity for two numerical columns, contingency similarity otherwise), averaged over the 20 sampled tables; the matrix is symmetric, its diagonal is left white, and the columns are ordered numerical first, then categorical (red lines and brackets). Colour scale 0 to 0.10 as in the paper (lighter is better); values above 0.10 are drawn at the maximum colour; percentage of pairs above 0.10 (Fixed top-k / Jenks / entmax-1.5 / Dense): Adult: 0.0 / 0.0 / 0.0 / –; Beijing: 3.0 / 0.0 / 1.5 / 3.0; Magic: 0.0 / 0.0 / 0.0 / 0.0; Shoppers: 0.0 / 0.0 / 0.0 / –. The mean of each matrix equals the run's Trend error divided by 100: Adult: 0.013 / 0.013 / 0.012 / –; Beijing: 0.032 / 0.029 / 0.025 / 0.027; Magic: 0.010 / 0.009 / 0.010 / 0.008; Shoppers: 0.017 / 0.017 / 0.018 / –. The dense ablation (k=N-1) exists for Beijing and Magic only (–); Fixed top-k on Magic is the k=3 run. The layout follows the TabDiff paper so that the rules can be set beside its Figure 4, but the paper's panels show other models on other samples: the comparison is visual and qualitative only. Route A, training seed 0, 20 sampled tables.
+
+
+_Script: analysis/summary/fig_paper_style.py; files: figures/paper_style_pair_heatmaps.pdf / .png / .caption.tex; 6.27 × 6.30 in._
 
 ### Appendix: `topk_k_vs_t`
 
@@ -680,6 +698,12 @@ Transcribed in analysis/tabdiff/reported_gatd.py. — = no value: ᵖ not report
 - `analysis/summary/figures/marginals.pdf`
 - `analysis/summary/figures/marginals.png`
 - `analysis/summary/figures/marginals.caption.tex`
+- `analysis/summary/figures/paper_style_marginals.pdf`
+- `analysis/summary/figures/paper_style_marginals.png`
+- `analysis/summary/figures/paper_style_marginals.caption.tex`
+- `analysis/summary/figures/paper_style_pair_heatmaps.pdf`
+- `analysis/summary/figures/paper_style_pair_heatmaps.png`
+- `analysis/summary/figures/paper_style_pair_heatmaps.caption.tex`
 - `analysis/summary/figures/topk_k_vs_t.pdf`
 - `analysis/summary/figures/topk_k_vs_t.png`
 - `analysis/summary/figures/topk_k_vs_t.caption.tex`
@@ -698,6 +722,7 @@ Transcribed in analysis/tabdiff/reported_gatd.py. — = no value: ᵖ not report
 - `analysis/summary/route_a_figs.py`
 - `analysis/summary/fig_density_vs_fidelity.py`
 - `analysis/summary/fig_pairs_marginals.py`
+- `analysis/summary/fig_paper_style.py`
 - `analysis/summary/fig_selection_example.py`
 - `analysis/summary/fig_vs_tabdiff_heatmap.py`
 - `tests/test_selection_differentiability.py`

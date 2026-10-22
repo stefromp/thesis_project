@@ -248,7 +248,7 @@ def save(fig, name: str, caption: str, width: float = FULL, allow=frozenset()) -
     # the fitted box, passed explicitly: PDF and PNG get exactly this size (the PDF backend's own
     # "tight" box can differ from Agg's by a few hundredths of an inch)
     bb = fig.get_tightbbox(fig.canvas.get_renderer()).padded(plt.rcParams["savefig.pad_inches"])
-    fig.savefig(out / f"{name}.pdf", bbox_inches=bb)
+    fig.savefig(out / f"{name}.pdf", bbox_inches=bb, metadata={"CreationDate": None})   # reproducible bytes
     fig.savefig(out / f"{name}.png", dpi=300, bbox_inches=bb)
     (out / f"{name}.caption.tex").write_text(" ".join(caption.split()) + "\n")
     assert size[1] <= MAX_H + 1e-6, (name, size)
@@ -282,7 +282,7 @@ def contact_sheet(names: list[str], path: Path | None = None) -> Path:
     out = Path(OUT_DIR)
     path = path or out / "_contact_sheet.pdf"
     A4 = (8.27, 11.69)
-    with PdfPages(path) as pdf:
+    with PdfPages(path, metadata={"CreationDate": None}) as pdf:
         for n in names:
             png = out / f"{n}.png"
             if not png.exists():
