@@ -778,6 +778,9 @@ def table_a6(vals, tv):
 # ===========================================================================
 B_DS = ["adult", "beijing", "default", "diabetes", "magic", "shoppers", "news"]
 B_ARMS = [("fixed", "fixed"), ("jenks", "adaptive_jenks"), ("entmax15", "adaptive_entmax15")]
+# ablation runs (NOT the main protocol): tag -> (rule, config.ABLATIONS key, table)
+B_ABL = {"dense": ("fixed", "topk_dense", "B4"),
+         **{f"d3_{tag}": (mode, "depth3", "B4b") for tag, mode in B_ARMS}}
 B_COLS = [  # key, md header, tex header, decimals, better (+1 / -1)
     ("shape", "Shape err (%) ↓", r"Shape err.\ (\%) $\downarrow$", 2, -1),
     ("trend", "Trend err (%) ↓", r"Trend err.\ (\%) $\downarrow$", 2, -1),
@@ -807,11 +810,13 @@ def b_values() -> dict:
     out = {}
     for ds in B_DS:
         reg = RC.TASK[ds] == "regression"
-        arms = list(B_ARMS) + ([("dense", "fixed")] if ds in RC.ABLATIONS["topk_dense"]["datasets"] else [])
+        arms = list(B_ARMS) + [(t, m) for t, (m, abl, _) in B_ABL.items() if ds in RC.ABLATIONS[abl]["datasets"]]
         for tag, mode in arms:
-            tid = {"fixed": "B1", "jenks": "B2", "entmax15": "B3", "dense": "B4"}[tag]
-            run = ra_run(ds, mode, "topk_dense" if tag == "dense" else None)
-            model = f"GNN in TabDiff ({'topk_dense ablation' if tag == 'dense' else mode})"
+            abl = B_ABL[tag][1] if tag in B_ABL else None
+            tid = {"fixed": "B1", "jenks": "B2", "entmax15": "B3"}.get(tag) or B_ABL[tag][2]
+            run = ra_run(ds, mode, abl)
+            model = "GNN in TabDiff (" + ({"topk_dense": "topk_dense ablation"}.get(abl) or
+                                          (f"depth3 ablation, {mode}" if abl else mode)) + ")"
             ev = run / "tabdiff_eval"
             if not run.is_dir():
                 st = "no run on disk"
@@ -829,7 +834,7 @@ def b_values() -> dict:
                     out[(ds, tag, "params")] = V(tid, ds, model, "params", pc_["denoiser_total"], n=1,
                                                  note="denoiser parameters, counted at the start of the run",
                                                  **src(mp, f"run_meta git_commit={jload(mp).get('git_commit')}"))
-                elif run.is_dir() and tag != "dense":
+                elif run.is_dir() and abl is None:
                     # unfinished run without counts: the Step-0 count from the same code (params.py),
                     # checked below to equal run_meta wherever both exist
                     out[(ds, tag, "params")] = V(tid, ds, model, "params", STEP0.loc[ds].attngnn, n=1,
@@ -840,7 +845,7 @@ def b_values() -> dict:
                 continue
             meta = jload(run / "run_meta.json")
             assert not meta.get("smoke_epochs"), run
-            assert (tag == "dense") == bool(meta.get("ablation")), run
+            assert (meta.get("ablation") or {}).get("name") == abl, run
             producer = f"run_meta git_commit={meta.get('git_commit')}"
             v = CP.ra_tables(str(run))
             files = [ev / "all_results.csv", ev / "mle2.csv", ev / "quality.csv",
@@ -861,7 +866,7 @@ def b_values() -> dict:
                 out[(ds, tag, key)] = V(tid, ds, model, key, a.mean(), a.std(ddof=1), n=len(a),
                                         std_kind="std over the 20 sampled tables of one trained model (ddof=1)",
                                         note=note, **src([files[per_file[key]], run / "run_meta.json"], producer))
-            if tag != "dense":
+            if abl is None:
                 assert meta["param_counts"]["denoiser_total"] == STEP0.loc[ds].attngnn, (ds, tag)
             out[(ds, tag, "params")] = V(tid, ds, model, "params", meta["param_counts"]["denoiser_total"], n=1,
                                          note="denoiser parameters, counted at the start of the run "
@@ -872,7 +877,7 @@ def b_values() -> dict:
             out[(ds, tag, "train_h")] = V(tid, ds, model, "train_h", meta["train_record"]["train_wall_s"] / 3600,
                                           n=1, note=f"train_wall_s on {meta.get('device')} host {meta.get('hostname')}",
                                           **src(run / "run_meta.json", producer))
-            if tag != "fixed" and tag != "dense":
+            if tag in ("jenks", "entmax15"):
                 out[(ds, tag, "_kstats")] = run / "topk_k_stats.csv"
     return out
 
@@ -908,6 +913,7 @@ def b_tabdiff_values() -> dict:
 
 
 def _b_table(tid, title, how, vals, tags, label_of, caption, note="", note_tex="", datasets=None):
+    main_tids = {{"fixed": "B1", "jenks": "B2", "entmax15": "B3"}[t] for t in tags if t in dict(B_ARMS)}
     head_md = ["Dataset", "task"] + [c[1] for c in B_COLS] + ["Params"]
     head_tex = ["Dataset", "task"] + [c[2] for c in B_COLS] + ["Params"]
     rows_md, rows_tex, groups = [], [], []
@@ -933,7 +939,7 @@ def _b_table(tid, title, how, vals, tags, label_of, caption, note="", note_tex="
          r"MLE-2: $F_1$/RMSE. wNMIS, C2ST (XGB): tabpc. " + note_tex, caption,
          groups=groups or None, colspec="ll" + "c" * (len(B_COLS) + 1),
          select=None if len(tags) == 1 else
-         (lambda x: x["table"] == "B4" or (x["table"] == "B1" and x["dataset"] in (datasets or B_DS))))
+         (lambda x: x["table"] == tid or (x["table"] in main_tids and x["dataset"] in (datasets or B_DS))))
 
 
 def b_coverage(bv, tag: str) -> str:
@@ -970,6 +976,18 @@ def table_b(bv, tdv):
              "beijing: N − 1 = 11 (main k = 5); magic: N − 1 = 10 (main k = 3).",
              "beijing: $N-1=11$ (main $k=5$); magic: $N-1=10$ (main $k=3$).",
              datasets=list(RC.ABLATIONS["topk_dense"]["datasets"]))
+    d3 = list(RC.ABLATIONS["depth3"]["datasets"])
+    _b_table("B4b", "ABLATION: depth3 (3 GNN blocks instead of 2) on magic, every rule",
+             "**Ablation, not part of the main protocol.** Each rule's main run (2 AttnGNN blocks) next to the "
+             "same model with 3 blocks; gnn type, heads, d_model, dim_t, noise mode, TabDiff's protocol and the "
+             "seed are unchanged. Compare only within a rule: it asks whether more message passing closes "
+             "magic's gap to TabDiff.",
+             bv, [x for t, _ in B_ARMS for x in (t, f"d3_{t}")],
+             {**{(d, t): f"main {m} (2 blocks)" for d in d3 for t, m in B_ARMS},
+              **{(d, f"d3_{t}"): f"depth3 {m} (3 blocks)" for d in d3 for t, m in B_ARMS}},
+             "Ablation: three vs.\\ two AttnGNN blocks on magic, each neighbour-selection rule.",
+             "Only n_layers differs (2 → 3); run dirs ..._layers3_..., run_meta.json records the ablation.",
+             "Only $n_\\text{layers}$ differs ($2\\to3$).", datasets=d3)
     # B5 TabDiff as reported
     rows_md, rows_tex = [], []
     for ds in B_DS:
@@ -1555,9 +1573,9 @@ def write_summary(xcheck, a5, b6, files, bv):
         L.append(secs[t])
     L += ["## B. TabDiff framework (Route A, seed 0 = 1 trained model × 20 tables)", "",
           "Datasets: adult, beijing, default, diabetes, magic, shoppers; news pending. GNN tables per rule "
-          "(B1–B3), the dense-graph ablation (B4), then TabDiff as reported (B5), the win/tie/loss summary "
+          "(B1–B3), the dense-graph ablation (B4), the depth ablation (B4b), then TabDiff as reported (B5), the win/tie/loss summary "
           "(B6) and the selected-neighbour statistics (B7).", ""]
-    for t in ("B1", "B2", "B3", "B4", "B5", "B6", "B7"):
+    for t in ("B1", "B2", "B3", "B4", "B4b", "B5", "B6", "B7"):
         L.append(secs[t])
     L += ["Figures of the selected k: Figure 4 (`topk_frac_vs_t`) and appendix `topk_k_vs_t`, see "
           "*Thesis figures* below.", "",

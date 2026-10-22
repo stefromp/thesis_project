@@ -1,6 +1,6 @@
 # Comparison tables (supervisor summary)
 
-_Generated 2026-10-22 12:28 by `analysis/summary/build_summary.py` at commit `f991dbb` (+ uncommitted changes). Rerun it to refresh; nothing is trained or sampled._
+_Generated 2026-10-22 14:19 by `analysis/summary/build_summary.py` at commit `87a86a3` (+ uncommitted changes). Rerun it to refresh; nothing is trained or sampled._
 
 ## How values are marked
 
@@ -261,7 +261,7 @@ Metric: macro-F1 / R², the same rule as A1. The budget-matched runs are prepare
 
 ## B. TabDiff framework (Route A, seed 0 = 1 trained model × 20 tables)
 
-Datasets: adult, beijing, default, diabetes, magic, shoppers; news pending. GNN tables per rule (B1–B3), the dense-graph ablation (B4), then TabDiff as reported (B5), the win/tie/loss summary (B6) and the selected-neighbour statistics (B7).
+Datasets: adult, beijing, default, diabetes, magic, shoppers; news pending. GNN tables per rule (B1–B3), the dense-graph ablation (B4), the depth ablation (B4b), then TabDiff as reported (B5), the win/tie/loss summary (B6) and the selected-neighbour statistics (B7).
 
 ### B1. GNN in TabDiff, fixed (Route A, d_model 256)
 
@@ -331,6 +331,23 @@ Mean ± std (ddof=1, TabDiff's aggregation) over the 20 tables sampled from ONE 
 | magic — topk_dense (k = N − 1 = 10) | clf. | 0.78 ± 0.11 | 0.83 ± 0.17 | 0.934 ± 0.003 | 0.818 ± 0.009 | 99.45 ± 0.24 | 46.60 ± 0.34 | 0.9976 ± 0.0030 | 0.9944 ± 0.0010 | 0.7702 ± 0.0074 | 3,478,403 |
 
 Mean ± std (ddof=1, TabDiff's aggregation) over the 20 tables sampled from ONE trained model (training seed 0). MLE-1 = AUROC (classification) or R² (regression); MLE-2 = F1 or RMSE, from the same MLE call. C2ST (LR) = TabDiff's detection score as a fraction; wNMIS and C2ST (XGBoost) from tabpc. Params = denoiser parameters. beijing: N − 1 = 11 (main k = 5); magic: N − 1 = 10 (main k = 3). — = no value: ᵖ not reported, ⁿ not computed, ᵃ not applicable, ᵈ no run on disk; **pending** = run still in progress. † = reported (paper, or the authors' released evaluation files); unmarked values are computed by us.
+
+### B4b. ABLATION: depth3 (3 GNN blocks instead of 2) on magic, every rule
+
+**How to read.** **Ablation, not part of the main protocol.** Each rule's main run (2 AttnGNN blocks) next to the same model with 3 blocks; gnn type, heads, d_model, dim_t, noise mode, TabDiff's protocol and the seed are unchanged. Compare only within a rule: it asks whether more message passing closes magic's gap to TabDiff.
+
+**Protocol.** Route A: TabDiff's framework (EDM + masked diffusion, learnable schedules, Trainer, sampler, evaluation code @5ecdb33) with AttnGNN V2 (d_model 256) as the denoiser; TabDiff's own splits and budget (8000 epochs, lr 1e-3, batch 4096, 50 sampling steps); training seed 0 (1 trained model), checkpoint = best EMA training loss after epoch 4000, 20 tables of n_train rows (generation seeds 0–19); wNMIS and C2ST (XGBoost) from tabpc @b821a47.
+
+| Dataset | task | Shape err (%) ↓ | Trend err (%) ↓ | MLE-1: AUC / R² ↑ | MLE-2: F1 ↑ / RMSE ↓ | α-precision (%) ↑ | β-recall (%) ↑ | C2ST (LR) ↑ | wNMIS ↑ | C2ST (XGBoost) ↑ | Params |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| magic — main fixed (2 blocks) | clf. | 0.82 ± 0.10 | 0.95 ± 0.17 | 0.932 ± 0.003 | 0.806 ± 0.009 | 99.09 ± 0.29 | 45.08 ± 0.31 | 0.9960 ± 0.0035 | 0.9907 ± 0.0013 | 0.7242 ± 0.0067 | 3,478,403 |
+| magic — depth3 fixed (3 blocks) | clf. | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ |
+| magic — main adaptive_jenks (2 blocks) | clf. | 0.81 ± 0.10 | 0.94 ± 0.17 | 0.934 ± 0.002 | 0.814 ± 0.007 | 99.34 ± 0.27 | 45.40 ± 0.39 | 0.9960 ± 0.0034 | 0.9913 ± 0.0014 | 0.7407 ± 0.0056 | 3,478,403 |
+| magic — depth3 adaptive_jenks (3 blocks) | clf. | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ |
+| magic — main adaptive_entmax15 (2 blocks) | clf. | 0.81 ± 0.10 | 1.00 ± 0.19 | 0.933 ± 0.002 | 0.814 ± 0.008 | 99.33 ± 0.17 | 43.74 ± 0.23 | 0.9957 ± 0.0044 | 0.9830 ± 0.0015 | 0.6770 ± 0.0063 | 3,478,403 |
+| magic — depth3 adaptive_entmax15 (3 blocks) | clf. | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ | —ᵈ |
+
+Mean ± std (ddof=1, TabDiff's aggregation) over the 20 tables sampled from ONE trained model (training seed 0). MLE-1 = AUROC (classification) or R² (regression); MLE-2 = F1 or RMSE, from the same MLE call. C2ST (LR) = TabDiff's detection score as a fraction; wNMIS and C2ST (XGBoost) from tabpc. Params = denoiser parameters. Only n_layers differs (2 → 3); run dirs ..._layers3_..., run_meta.json records the ablation. — = no value: ᵖ not reported, ⁿ not computed, ᵃ not applicable, ᵈ no run on disk; **pending** = run still in progress. † = reported (paper, or the authors' released evaluation files); unmarked values are computed by us.
 
 ### B5. TabDiff as reported in its paper (1 model × 20 tables)
 
@@ -474,7 +491,7 @@ The TabDDPM-framework denoiser (`GraphAwareDenoiser`) uses the same `AttnGNNBloc
 
 **Wording to fix in the code's own docs.** `DynamicAdjacency`'s docstring says the top-k result is "differentiable via a straight-through mask". It is not straight-through: dropped edges get exactly zero gradient (no surrogate gradient is passed through the selection); kept edges are differentiable through the sigmoid. The selection itself is not differentiated in any of the three rules.
 
-**Test outcome:** `11 passed in 2.43s (exit code 0); entmax 1.3 available; run 2026-10-22 12:28 on CPU, torch 2.5.1`.
+**Test outcome:** `11 passed in 2.28s (exit code 0); entmax 1.3 available; run 2026-10-22 14:19 on CPU, torch 2.5.1`.
 
 ## Thesis figures (Route A)
 
@@ -646,6 +663,7 @@ Transcribed in analysis/tabdiff/reported_gatd.py. — = no value: ᵖ not report
 - `analysis/summary/tables/B2.tex`
 - `analysis/summary/tables/B3.tex`
 - `analysis/summary/tables/B4.tex`
+- `analysis/summary/tables/B4b.tex`
 - `analysis/summary/tables/B5.tex`
 - `analysis/summary/tables/B6.tex`
 - `analysis/summary/tables/B7.tex`
@@ -667,6 +685,7 @@ Transcribed in analysis/tabdiff/reported_gatd.py. — = no value: ᵖ not report
 - `analysis/summary/csv/B2.csv`
 - `analysis/summary/csv/B3.csv`
 - `analysis/summary/csv/B4.csv`
+- `analysis/summary/csv/B4b.csv`
 - `analysis/summary/csv/B5.csv`
 - `analysis/summary/csv/B6.csv`
 - `analysis/summary/csv/B6_best_arm_detail.csv`

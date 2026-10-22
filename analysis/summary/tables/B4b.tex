@@ -1,0 +1,20 @@
+% requires \usepackage{booktabs,graphicx}
+\begin{table}[t]
+\centering
+\caption{Ablation: three vs.\ two AttnGNN blocks on magic, each neighbour-selection rule.}
+\label{tab:summary_b4b}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccccccccc}
+\toprule
+Dataset & task & Shape err.\ (\%) $\downarrow$ & Trend err.\ (\%) $\downarrow$ & MLE-1: AUC / $R^2$ $\uparrow$ & MLE-2: $F_1\uparrow$ / RMSE$\downarrow$ & $\alpha$-prec.\ (\%) $\uparrow$ & $\beta$-rec.\ (\%) $\uparrow$ & C2ST (LR) $\uparrow$ & wNMIS $\uparrow$ & C2ST (XGB) $\uparrow$ & Params \\
+\midrule
+magic -- main fixed (2 blocks) & clf. & 0.82{\scriptsize$\pm$0.10} & 0.95{\scriptsize$\pm$0.17} & 0.932{\scriptsize$\pm$0.003} & 0.806{\scriptsize$\pm$0.009} & 99.09{\scriptsize$\pm$0.29} & 45.08{\scriptsize$\pm$0.31} & 0.9960{\scriptsize$\pm$0.0035} & 0.9907{\scriptsize$\pm$0.0013} & 0.7242{\scriptsize$\pm$0.0067} & 3{,}478{,}403 \\
+magic -- depth3 fixed (3 blocks) & clf. & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ \\
+magic -- main adaptive\_jenks (2 blocks) & clf. & 0.81{\scriptsize$\pm$0.10} & 0.94{\scriptsize$\pm$0.17} & 0.934{\scriptsize$\pm$0.002} & 0.814{\scriptsize$\pm$0.007} & 99.34{\scriptsize$\pm$0.27} & 45.40{\scriptsize$\pm$0.39} & 0.9960{\scriptsize$\pm$0.0034} & 0.9913{\scriptsize$\pm$0.0014} & 0.7407{\scriptsize$\pm$0.0056} & 3{,}478{,}403 \\
+magic -- depth3 adaptive\_jenks (3 blocks) & clf. & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ \\
+magic -- main adaptive\_entmax15 (2 blocks) & clf. & 0.81{\scriptsize$\pm$0.10} & 1.00{\scriptsize$\pm$0.19} & 0.933{\scriptsize$\pm$0.002} & 0.814{\scriptsize$\pm$0.008} & 99.33{\scriptsize$\pm$0.17} & 43.74{\scriptsize$\pm$0.23} & 0.9957{\scriptsize$\pm$0.0044} & 0.9830{\scriptsize$\pm$0.0015} & 0.6770{\scriptsize$\pm$0.0063} & 3{,}478{,}403 \\
+magic -- depth3 adaptive\_entmax15 (3 blocks) & clf. & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ & ---$^{d}$ \\
+\bottomrule
+\end{tabular}}
+\par\smallskip\footnotesize Mean$\pm$std (ddof=1) over 20 tables from one trained model (seed 0). MLE-1: AUROC/$R^2$; MLE-2: $F_1$/RMSE. wNMIS, C2ST (XGB): tabpc. Only $n_\text{layers}$ differs ($2\to3$). ---: no value ($^{p}$ not reported, $^{n}$ not computed, $^{a}$ not applicable, $^{d}$ no run on disk); \emph{pending}: run in progress. $^\dagger$reported (paper or the authors' released evaluation files); unmarked: computed by us.
+\end{table}

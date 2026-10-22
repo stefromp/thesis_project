@@ -349,3 +349,13 @@ TabDiff's Trainer computes the EMA loss but never logs it, so the report has no 
 - **Path:** `…/tabdiff_magic/attngnn/v2_gatv2_layers2_dim256_topk10_heads8_dimt128_noise-shared/seed0/`; `run_meta.json` links the main magic run (`…_topk3_…`).
 - **Job:** `hpc_transfer/jobs_tabdiff_gnn/magic_tabdiff_gnn_ablation_topk_dense.sh`, ABLATION block, `--gres=gpu:a100:1 --mem=24G --time=05:00:00`.
 - **Cost:** about 3.2 GPU-h (the main magic estimate × the 1.00 dense ratio measured on beijing; magic is GATv2 too).
+
+## Ablation: magic with 3 GNN blocks, every rule (not part of the main protocol)
+
+`--ablation depth3` keeps every setting of the main magic run of a rule except `n_layers = 3` (main: 2). The gnn type, heads, d_model, dim_t, noise mode, TabDiff's protocol and seed 0 are unchanged. Unlike `topk_dense`, it is defined for all three rules (`config.ABLATIONS["depth3"]["topk_modes"]`).
+- **Paths:** `…/tabdiff_magic/attngnn/v2_gatv2_layers3_dim256_{topk3,jenks,entmax15}_heads8_dimt128_noise-shared/seed0/`. `config.arm_name` refuses an ablation whose path would equal the main run's.
+- **`run_meta.json`** records the ablation and links the same rule's main run (`main_run_dir`).
+- **k statistics:** the jenks and entmax15 runs write `topk_k_stats.csv` / `topk_k_hist.csv`, as the main rule arms do. The fixed run keeps k = 3 by construction.
+- **Jobs:** `hpc_transfer/jobs_tabdiff_gnn/magic_tabdiff_gnn_ablation_depth3_{topk3,jenks,entmax15}.sh`, ABLATION block, `--gres=gpu:a100:1 --mem=24G --time=06:00:00`.
+- **Cost:** about 4.6 GPU-h each. This is the main magic estimate × 3/2 blocks, which is an upper bound and not measured.
+- **Summary:** table B4b in `analysis/summary/` (next to B4, topk_dense).

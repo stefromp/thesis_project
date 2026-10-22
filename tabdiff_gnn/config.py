@@ -258,7 +258,26 @@ ABLATIONS = {
                    # per-dataset question where it differs from "question"
                    "question_by_dataset": {"magic": "is the sparse top-k graph (k = 3) the cause of "
                                                     "magic's gap (fixed and entmax15 trail TabDiff)?"}},
+    # one more AttnGNN block; run with every rule ("topk_modes"; default: fixed only)
+    "depth3": {"datasets": ("magic",), "topk_modes": TOPK_MODES, "n_layers": 3,
+               "change": "n_layers = 3 (one more AttnGNN block than the main run's 2; gnn type, heads, "
+               "d_model, dim_t, noise mode, rule and TabDiff's protocol unchanged)",
+               "question": "does a third message-passing block close magic's gap to TabDiff?"},
 }
+
+
+def ablation_topk_modes(ablation: str) -> tuple:
+    """The neighbour-selection rules an ablation is defined for (topk_dense: fixed only)."""
+    return tuple(ABLATIONS[ablation].get("topk_modes", ("fixed",)))
+
+
+def check_ablation(ablation: str | None, topk_mode: str = TOPK_MODE) -> None:
+    if ablation is None:
+        return
+    if ablation not in ABLATIONS:
+        raise ValueError(f"unknown ablation {ablation!r}; known: {sorted(ABLATIONS)}")
+    if topk_mode not in ablation_topk_modes(ablation):
+        raise ValueError(f"ablation {ablation} is defined for topk_mode {ablation_topk_modes(ablation)} only")
 
 
 def model_node_columns(ds: str, repo_root: str = REPO) -> list:
@@ -302,6 +321,10 @@ def gnn_config(ds: str, repo_root: str = REPO, ablation: str | None = None):
             n = n_nodes(ds, repo_root)
             s["top_k"] = f"ABLATION topk_dense: N - 1 = {n - 1} (main run: {v['top_k']} from {s['top_k']})"
             v["top_k"] = n - 1
+        elif ablation == "depth3":
+            n = ABLATIONS["depth3"]["n_layers"]
+            s["n_layers"] = f"ABLATION depth3: {n} (main run: {v['n_layers']} from {s['n_layers']})"
+            v["n_layers"] = n
     if v["d_model"] % v["n_heads"]:
         raise ValueError(f"{ds}: d_model {v['d_model']} not divisible by n_heads {v['n_heads']}")
     return v, s
@@ -316,12 +339,14 @@ def arm_name(denoiser: str, ds: str | None = None, node_noise: str = NODE_NOISE,
     if denoiser != "attngnn":
         raise ValueError(f"denoiser must be one of {DENOISERS}")
     gnn_rule_fields(topk_mode)
-    if topk_mode != "fixed" and ablation is not None:
-        raise ValueError("ablations are defined for the fixed arm only")
+    check_ablation(ablation, topk_mode)
     g, _ = gnn_config(ds, repo_root, ablation=ablation)
     sel = f"topk{g['top_k']}" if topk_mode == "fixed" else RULE_TAG[topk_mode]
-    return (f"v2_{g['gnn_type']}_layers{g['n_layers']}_dim{g['d_model']}_{sel}"
+    name = (f"v2_{g['gnn_type']}_layers{g['n_layers']}_dim{g['d_model']}_{sel}"
             f"_heads{g['n_heads']}_dimt{DIM_T}_noise-{node_noise}")
+    if ablation is not None and name == arm_name(denoiser, ds, node_noise, repo_root, topk_mode=topk_mode):
+        raise ValueError(f"ablation {ablation} on {ds} would write into the main run's directory {name}")
+    return name
 
 
 def run_dir(exp_root: str, target: str, denoiser: str, seed: int,

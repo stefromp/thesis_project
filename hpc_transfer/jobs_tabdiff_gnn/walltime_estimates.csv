@@ -130,3 +130,6 @@ gnn_entmax15,news,JOB news_tabdiff_gnn_entmax15_sample_eval.sh,walltime,5,,,,,es
 gnn_entmax15,diabetes,JOB diabetes_tabdiff_gnn_entmax15.sh,walltime,21,,,,,estimate 15.76 h x 1.3
 gnn,beijing,JOB beijing_tabdiff_gnn_ablation_topk_dense.sh,walltime,48,,,,,estimate 6.93 h x 1.3
 gnn,magic,JOB magic_tabdiff_gnn_ablation_topk_dense.sh,walltime,48,,,,,estimate 3.17 h x 1.3
+gnn,magic,JOB magic_tabdiff_gnn_ablation_depth3_topk3.sh,walltime,48,,,,,estimate 4.57 h x 1.3
+gnn_jenks,magic,JOB magic_tabdiff_gnn_ablation_depth3_jenks.sh,walltime,6,,,,,estimate 4.58 h x 1.3
+gnn_entmax15,magic,JOB magic_tabdiff_gnn_ablation_depth3_entmax15.sh,walltime,6,,,,,estimate 4.58 h x 1.3

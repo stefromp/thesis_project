@@ -131,8 +131,7 @@ def spec_for(target: str, denoiser: str, seed: int, node_noise=C.NODE_NOISE,
         raise ValueError("ablations are defined for the attngnn denoiser only")
     if topk_mode != "fixed" and denoiser != "attngnn":
         raise ValueError("--topk_mode is an attngnn option")
-    if topk_mode != "fixed" and ablation is not None:
-        raise ValueError("ablations are defined for the fixed arm only")
+    C.check_ablation(ablation, topk_mode)
     if denoiser == "attngnn":
         g, src = C.gnn_config(ds, ablation=ablation)
         rule = C.gnn_rule_fields(topk_mode)             # {} for fixed: spec unchanged

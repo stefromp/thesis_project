@@ -218,7 +218,8 @@ class Target:
             "ablation": (None if a.ablation is None else {
                 "name": a.ablation, **C.ABLATIONS[a.ablation],
                 "main_run_dir": C.run_dir(a.exp_root, self.name, a.denoiser, a.seed,
-                                          node_noise=a.node_noise, repo_root=self.repo),
+                                          node_noise=a.node_noise, repo_root=self.repo,
+                                          topk_mode=a.topk_mode),
                 "note": "ABLATION -- not part of the main Route-A protocol; compare only with the "
                         "main run of the same dataset and seed"}),
             "train_seed": a.seed,

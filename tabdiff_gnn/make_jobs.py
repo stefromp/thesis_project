@@ -121,11 +121,15 @@ SBATCH_FLAGS = "--gres=gpu:a100:1 --mem=24G"
 RULE_ORDER = ["beijing", "magic", "shoppers", "adult", "default", "diabetes", "news"]
 POST = ["sample", "eval_main", "eval_quality", "eval_tabpc"]
 # Ablation jobs (NOT the main protocol): (arm, dataset, config.ABLATIONS key), seed 0 only.
-ABLATION_JOBS = [("gnn", "beijing", "topk_dense"), ("gnn", "magic", "topk_dense")]
-# Measured cost of the ablation relative to the main run (CPU, beijing, 3 alternating rounds,
-# median): GATv2 scores every node pair and then masks, so top_k = N-1 costs the same
-# (magic is GATv2 too).
-ABLATION_COST = {"topk_dense": 1.00}
+ABLATION_JOBS = [("gnn", "beijing", "topk_dense"), ("gnn", "magic", "topk_dense"),
+                 ("gnn", "magic", "depth3"), ("gnn_jenks", "magic", "depth3"),
+                 ("gnn_entmax15", "magic", "depth3")]
+# Cost of the ablation relative to the main run. topk_dense: measured (CPU, beijing, 3 alternating
+# rounds, median): GATv2 scores every node pair and then masks, so top_k = N-1 costs the same
+# (magic is GATv2 too). depth3: NOT measured, 3/2 blocks (an upper bound: the tokenizer, noise
+# embedding and reconstructor do not grow).
+ABLATION_COST = {"topk_dense": 1.00, "depth3": 1.50}
+ABLATION_COST_BASIS = {"topk_dense": "measured on beijing (same GNN type)", "depth3": "3/2 blocks, not measured"}
 RATIO_CSV = os.path.join(OUT, "step_ratio_cpu.csv")
 # Submission blocks (seed 0), in order; seeds 1-2 follow, double-commented.
 SUBMIT_BLOCKS = [
@@ -417,13 +421,19 @@ def jobs_for(arm: str, ds: str, ablation: str | None = None) -> list:
     rule = ARM_RULE.get(arm, "fixed")
     base = (f"{ds}_tabdiff_gnn" + (f"_{C.RULE_TAG[rule]}" if rule != "fixed" else "")
             + (f"_ablation_{ablation}" if ablation else ""))
+    if ablation and len(C.ablation_topk_modes(ablation)) > 1:
+        # an ablation run with every rule: <ds>_tabdiff_gnn_ablation_<name>_<topk<k> | rule tag>
+        sel = f"topk{C.gnn_config(ds, ablation=ablation)[0]['top_k']}" if rule == "fixed" else C.RULE_TAG[rule]
+        base = f"{ds}_tabdiff_gnn_ablation_{ablation}_{sel}"
     # the fixed arm keeps its 48 h scripts (unchanged); the rule arms get estimate x 1.3 (cap 48 h)
     wall = (lambda est: JOB_WALLTIME_H) if rule == "fixed" else _hours
     if ablation:
         f = ABLATION_COST[ablation]
         e["stages_h"] = {k: (v * f if k in ("train", "sample") else v) for k, v in e["stages_h"].items()}
-        e["basis"] += f"; ablation {ablation}: x{f:.2f} measured" + ("" if ds == "beijing" else
-                                                                     " on beijing (same GNN type)")
+        e["basis"] += (f"; ablation {ablation}: x{f:.2f} measured" + ("" if ds == "beijing" else
+                                                                      " on beijing (same GNN type)")
+                       if ablation == "topk_dense" else
+                       f"; ablation {ablation}: x{f:.2f} ({ABLATION_COST_BASIS[ablation]})")
         chain = [(st, sum(e["stages_h"][x] for x in st)) for st, _ in chain]
         if len(chain) > 1 or ds in C.RESUMABLE_DATASETS:
             raise SystemExit(f"ablation jobs are single-job datasets only ({ds})")
@@ -639,8 +649,9 @@ def write_submit(plan: dict) -> dict:
     lines.append("# === ABLATION (NOT the main protocol; seed 0; compare with the main run) " + "=" * 8)
     for arm, ds, abl in ABLATION_JOBS:
         ls, g = _submit_lines(plan[(arm, ds, abl)], 0, "# ", pad=True)
-        lines += [f"# --- {ds} {abl}: {C.ABLATIONS[abl]['change'].split('(')[0].strip()} (~{g:.1f} GPU-h)"] + ls
-        totals[f"ablation {ds} {abl}"] = g
+        tag = (f" {C.RULE_TAG.get(ARM_RULE[arm], 'fixed')}" if len(C.ablation_topk_modes(abl)) > 1 else "")
+        lines += [f"# --- {ds} {abl}{tag}: {C.ABLATIONS[abl]['change'].split('(')[0].strip()} (~{g:.1f} GPU-h)"] + ls
+        totals[f"ablation {ds} {abl}{tag}"] = g
     lines.append("")
     for seed in [x for x in C.TRAIN_SEEDS if x != 0]:
         lines.append(f"# === training seed {seed} -- ONLY AFTER CONFIRMATION " + "=" * 30)

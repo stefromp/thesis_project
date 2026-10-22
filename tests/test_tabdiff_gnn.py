@@ -629,7 +629,8 @@ def test_job_scripts_follow_hpc_transfer_jobs():
     want = {f"{ds}_tabdiff_gnn" for ds in C.ORDER if ds != "news"} | {"news_tabdiff_gnn_train",
                                                                       "news_tabdiff_gnn_sample_eval",
                                                                       "beijing_tabdiff_gnn_ablation_topk_dense",
-                                                                      "magic_tabdiff_gnn_ablation_topk_dense"}
+                                                                      "magic_tabdiff_gnn_ablation_topk_dense"} | {
+        f"magic_tabdiff_gnn_ablation_depth3_{sel}" for sel in ("topk3", "jenks", "entmax15")}
     for tag in ("jenks", "entmax15"):                        # the adaptive-rule arms
         want |= {f"{ds}_tabdiff_gnn_{tag}" for ds in C.ORDER if ds != "news"} | {
             f"news_tabdiff_gnn_{tag}_train", f"news_tabdiff_gnn_{tag}_sample_eval"}
@@ -1192,6 +1193,7 @@ def test_rule_jobs_and_fixed_jobs_unchanged():
     # the fixed arm's scripts are byte-identical to the ones it was run with
     fixed = [f for f in glob.glob(os.path.join(JOBS, "*_tabdiff_gnn*.sh"))
              if not re.search(r"_(jenks|entmax15)(_|\.)", os.path.basename(f))
+             and "_ablation_" not in os.path.basename(f)              # ablations: their own tests
              and not f.endswith("common_tabdiff_gnn.sh")]
     if subprocess.run(["git", "-C", REPO, "cat-file", "-e", FIXED_ARM_COMMIT],
                       capture_output=True).returncode == 0:          # no git history on the cluster
@@ -1400,6 +1402,130 @@ def test_only_the_magic_ablation_job_is_new():
         pytest.skip("no git history (cluster)")
     scripts = [f for f in glob.glob(os.path.join(JOBS, "*.sh"))
                if not f.endswith("magic_tabdiff_gnn_ablation_topk_dense.sh")
+               and "_ablation_depth3_" not in os.path.basename(f)           # depth3: own tests below
                and not os.path.basename(f).startswith("analysis_")]          # analysis jobs: own tests
     r = subprocess.run(["git", "-C", REPO, "diff", "--quiet", ABLATION_BASE_COMMIT, "--"] + scripts)
     assert r.returncode == 0, "a job script other than magic's ablation changed"
+
+
+# ---------------------------------------------------------------------------
+# depth3 ablation on magic: 3 AttnGNN blocks instead of 2, with every rule
+# ---------------------------------------------------------------------------
+DEPTH3_JOBS = {"fixed": "magic_tabdiff_gnn_ablation_depth3_topk3",
+               "adaptive_jenks": "magic_tabdiff_gnn_ablation_depth3_jenks",
+               "adaptive_entmax15": "magic_tabdiff_gnn_ablation_depth3_entmax15"}
+MAIN_MAGIC_JOBS = {"fixed": "magic_tabdiff_gnn", "adaptive_jenks": "magic_tabdiff_gnn_jenks",
+                   "adaptive_entmax15": "magic_tabdiff_gnn_entmax15"}
+
+
+def _flat(d, p=""):
+    out = {}
+    for k, v in d.items():
+        out.update(_flat(v, f"{p}{k}.") if isinstance(v, dict) else {f"{p}{k}": v})
+    return out
+
+
+def test_depth3_config_differs_from_the_source_only_in_layers():
+    main, main_src = C.gnn_config("magic")
+    abl, abl_src = C.gnn_config("magic", ablation="depth3")
+    assert {k for k in main if main[k] != abl[k]} == {"n_layers"} and set(main) == set(abl)
+    assert (main["n_layers"], abl["n_layers"]) == (2, 3)
+    assert {k for k in main_src if main_src[k] != abl_src[k]} == {"n_layers"}
+    assert "ABLATION depth3" in abl_src["n_layers"] and main_src["n_layers"] in abl_src["n_layers"]
+    import entry
+    for mode in C.TOPK_MODES:
+        m = _flat(entry.spec_for("tabdiff_magic", "attngnn", 0, topk_mode=mode))
+        a = _flat(entry.spec_for("tabdiff_magic", "attngnn", 0, topk_mode=mode, ablation="depth3"))
+        assert set(m) == set(a), mode
+        assert {k for k in m if m[k] != a[k]} == {"ablation", "gnn.n_layers", "gnn_sources.n_layers"}, mode
+        assert (m["gnn.n_layers"], a["gnn.n_layers"], a["ablation"]) == (2, 3, "depth3")
+
+
+def test_depth3_paths_never_collide_and_magic_only(tmp_path):
+    root = os.path.join(str(tmp_path), C.RESULTS_DIRNAME, "tabdiff_magic", "attngnn")
+    main = {C.run_dir(str(tmp_path), "tabdiff_magic", "attngnn", 0, topk_mode=m) for m in C.TOPK_MODES} | \
+        {C.run_dir(str(tmp_path), "tabdiff_magic", "attngnn", 0, ablation="topk_dense")}
+    for mode, sel in (("fixed", "topk3"), ("adaptive_jenks", "jenks"), ("adaptive_entmax15", "entmax15")):
+        p = C.run_dir(str(tmp_path), "tabdiff_magic", "attngnn", 0, topk_mode=mode, ablation="depth3")
+        assert p == os.path.join(root, f"v2_gatv2_layers3_dim256_{sel}_heads8_dimt128_noise-shared", "seed0")
+        assert p not in main
+    for ds in ("beijing", "shoppers", "adult", "default", "news", "diabetes"):
+        with pytest.raises(ValueError):
+            C.run_dir(str(tmp_path), C.target_name(ds), "attngnn", 0, ablation="depth3")
+    # topk_dense stays fixed-only
+    with pytest.raises(ValueError):
+        C.run_dir(str(tmp_path), "tabdiff_magic", "attngnn", 0, topk_mode="adaptive_jenks", ablation="topk_dense")
+
+
+def test_an_ablation_that_would_reuse_the_main_path_is_refused(tmp_path, monkeypatch):
+    monkeypatch.setitem(C.ABLATIONS, "depth3", {**C.ABLATIONS["depth3"], "n_layers": 2})   # a no-op change
+    with pytest.raises(ValueError, match="main run's directory"):
+        C.run_dir(str(tmp_path), "tabdiff_magic", "attngnn", 0, ablation="depth3")
+
+
+@pytest.mark.parametrize("mode", C.TOPK_MODES)
+def test_depth3_run_meta_links_the_rules_main_run(tmp_path, mode):
+    runner = _load_route_a("runner")
+    runner.run_job(_args(tmp_path, "--dataset", "magic", "--denoiser", "attngnn", "--ablation", "depth3",
+                         "--topk_mode", mode), FakeExec())
+    run = C.run_dir(str(tmp_path), "tabdiff_magic", "attngnn", 0, topk_mode=mode, ablation="depth3")
+    meta = json.load(open(os.path.join(run, "run_meta.json")))
+    assert meta["ablation"]["name"] == "depth3" and "not part of the main" in meta["ablation"]["note"]
+    assert meta["ablation"]["main_run_dir"] == C.run_dir(str(tmp_path), "tabdiff_magic", "attngnn", 0, topk_mode=mode)
+    assert meta["gnn"]["n_layers"] == 3 and meta["topk_mode"] == mode
+    assert (meta["k_logging"] is None) == (mode == "fixed")          # k statistics on, as in the main rule arms
+    assert not os.path.exists(meta["ablation"]["main_run_dir"])      # main run untouched
+
+
+@pytest.mark.parametrize("mode", C.TOPK_MODES)
+def test_depth3_builds_three_blocks(mode):
+    import torch
+    import entry
+    from denoiser import build_denoiser
+    if mode == "adaptive_entmax15":
+        pytest.importorskip("entmax")
+    spec = entry.spec_for("tabdiff_magic", "attngnn", 0, topk_mode=mode, ablation="depth3")
+    info = json.load(open(C.data_files("tabdiff_magic")["info"]))
+    d_num = len(info["num_col_idx"]) + (len(info["target_col_idx"]) if info["task_type"] == "regression" else 0)
+    up = {"d_numerical": d_num, "categories": [3] * (C.n_nodes("magic") - d_num)}
+    m = build_denoiser("attngnn", up, spec["gnn"], dim_t=C.DIM_T)
+    main = build_denoiser("attngnn", up, entry.spec_for("tabdiff_magic", "attngnn", 0, topk_mode=mode)["gnn"],
+                          dim_t=C.DIM_T)
+    assert (len(m.blocks), len(main.blocks)) == (3, 2)
+    n = lambda mod: sum(p.numel() for p in mod.parameters())
+    assert n(m) - n(main) == n(m.blocks[2])                          # exactly one more block, nothing else
+    assert all(b.dynamic_adj.top_k == 3 and b.dynamic_adj.n_nodes == 11 for b in m.blocks)
+    adj = m.blocks[2].dynamic_adj(torch.randn(4, 11, 256))
+    assert torch.isfinite(adj).all()
+
+
+def test_depth3_job_scripts():
+    for mode, stem in DEPTH3_JOBS.items():
+        t = open(os.path.join(JOBS, stem + ".sh")).read()
+        main = open(os.path.join(JOBS, MAIN_MAGIC_JOBS[mode] + ".sh")).read()
+        assert 'ABLATION="${ABLATION:-depth3}"' in t and "gatv2 L3 d256" in t and "_layers3_dim256_" in t
+        assert f"#SBATCH --job-name={stem}\n" in t
+        assert subprocess.run(["bash", "-n", os.path.join(JOBS, stem + ".sh")]).returncode == 0
+        env = lambda x: dict(re.findall(r'^([A-Z_]+)="\$\{\1:-(.*)\}"$', x, re.M))
+        e, em = env(t), env(main)
+        assert {k for k in set(e) | set(em) if e.get(k) != em.get(k)} == {"ABLATION"}, stem
+        if mode != "fixed":                                          # k statistics logged as in the main rule arms
+            assert f'TOPK_MODE="${{TOPK_MODE:-{mode}}}"' in t and "RULE_ARM=1" in t
+            assert 'TOPK_LOG_EVERY="${TOPK_LOG_EVERY:-100}"' in t
+    sub = open(os.path.join(REPO, "hpc_transfer", "submit_tabdiff_gnn.sh")).read()
+    for stem in DEPTH3_JOBS.values():
+        assert (f"# sbatch --gres=gpu:a100:1 --mem=24G --time=06:00:00 "
+                f"hpc_transfer/jobs_tabdiff_gnn/{stem}.sh") in sub.splitlines()
+
+
+def test_summary_picks_up_depth3_in_the_ablation_section():
+    sys.path.insert(0, os.path.join(REPO, "analysis", "summary"))
+    BS = pytest.importorskip("build_summary")
+    d3 = {t: v for t, v in BS.B_ABL.items() if v[1] == "depth3"}
+    assert {v[0] for v in d3.values()} == set(C.TOPK_MODES) and {v[2] for v in d3.values()} == {"B4b"}
+    assert BS.B_ABL["dense"] == ("fixed", "topk_dense", "B4")
+    for t, (mode, abl, _) in d3.items():
+        assert str(BS.ra_run("magic", mode, abl)).endswith(
+            os.path.join(f"v2_gatv2_layers3_dim256_{'topk3' if mode == 'fixed' else C.RULE_TAG[mode]}"
+                         "_heads8_dimt128_noise-shared", "seed0"))
+
